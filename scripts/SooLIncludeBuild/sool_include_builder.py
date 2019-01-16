@@ -35,6 +35,10 @@ parser.add_argument("-H", "--hierarchy",
 					action="store_true",
 					required=False,
 					help="Keep hierarchy")
+parser.add_argument("-a","--accumulate",
+					action="store_true",
+					required=False,
+					help="Do not performs cleanup")
 
 
 
@@ -91,17 +95,26 @@ def retrive_files(paths : List[Path]) -> Dict[Path,List[Path]]:
 	
 	return ret
 
-def build_output_struct(new_root : Path,rel_paths : List[Path],build_hier =True) :
+def build_output_struct(new_root : Path,rel_paths : List[Path],build_hier =True,accumulate=True) :
 	
-	print("Performing cleanup")
-	shutil.rmtree(new_root,True)
-	os.mkdir(new_root)
+	if not accumulate :
+		print("Performing cleanup")
+		shutil.rmtree(new_root,True)
+	else:
+		print("Accumulating")
+		
+	if not os.path.exists(new_root) :
+		print("Creating",new_root)
+		os.mkdir(new_root)
 	
 	if build_hier :
 		for p in rel_paths :
 			if str(p) != "." :
-				print("Creating",str(p))
-				os.makedirs(new_root/p.parent)
+				if not os.path.exists(new_root/p.parent) :
+					print("Creating",str(p))
+					os.makedirs(new_root/p.parent)
+				else :
+					print("Skipping",str(p))
 	
 	
 	
@@ -130,7 +143,7 @@ if __name__ == "__main__" :
 		
 	files_dict = retrive_files(get_path)
 	
-	build_output_struct(out_dir,[Path(os.path.relpath(p,root.absolute())) for p in get_path],args.hierarchy)
+	build_output_struct(out_dir,[Path(os.path.relpath(p,root.absolute())) for p in get_path],args.hierarchy,args.accumulate)
 	
 	for src_path in files_dict :
 		for src_file in files_dict[src_path] :
