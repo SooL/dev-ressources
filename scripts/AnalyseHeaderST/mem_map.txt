@@ -1,0 +1,43 @@
+#if defined(STM32F105xC ) || defined(STM32F107xC ) || defined(STM32F2     ) || defined(STM32F401xC ) ||\
+    defined(STM32F401xE ) || defined(STM32F405xx ) || defined(STM32F407xx ) || defined(STM32F411xE ) ||\
+    defined(STM32F412Cx ) || defined(STM32F412Rx ) || defined(STM32F412Vx ) || defined(STM32F412Zx ) ||\
+    defined(STM32F413xx ) || defined(STM32F415xx ) || defined(STM32F417xx ) || defined(STM32F423xx ) ||\
+    defined(STM32F427xx ) || defined(STM32F429xx ) || defined(STM32F437xx ) || defined(STM32F439xx ) ||\
+    defined(STM32F446xx ) || defined(STM32F469xx ) || defined(STM32F479xx ) || defined(STM32F7     ) ||\
+    defined(STM32L475xx ) || defined(STM32L476xx ) || defined(STM32L485xx ) || defined(STM32L486xx ) ||\
+    defined(STM32L496xx ) || defined(STM32L4A6xx ) || defined(STM32L4P    ) 
+#define USB_OTG_FS           (reinterpret_cast<USB_OTG_Global*>(0x50000000))
+#endif
+#if defined(STM32F2     ) || defined(STM32F405xx ) || defined(STM32F407xx ) || defined(STM32F415xx ) ||\
+    defined(STM32F417xx ) || defined(STM32F427xx ) || defined(STM32F429xx ) || defined(STM32F437xx ) ||\
+    defined(STM32F439xx ) || defined(STM32F446xx ) || defined(STM32F469xx ) || defined(STM32F479xx ) ||\
+    defined(STM32F7     ) 
+#define USB_OTG_HS           (reinterpret_cast<USB_OTG_Global*>(0x40040000))
+#endif
+#if defined(STM32F334x8 ) || defined(STM32H7     ) 
+#define HRTIM1_TIMA          (reinterpret_cast<HRTIM_TIM*>(0x40017480))
+#endif
+#if defined(STM32F334x8 ) || defined(STM32H7     ) 
+#define HRTIM1_TIMB          (reinterpret_cast<HRTIM_TIM*>(0x40017500))
+#endif
+#if defined(STM32F334x8 ) || defined(STM32H7     ) 
+#define HRTIM1_TIMC          (reinterpret_cast<HRTIM_TIM*>(0x40017580))
+#endif
+#if defined(STM32F334x8 ) || defined(STM32H7     ) 
+#define HRTIM1_TIMD          (reinterpret_cast<HRTIM_TIM*>(0x40017600))
+#endif
+#if defined(STM32F334x8 ) || defined(STM32H7     ) 
+#define HRTIM1_TIME          (reinterpret_cast<HRTIM_TIM*>(0x40017680))
+#endif
+#if defined(STM32F723xx ) || defined(STM32F733xx ) 
+#define USB_HS_PHYC          (reinterpret_cast<USB_HS_PHYC_Global*>(0x40017C00))
+#endif
+#if defined(STM32H7     ) 
+#define RCC_C1               (reinterpret_cast<RCC_Core*>(0x58024530))
+#endif
+#if defined(STM32H7     ) 
+#define USB1_OTG_HS          (reinterpret_cast<USB_OTG_Global*>(0x00000000))
+#endif
+#if defined(STM32H7     ) 
+#define USB2_OTG_FS          (reinterpret_cast<USB_OTG_Global*>(0x00000000))
+#endif

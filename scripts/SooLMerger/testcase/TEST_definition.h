@@ -1,0 +1,12 @@
+//SOOL-ADC-DECLARATION-BEGIN
+
+public:
+	void doIt();
+//SOOL-ADC-DECLARATION-END
+//SOOL-ADC-DEFINITION-BEGIN
+
+void ADC::doIt()
+{
+	yolo();
+}
+//SOOL-ADC-DEFINITION-END
