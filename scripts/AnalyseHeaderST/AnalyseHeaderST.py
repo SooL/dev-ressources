@@ -39,15 +39,17 @@ db_peripheral_typedef = db_path_base / "periph_typedef.pkl"
 
 FileListing = glob.glob(FileLocation + "stm32?????*.h")
 
-# ______________________________________________________________________________________________________ Template strings
+# ______________________________________________________________________________________________________Template strings
 
 full = ChipSeriesManager()
 full.from_file_path(FileListing)
 
 csm: Set[str] = full  # .select("STM32F07")
 # csm.remove_chips(csm.select("F1"),"remove")
+with open(OutputDirectory+"chips.h", "w") as file:
+	file.write(full.output_series_definition())
 
-# _____________________________________________________________________________________________________ Correction_matrix
+# _____________________________________________________________________________________________________Correction_matrix
 
 """
 correction_matrix : Dict[Tuple[str,str,str],Tuple[str,str,str]] = dict()
