@@ -8,12 +8,47 @@ from tools.msglog import log
 from tools.utils import ChipSeriesManager
 from typing import *
 
-#<editor-fold desc="Templates">
+# <editor-fold desc="Templates">
 
+FILE_TEMPLATE = """
+#ifndef __SOOL_{name}_H
+#define __SOOL_{name}_H
+
+{chips}
+
+#include "lib_utils/peripheral_include.h"
+//SOOL-{name}-INCLUDES
+//region defines
+{defines}
+//endregion
+namespace sool
+{{
+	namespace core
+	{{
+//region related-types
+		//SOOL-{name}-RELATED-TYPES
+//endregion
+//region peripheral-declaration
+		{declaration}
+//endregion
+//region instances
+		{instances}
+//endregion
+//region peripheral-definition
+		//SOOL-{name}-DEFINITION
+//endregion
+	}};
+}};
+//region undef
+{undef}
+//endregion
+#endif // chips selection
+#endif //__SOOL_{name}_H
+"""
 PERIPH_STRUCT_TEMPLATE = """
 class {periph}
 {{
-	//SOOL-{periph}-ENUMS
+	//SOOL-{periph}-NESTED-TYPES
 	
 	public :
 	{registers}
@@ -25,19 +60,17 @@ class {periph}
 	{periph}() = delete;
 	//SOOL-{periph}-DECLARATION
 }};
-
 """
 PERIPH_STRUCT_EMPTY_TEMPLATE = """
 class {periph}
 {{
-	//SOOL-{periph}-ENUMS
+	//SOOL-{periph}-NESTED-TYPES
 	{registers}
 	
 	private:
 	{periph}() = delete;
 	//SOOL-{periph}-DECLARATION
 }};
-
 """
 
 DIVERGENCE_TEMPLATE = """
@@ -45,23 +78,27 @@ struct {name}_plugin: {periph}_base_plugin {{
 	{content}
 }};
 """
-#</editor-fold>
 
-def create_padding(size: int, indent: int = 0, for_define = False) :
+
+# </editor-fold>
+
+def create_padding(size: int, indent: int = 0, for_define=False):
 	i = 1
 	j = 2
 	out = ""
 	size /= 8
 	while size > 0:
 		if size % j == i:
-			out = "{}__SOOL_PERIPH_PADDING_{};".format("\t"*indent, i) + ("" if for_define else "\n") + out
+			out = "{}__SOOL_PERIPH_PADDING_{};".format("\t" * indent, i) + ("" if for_define else "\n") + out
 			size -= i
 		i = j
 		j *= 2
 	return out[:-1]
 
-class Mapping(Component) :
-	def __init__(self, reg: Union[Register, "Peripheral"], chips: ChipSeriesManager, pos: int, name: str = None, array_size: int = 1, array_offset: int = 0, array_item_size: int = 0):
+
+class Mapping(Component):
+	def __init__(self, reg: Union[Register, "Peripheral"], chips: ChipSeriesManager, pos: int, name: str = None,
+					array_size: int = 1, array_offset: int = 0, array_item_size: int = 0):
 		Component.__init__(self, "", chips)
 		self.reg = reg
 		self.array_size = array_size
@@ -70,12 +107,13 @@ class Mapping(Component) :
 		self.index = -1
 		self.array_offset = array_offset
 		self.array_item_size = array_item_size
+
 	def _define(self):
 		name = "{parent}_MAP{m.index}_{m.name}".format(
-			parent = self.parent.prefixed_name(),
-			m = self)
+			parent=self.parent.prefixed_name(),
+			m=self)
 		result = ""
-		if self.array_size > 1 :
+		if self.array_size > 1:
 			if self.array_item_size == 0:
 				result = "#define {name:20} {reg_use} {m.name}[{m.array_size}]"
 			else:
@@ -84,76 +122,82 @@ class Mapping(Component) :
 			result = "#define {name:20} {reg_use} {m.name}"
 
 		return result.format(
-				name = name,
-				reg_use = self.reg if isinstance(self.reg, str) else self.reg.use(),
-				m = self)
+			name=name,
+			reg_use=self.reg if isinstance(self.reg, str) else self.reg.use(),
+			m=self)
+
 	def _notDefined(self):
-		return "#define {0}_MAP{1.index}_{1.name} ".format(self.parent.prefixed_name(), self) +\
-		       create_padding(size= self.reg.size * self.array_size, for_define=True)
+		return "#define {0}_MAP{1.index}_{1.name} ".format(self.parent.prefixed_name(), self) + \
+		       create_padding(size=self.reg.size * self.array_size, for_define=True)
+
 	def _undefine(self):
 		return "#undef {parent}_MAP{m.index}_{m.name}".format(
-			parent = self.parent.prefixed_name(),
-			m = self)
+			parent=self.parent.prefixed_name(),
+			m=self)
 
 	def use(self):
 		if self.chips == self.parent.chips:
 			if self.array_item_size == 0:
-				return self.reg.use() + " " + self.name +\
+				return self.reg.use() + " " + self.name + \
 				       (";" if self.array_size == 1 else "[{}];".format(self.array_size))
 			else:
 				return "BigArrayReg_t<{reg_use}, {m.array_offset}, {m.array_item_size}, {m.array_size}> {m.name};".format(
-					m = self,
-					reg_use = self.reg.use()
+					m=self,
+					reg_use=self.reg.use()
 				)
 
 		else:
 			return "{parent}_MAP{m.index}_{m.name};".format(
-				parent = self.parent.prefixed_name(),
-				m = self)
+				parent=self.parent.prefixed_name(),
+				m=self)
 
 	def finalize(self, full_chips):
-		if self.chips.is_empty(): # register created manually
+		if self.chips.is_empty():  # register created manually
 			self.chips.merge(self.reg.chips)
 
 		Component.finalize(self, full_chips)
-		if self.index < 0 :
+		if self.index < 0:
 			raise Exception("mapping does not have an index.")
+
 	def size(self):
 		# noinspection PyUnresolvedReferences
 		return self.reg.size * self.array_size
 
 	def __eq__(self, other):
-		return type(other) == Mapping and\
-		       other.reg == self.reg and\
-		       other.array_size == self.array_size and\
-		       other.pos == self.pos and\
+		return type(other) == Mapping and \
+		       other.reg == self.reg and \
+		       other.array_size == self.array_size and \
+		       other.pos == self.pos and \
 		       other.name == self.name
 
 	def merge(self, other: "Mapping"):
-		self.reg.merge(other.reg) #probably not necessary
+		self.reg.merge(other.reg)  # probably not necessary
 		self.chips.merge(other.chips)
+
 
 class Peripheral(Component):
 	def __init__(self, name: str, chips: ChipSeriesManager):
 		Component.__init__(self, name, chips)
-		self.registers : List[Union[Register, "Peripheral"]]  = list() #List[position, register*, array_size]
-																#*: or sub-peripherals like CAN mailbox
-		self.mappings: List[Mapping] = list() # one Mapping instance per register
+		self.registers: List[Union[Register, "Peripheral"]] = list()  # List[position, register*, array_size]
+		# *: or sub-peripherals like CAN mailbox
+		self.mappings: List[Mapping] = list()  # one Mapping instance per register
 		self.size = -1
 		self.linked_peripherals: List[Peripheral] = list()
 		self.main = True
-		self.instances: List[Tuple[str, ChipSeriesManager, int]] = list() # list (name, chips, addr)
+		self.instances: List[Tuple[str, ChipSeriesManager, int]] = list()  # list (name, chips, addr)
 		self.divergences: List[PeriphDivergence] = list()
 
 	def need_def(self):
 		return True
 
 	def _define(self):
-		if not self.main :
+		if not self.main:
 			return "#define {}".format(self.name)
+
 	def _notDefined(self):
 		return ""
-	def define_output(self, dictionary: Dict[str,List[Tuple[str, str, str]]]):
+
+	def define_output(self, dictionary: Dict[str, List[Tuple[str, str, str]]]):
 		for r in self.registers:
 			r.define_output(dictionary)
 
@@ -165,8 +209,9 @@ class Peripheral(Component):
 
 		for d in self.divergences:
 			d.define_output(dictionary)
-		#if not self.main:
-		#	Component.define_output(self, dictionary)
+
+	# if not self.main:
+	#	Component.define_output(self, dictionary)
 	def _split_mappings(self):
 		self.mappings.sort(key=lambda m: m.index)
 		groups: List[List[Mapping]] = [[]]
@@ -176,62 +221,66 @@ class Peripheral(Component):
 				groups[map_index].append(mapping)
 			else:
 				groups.append([mapping])
-				map_index = map_index+1
+				map_index = map_index + 1
 		return groups
+
 	def use(self):
 		return self.name
+
 	def declare(self):
 		if self.size == -1:
 			self.compute_size()
-		if self.size == 0 :
+		if self.size == 0:
 			return ""
 		reg_declare = ""
 		map_declare = ""
-		for reg in self.registers :
+		for reg in self.registers:
 			if isinstance(reg, Peripheral) or not reg.divergent:
 				reg_declare += reg.declare().replace("\n", "\n\t")
 		mapping_groups = self._split_mappings()
-		for group in mapping_groups :
+		for group in mapping_groups:
 			map_declare += "\n\t\tstruct\n\t\t{"
 			cursor: int = 0
-			for mapping in group :
+			for mapping in group:
 				if mapping.pos < cursor:
 					raise Exception("mappings overlap in peripheral " + self.name)
 				elif mapping.pos > cursor:
 					size = mapping.pos - cursor
-					if size % 8 != 0 :
+					if size % 8 != 0:
 						raise Exception("filler without a integral number of bytes : " + self.name + "_" + mapping.name)
-					map_declare += "\n"+create_padding(size, 3)
-				map_declare += "\n\t\t\t{:20} // @0x{:03x}".format(mapping.use(), int(mapping.pos/8))
+					map_declare += "\n" + create_padding(size, 3)
+				map_declare += "\n\t\t\t{:20} // @0x{:03x}".format(mapping.use(), int(mapping.pos / 8))
 				cursor = mapping.pos + mapping.size()
 			if cursor != self.size:
-					size = self.size - cursor
-					if size % 8 != 0 :
-						raise Exception("filler without a integral number of bytes : " + self.name + " at " + str(cursor) + " " + str(self.size))
-					map_declare += "\n"+create_padding(size, 3)
+				size = self.size - cursor
+				if size % 8 != 0:
+					raise Exception(
+						"filler without a integral number of bytes : " + self.name + " at " + str(cursor) + " " + str(
+							self.size))
+				map_declare += "\n" + create_padding(size, 3)
 			map_declare += "\n\t\t};"
 		template = ""
 		if len(self.divergences) > 0:
-			#output base variant
-			template = "struct {}_base_plugin\n{{\n".format(self.name)
+			# output base variant
+			template = "\nstruct {}_base_plugin\n{{\n".format(self.name)
 			for r in self.registers:
 				if r.divergent:
 					template += r.declare(True).replace("\n", "\n\t")
 			template += "};\n"
 			template += "template<typename plugin={}_base_plugin>".format(self.name)
-		return template + (PERIPH_STRUCT_TEMPLATE if len(self.mappings) > 0 else PERIPH_STRUCT_EMPTY_TEMPLATE)\
-				.format(periph=self.name, registers=reg_declare, mappings = map_declare)
+		return template + (PERIPH_STRUCT_TEMPLATE if len(self.mappings) > 0 else PERIPH_STRUCT_EMPTY_TEMPLATE) \
+			.format(periph=self.name, registers=reg_declare, mappings=map_declare)
 
 	def add_register(self, register: Union[Register, "Peripheral"], pos: int, chips: ChipSeriesManager = None,
-	                 name: Union[str,None] = None, arr_size: int = 1, array_offset: int = 0, array_item_size: int = 0):
+	                 name: Union[str, None] = None, arr_size: int = 1, array_offset: int = 0, array_item_size: int = 0):
 		if chips is None:
 			chips = register.chips
 
 		self.chips.merge(chips)
 
 		ok = False
-		#1. add register to list or merge with existing one
-		for reg in self.registers :
+		# 1. add register to list or merge with existing one
+		for reg in self.registers:
 			if reg == register:
 				reg.merge(register)
 				register = reg
@@ -240,11 +289,11 @@ class Peripheral(Component):
 			register.set_parent(self)
 			self.registers.append(register)
 		else:
-			ok = False #reset to False for next step
+			ok = False  # reset to False for next step
 
-		if pos < 0: return #register without direct usage
+		if pos < 0: return  # register without direct usage
 
-		#2. add appropriate mapping or merge with existing one if attributes match
+		# 2. add appropriate mapping or merge with existing one if attributes match
 		m = Mapping(register, chips, pos, name, arr_size, array_offset, array_item_size)
 		for mapping in self.mappings:
 			if mapping == m:
@@ -256,12 +305,12 @@ class Peripheral(Component):
 
 	def compute_size(self):
 		if len(self.mappings) > 0:
-			self.mappings.sort(key=lambda m: m.pos+m.size())
-			mapping = self.mappings[len(self.mappings)-1]
+			self.mappings.sort(key=lambda m: m.pos + m.size())
+			mapping = self.mappings[len(self.mappings) - 1]
 			# noinspection PyUnresolvedReferences
 			self.size = mapping.pos + mapping.size()
 			return self.size
-		else :
+		else:
 			self.size = 0
 			return 0
 
@@ -280,13 +329,12 @@ class Peripheral(Component):
 
 			reg.finalize(full_chips)
 
-
 		for d in self.divergences:
 			d.finalize(full_chips)
 
 		self.mappings.sort(key=lambda m: m.pos)
 
-		last_pos : List[int] = [0]
+		last_pos: List[int] = [0]
 		used_names: List[List[str]] = list()
 		used_names.append(list())
 		for mapping in self.mappings:
@@ -296,7 +344,7 @@ class Peripheral(Component):
 				if map_index == len(last_pos):
 					last_pos.append(0)
 					used_names.append(list())
-			last_pos[map_index] = mapping.pos+mapping.size()
+			last_pos[map_index] = mapping.pos + mapping.size()
 			used_names[map_index].append(mapping.name)
 			mapping.index = map_index
 			mapping.finalize(full_chips)
@@ -308,59 +356,52 @@ class Peripheral(Component):
 
 	def file_output(self):
 		if not self.main:
-			raise Exception("Peripheral {0.name} is a sub peripheral. It can't have its own file"\
-			                .format(self))
+			raise Exception("Peripheral {0.name} is a sub peripheral. It can't have its own file".format(self))
 
-		define_dict: Dict[str,List[Tuple[str, str, str]]] = dict()
+		define_dict: Dict[str, List[Tuple[str, str, str]]] = dict()
 		self.define_output(define_dict)
-		out = "//region defines\n"
 		with open("out/" + self.name + ".h", "w") as file:
-			out_undef: str = "//region undef\n"
+			out_define: str =""
+			out_undef: str = ""
 			for key in define_dict:
 				out_def: str = ""
 				out_ndef: str = ""
 				for values in define_dict[key]:
 					if values[0] is not None and len(values[0]) > 0:
-						out_def += values[0]+"\n"
+						out_def += values[0] + "\n"
 					if values[1] is not None and len(values[1]) > 0:
-						out_ndef += values[1]+"\n"
+						out_ndef += values[1] + "\n"
 					if values[2] is not None and len(values[2]) > 0:
-						out_undef += values[2]+"\n"
-				out += "\n"+key.format(ifdef=out_def[:-1], ifndef=out_ndef[:-1]).replace("#else\n\n#endif", "#endif")
-			out_undef += "//endregion"
-			out += "\n//endregion\n"
-			out += "\nnamespace sool\n{\n\tnamespace core\n\t{"
-			out += self.declare().replace("\n", "\n\t\t")
+						out_undef += values[2] + "\n"
+				out_define += "\n" + key.format(ifdef=out_def[:-1], ifndef=out_ndef[:-1]).replace("#else\n\n#endif", "#endif")
+			out_declare: str = self.declare().replace("\n", "\n\t\t")
 
 			for linked in self.linked_peripherals:
-				out += linked.declare().replace("\n", "\n\t\t")
+				out_declare += "\n"+linked.declare().replace("\n", "\n\t\t")
 
-			out += self.output_instances()
-			out += "\n//SOOL-{}-DEFINES".format(self.name)
-			out += "\n//SOOL-{}-DEFINITION\n\t}};\n}};".format(self.name)
-			out += out_undef
-			file.write(
-"""#ifndef __SOOL_{0}_H
-#define __SOOL_{0}_H
-
-#include "peripheral_include.h"
-//SOOL-{0}-INCLUDES
-""".format(self.name))
-			file.write(self.chips.output_ifdef_template().format(ifdef=out, ifndef ="").replace("#else\n\n#endif", "#endif"))
-			file.write("#endif\n")
+			file.write(FILE_TEMPLATE.format(
+				chips=self.chips.output_ifdef_template(onlyIf=True),
+				name=self.name,
+				defines=out_define,
+				declaration=out_declare,
+				instances= self.output_instances(),
+				undef=out_undef
+			))
 
 	def __iter__(self):
 		for reg in self.registers:
 			yield reg
+
 	def __getitem__(self, item: str):
 		if isinstance(item, str):
 			for reg in self.registers:
-				if reg.name == item :
+				if reg.name == item:
 					return reg
 			return None
-		else :
+		else:
 			return None
-	def getMappings(self, reg: Union[str,Register]):
+
+	def getMappings(self, reg: Union[str, Register]):
 		"""
 		:param reg:
 		:return Mapping:
@@ -372,6 +413,7 @@ class Peripheral(Component):
 			if m.reg == r:
 				mappings.append(m)
 		return mappings
+
 	def create_field(self, reg_name: str, field_name: str, pos: int, size: int, chips: ChipSeriesManager):
 		register: Register = None
 
@@ -392,7 +434,7 @@ class Peripheral(Component):
 			register.add_field(Field(field_name, chips, pos, size))
 			return True
 		else:
-			return False #TODO go a bit further
+			return False  # TODO go a bit further
 
 	def get_field(self, reg_name: str, field_name: str, chips: ChipSeriesManager):
 		for reg in self.registers:
@@ -406,12 +448,12 @@ class Peripheral(Component):
 				if field is not None:
 					return field
 		for periph in self.linked_peripherals:
-			field =periph.get_field(reg_name, field_name, chips)
+			field = periph.get_field(reg_name, field_name, chips)
 			return field
 
 		return None
 
-	def find_register(self, name: List[str], chips: ChipSeriesManager, divergenceName=None)->(Register, List[str]):
+	def find_register(self, name: List[str], chips: ChipSeriesManager, divergenceName=None) -> (Register, List[str]):
 		divergence = None
 		if self.parent is None:
 			if name[0].startswith(self.name):
@@ -471,10 +513,10 @@ class Peripheral(Component):
 			result_reg, result_name = p.find_register(name, chips, divergenceName)
 			if result_reg is not None:
 				return result_reg, result_name
-		#TODO if reg name ends with number, remove number and retry
-		return None,None
+		# TODO if reg name ends with number, remove number and retry
+		return None, None
 
-	def find_field(self, name: List[str], chips: ChipSeriesManager, divergenceName=None)-> Union[Field,None]:
+	def find_field(self, name: List[str], chips: ChipSeriesManager, divergenceName=None) -> Union[Field, None]:
 		reg, name = self.find_register(name, chips, divergenceName)
 		if reg is None:
 			return None
@@ -492,7 +534,7 @@ class Peripheral(Component):
 
 		return None
 
-	def parse_define(self, name: List[str], pos: int, size: int, chips: ChipSeriesManager, divergenceName=None)-> bool:
+	def parse_define(self, name: List[str], pos: int, size: int, chips: ChipSeriesManager, divergenceName=None) -> bool:
 
 		reg, name = self.find_register(name, chips, divergenceName)
 		if reg is None:
@@ -505,7 +547,7 @@ class Peripheral(Component):
 		for var in reg:
 			for f in var:
 				if f.name in names:
-					#field already in reg. just copy the already existing field to add chips if it is not a sub field
+					# field already in reg. just copy the already existing field to add chips if it is not a sub field
 					already = True
 					if (len(name) == len(f.name.split("_")) and "_".join(name) == f.name) or ("".join(name) == f.name):
 						reg.add_field(Field(f.name, chips, pos, size))
@@ -519,9 +561,9 @@ class Peripheral(Component):
 
 			name = "_".join(name)
 
-			if name[0].isdigit(): #first character is digit
+			if name[0].isdigit():  # first character is digit
 				prefix = (reg.name[:-1] if reg.name[-1:] == "R" else reg.name)
-				#reg.add_field(Field(prefix + "_" + name, chips, pos, size))
+				# reg.add_field(Field(prefix + "_" + name, chips, pos, size))
 				name = prefix + name
 
 			reg.add_field(Field(name, chips, pos, size))
@@ -548,14 +590,14 @@ class Peripheral(Component):
 				key = chips.output_ifdef_template()
 			if key not in dico:
 				dico[key] = list()
-			dico[key].append((self.name, name, addr, len(self.divergences)>0))
+			dico[key].append((self.name, name, addr, len(self.divergences) > 0))
 		for p in self.linked_peripherals:
 			divergences.extend(p.divergences)
 			for name, chips, addr in p.instances:
 				key = chips.output_ifdef_template()
 				if key not in dico:
 					dico[key] = list()
-				dico[key].append((p.name, name, addr, len(p.divergences)>0))
+				dico[key].append((p.name, name, addr, len(p.divergences) > 0))
 		for reg in self.registers:
 			if isinstance(reg, Peripheral):
 				divergences.extend(reg.divergences)
@@ -563,13 +605,13 @@ class Peripheral(Component):
 					key = chips.output_ifdef_template()
 					if key not in dico:
 						dico[key] = list()
-					dico[key].append((self.name+"::"+reg.name, name, addr, len(reg.divergences)>0))
+					dico[key].append((self.name + "::" + reg.name, name, addr, len(reg.divergences) > 0))
 		for d in divergences:
-			div_names += d.name +"\n"
+			div_names += d.name + "\n"
 		if len(divergences) > 0:
 			print("divergences for {} :\n{}".format(self.name, div_names[:-2]))
 
-		output = "//region instances\n"
+		output = ""
 		inst_list: List[str] = list()
 		for key in dico:
 			ifdef = ""
@@ -587,57 +629,59 @@ class Peripheral(Component):
 						if d.parent.name:
 							if d.name == name or d.name in name.split("_"):
 								divergence = d
-								log("W_DIVERGENCE", "divergence {} used for peripheral instance {}".format(d.name, name))
+								log("W_DIVERGENCE",
+								    "divergence {} used for peripheral instance {}".format(d.name, name))
 								if d.name != name:
 									divergence.name = name
-								#divergences.remove(d)
+								# divergences.remove(d)
 								break
-							#TODO take divergences with '_' in their name into account
+							# TODO take divergences with '_' in their name into account
 							else:
 								print("divergence {} not applicable for {}".format(d.name, name))
 
 					if divergence is not None:
-						inst = ("#ifdef {inst}_BASE_ADDR{div_declare}volatile class {periph}<{inst}_plugin>* const {inst} ="+
-						       "reinterpret_cast<class {periph}<{inst}_plugin>* const>({inst}_BASE_ADDR);\n#endif").format(
-							inst=name, div_declare = divergence.declare(), periph=typedef
+						inst = (
+								"#ifdef {inst}_BASE_ADDR{div_declare}volatile class {periph}<{inst}_plugin>* const {inst} =" +
+								"reinterpret_cast<class {periph}<{inst}_plugin>* const>({inst}_BASE_ADDR);\n#endif").format(
+							inst=name, div_declare=divergence.declare(), periph=typedef
 						)
 					else:
-						inst = ("#ifdef {inst}_BASE_ADDR\nvolatile class {periph}<>* const {inst} ="+
-						       "reinterpret_cast<class {periph}<>* const>({inst}_BASE_ADDR);\n#endif").format(
+						inst = ("#ifdef {inst}_BASE_ADDR\nvolatile class {periph}<>* const {inst} =" +
+						        "reinterpret_cast<class {periph}<>* const>({inst}_BASE_ADDR);\n#endif").format(
 							inst=name, periph=typedef
 						)
-				else :
-					inst = "#ifdef {1}_BASE_ADDR\nvolatile class {0} * const {1} = reinterpret_cast<class {0}* const>({1}_BASE_ADDR);\n#endif"\
-					    .format(typedef, name)
+				else:
+					inst = "#ifdef {1}_BASE_ADDR\nvolatile class {0} * const {1} = reinterpret_cast<class {0}* const>({1}_BASE_ADDR);\n#endif" \
+						.format(typedef, name)
 
 				if inst not in inst_list:
 					inst_list.append(inst)
 
 			output += key.format(
-						ifdef=ifdef,
-						ifndef=""
-						).replace("\n#else\n\n#endif", "#endif\n")
+				ifdef=ifdef,
+				ifndef=""
+			).replace("\n#else\n\n#endif", "#endif\n")
 		output += "\n".join(inst_list)
-		output += "\n//endregion\n"
 
-		#for d in divergences:
+		# for d in divergences:
 		#	log("E_DIVERGENCE", "unused divergence : {} for {}".format(d.name, d.parent.name))
 		return output
 
-class PeriphDivergence(Component) :
+
+class PeriphDivergence(Component):
 	def __init__(self, peripheral, instanceName, chips):
 		Component.__init__(self, instanceName, chips)
 		self.set_parent(peripheral)
-		self.registers : List[Register] = list()
+		self.registers: List[Register] = list()
 
 	def declare(self):
 		out = ""
-		for r in self.registers :
+		for r in self.registers:
 			out += r.declare().replace("\n", "\n\t")
-		return DIVERGENCE_TEMPLATE.format(name = self.name, periph=self.parent.name, content = out)
+		return DIVERGENCE_TEMPLATE.format(name=self.name, periph=self.parent.name, content=out)
 
 	def finalize(self, full_chips):
-		for r in self.registers :
+		for r in self.registers:
 			r.finalize(full_chips)
 			self.chips.merge(r.chips)
 		Component.finalize(self, full_chips)
@@ -660,7 +704,7 @@ class PeriphDivergence(Component) :
 			raise Exception("no register {} in divergence {}".format(registerName, self.name))
 		reg.add_field(field)
 
-	def define_output(self, dictionary: Dict[str,List[Tuple[str, str, str]]]):
+	def define_output(self, dictionary: Dict[str, List[Tuple[str, str, str]]]):
 		for r in self.registers:
 			r.define_output(dictionary)
 
