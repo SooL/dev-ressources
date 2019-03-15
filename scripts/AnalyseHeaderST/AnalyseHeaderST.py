@@ -47,7 +47,8 @@ full.from_file_path(FileListing)
 csm: Set[str] = full  # .select("STM32F07")
 # csm.remove_chips(csm.select("F1"),"remove")
 with open(OutputDirectory+"chips.h", "w") as file:
-	file.write(full.output_series_definition())
+	with open('license_header.txt', 'r') as license:
+		file.write(license.read() + full.output_series_definition())
 
 # _____________________________________________________________________________________________________Correction_matrix
 

@@ -379,14 +379,15 @@ class Peripheral(Component):
 			for linked in self.linked_peripherals:
 				out_declare += "\n"+linked.declare().replace("\n", "\n\t\t")
 
-			file.write(FILE_TEMPLATE.format(
-				chips=self.chips.output_ifdef_template(onlyIf=True),
-				name=self.name,
-				defines=out_define,
-				declaration=out_declare,
-				instances= self.output_instances(),
-				undef=out_undef
-			))
+			with open('license_header.txt', 'r') as license:
+				file.write(license.read() + FILE_TEMPLATE.format(
+					chips=self.chips.output_ifdef_template(onlyIf=True),
+					name=self.name,
+					defines=out_define,
+					declaration=out_declare,
+					instances=self.output_instances(),
+					undef=out_undef
+				))
 
 	def __iter__(self):
 		for reg in self.registers:
