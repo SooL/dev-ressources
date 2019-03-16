@@ -42,7 +42,7 @@ namespace sool
 //region undef
 {undef}
 //endregion
-#endif // chips selection
+{endif}
 #endif //__SOOL_{name}_H
 """
 PERIPH_STRUCT_TEMPLATE = """
@@ -386,7 +386,8 @@ class Peripheral(Component):
 					defines=out_define,
 					declaration=out_declare,
 					instances=self.output_instances(),
-					undef=out_undef
+					undef=out_undef,
+					endif="#endif // chips selection" if not(self.chips.is_all_chips()) else ""
 				))
 
 	def __iter__(self):
