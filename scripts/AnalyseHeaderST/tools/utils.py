@@ -58,7 +58,7 @@ class ChipSeriesManager:
 		:return: Built chip series list
 		:rtype: set of str
 		"""
-		chip_id = [f[f.find("stm32"):len(f) - 2].upper().replace("X", "x") for f in sorted(paths)]
+		chip_id = [f[f.find("STM32"):len(f) - 4].upper().replace("X", "x") for f in sorted(paths)]
 		self.chip_list = self.chip_list.union(chip_id)
 		self.build_chip_family()
 		return self.chip_list
@@ -82,19 +82,20 @@ class ChipSeriesManager:
 		"""
 		This function will rebuild the full chip family data structure
 		"""
+		#Put back all chips from already existing families into the actual chip list
 		for family in self.chip_families:
 			self.chip_list |= self.chip_families[family]
-
+			
+		self.chip_list = self.chip_list - set(self.chip_families.keys())
 		self.chip_families.clear()
 		for chip in self.chip_list:
-			if len(chip) < 9:
-				if chip in self.chip_families:
-					continue
-				else:
-					family = chip
-			else:
-				family = chip[:7]
-				family += "P" if (chip[7] in "RS") else str("")  # L4+
+			#STM32F072
+			end : int = 7
+			#while not chip[end].isdigit() :
+			#	end += 1
+			
+			family = chip[:end]
+			family += "P" if (chip[7] in "RS") else str("")  # L4+
 
 			if family not in self.chip_families:
 				self.chip_families[family] = set()
