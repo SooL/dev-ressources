@@ -56,6 +56,8 @@ OutputDirectory = "out/"
 
 import xml.etree.ElementTree as ET
 
+def get_node_text(root : ET.Element, node : str) -> str :
+	return str() if root.find(node) is None else root.find(node).text
 
 def analyze_svd(svd : str) :
 	"""
@@ -64,35 +66,35 @@ def analyze_svd(svd : str) :
 	"""
 	root = ET.parse(svd).getroot()
 	
-	chip_name = root.find("name").text
+	chip_name = get_node_text(root,"name")
 	
 	for svd_periph in root.findall("peripherals/peripheral"):
 		
-		periph_baseaddr = svd_periph.find("baseAddress").text
+		periph_baseaddr = get_node_text(svd_periph,"baseAddress")
 		
 		if "derivedForm" in svd_periph.attrib.keys():
 			#Some specific stuff here :D
 			continue
-		periph_name  	= svd_periph.find("name").text
-		periph_descr	= svd_periph.find("description").text
-		periph_grpname	= svd_periph.find("groupName").text
-		
+		periph_name  	= get_node_text(svd_periph,"name")
+		periph_descr	= get_node_text(svd_periph,"description")
+		periph_grpname	= get_node_text(svd_periph,"groupName")
 		
 		for svd_register in svd_periph.findall("registers/register"):
-			reg_name 	= svd_register.find("name").text
-			reg_disp	= svd_register.find("displayName").text
-			reg_descr 	= svd_register.find("description").text
-			reg_offset 	= svd_register.find("addressOffset").text
-			reg_size 	= svd_register.find("size").text
-			reg_access 	= svd_register.find("access").text
-			reg_rst 	= svd_register.find("resetValue").text
+			reg_name 	= get_node_text(svd_register,"name")
+			reg_disp	= get_node_text(svd_register,"displayName")
+			reg_descr 	= get_node_text(svd_register,"description")
+			reg_offset 	= get_node_text(svd_register,"addressOffset")
+			reg_size 	= get_node_text(svd_register,"size")
+			reg_access 	= get_node_text(svd_register,"access")
+			reg_rst 	= get_node_text(svd_register,"resetValue")
 			
 			for svd_field in svd_register.findall("fields/field"):
-				field_name	= svd_field.find("name").text
-				field_descr = svd_field.find("description").text
-				field_offset = svd_field.find("bitOffset").text
-				field_width = svd_field.find("bitWidth").text
-
+				field_name	= get_node_text(svd_field,"name")
+				field_descr = get_node_text(svd_field,"description")
+				field_offset = get_node_text(svd_field,"bitOffset")
+				field_width = get_node_text(svd_field,"bitWidth")
+				
+				print(periph_name,reg_name,field_name)
 # ______________________________________________________________________________________________________Template strings
 
 
