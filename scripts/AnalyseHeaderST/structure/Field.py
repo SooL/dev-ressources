@@ -1,44 +1,56 @@
-from structure.Peripheral import Component
+from typing import Union
+
+from structure.Component import Component
 from tools.utils import ChipSeriesManager
 
 
 class Field(Component):
-	def __init__(self, name: str, chips: ChipSeriesManager, pos: int, size: int):
-		Component.__init__(self, name, chips)
+	"""
+	The Field component. Its parent is the RegisterVariant.
+	"""
+
+	def __init__(self, name: Union[None, str], chips: ChipSeriesManager, pos: int, size: int):
+		super().__init__(name, chips)
 		self.pos: int = pos
+		"""position of the LSB in the register"""
 		self.size: int = size
+		"""number of bits used by the field"""
 
-	def _define(self):
-		return "#define {alias:20} {f.name:20} // {f.size} bits @ {f.pos}".format(
-			alias=self.prefixed_name(),
-			f=self)
+	def define(self):
+		return super().define() + " {f.name:20} // {f.size} bits @ {f.pos}".format(f=self)
 
-	def _notDefined(self):
-		return "#define {}".format(self.prefixed_name())
+	def no_define(self):
+		return f"#define {self.alias()}"
 
-	def _undefine(self):
-		return "#undef {}".format(self.prefixed_name())
+	def undefine(self):
+		return f"#undef {self.alias()}"
 
-	def need_def(self):
-		return Component.need_def(self) and self.name is not None and len(self.name) > 0
+	def need_define(self):
+		return super().need_define() and self.name is not None and len(self.name) > 0
 
-	def use(self):
+	def declare(self)->str:
 		# noinspection PyUnresolvedReferences
-		return "uint{type_size}_t {name:20} :{bit_size};".format(
+		return "uint{type_size}_t {name:20} :{bit_size};{brief}".format(
 			type_size=min(self.parent.parent.size, 32),
-			name=self.prefixed_name() if self.need_def() else self.name,
-			bit_size=self.size)
+			name=self.alias() if self.defined else self.name,
+			bit_size=self.size,
+			brief="" if self.brief is None else f"\t//!<{self.brief}")
 
-	def finalize(self, full_chips):
-		Component.finalize(self, full_chips)
-		# noinspection PyUnresolvedReferences
+	def finalize(self):
+		if self.parent is None:
+			raise Exception(f"{self.name} as no parent")
 		if self.pos < 0 or self.pos + self.size > self.parent.parent.size:
 			raise Exception(
-				"Field {0} does not fit in the register size : pos = {2.pos}, size = {2.size}, register size = {1.size}"
-					.format(self.prefixed_name(), self.parent.parent, self))
+				"Field {0} does not fit in the register size :"
+				" pos = {2.pos}, size = {2.size}, register size = {1.size}".format(
+					self.alias(), self.parent.parent, self))
+		super().finalize()
+
+	def mask(self)->int:
+		"""
+		:return: the bit mask of the field
+		"""
+		return (0xFFFFFFFFFFFFFFFF >> (64-self.size)) << self.pos
 
 	def __eq__(self, other):
-		return isinstance(other, Field) and\
-		       other.name == self.name and\
-		       other.pos == self.pos and\
-		       other.size == self.size
+		return super().__eq__(other) and other.pos == self.pos and other.size == self.size

@@ -4,6 +4,9 @@ from copy import deepcopy, copy
 
 
 class ChipSeriesManager:
+
+	full_chips: "ChipSeriesManager" = None
+
 	def __init__(self, chip_list: Set[str] = set()):
 		self.chip_list: Set[str] = copy(chip_list)
 		self.chip_families: Dict[str, Set[str]] = dict()
@@ -26,6 +29,14 @@ class ChipSeriesManager:
 
 	def __str__(self):
 		return " ".join(["{:12}".format(i) for i in sorted(self)])
+
+	@staticmethod
+	def set_full_chips(full: "ChipSeriesManager"):
+		ChipSeriesManager.full_chips = full
+
+	@staticmethod
+	def get_full_chips() -> "ChipSeriesManager":
+		return ChipSeriesManager.full_chips
 
 	def clear(self):
 		"""
@@ -198,22 +209,19 @@ class ChipSeriesManager:
 		self.build_chip_family()
 		return self.chip_list
 
-	def output_ifdef_template(self, cl=None, line_lenght=4, onlyIf=False) -> str:
-		i = 1
-		if cl is None:
-			cl = self.chip_list
-
-		if len(cl) == 1 and list(cl)[0] == "ALL_CHIPS":
-			return "" if onlyIf else "{ifdef}\n"
+	def output_condition(self, line_lenght=4) -> str:
+		i = 0
+		if self.is_all_chips():
+			raise Exception("chip list is full, no need for define condition")
 		else:
-			out = "#if"
-			for chip in sorted(list(cl)):
-				if i > line_lenght:
-					i = 1
+			out = ""
+			for chip in sorted(list(self.chip_list)):
+				if i >= line_lenght:
+					i = 0
 					out += "\\\n   "
+				out += "defined({0:12s}) ||".format(chip)
 				i += 1
-				out += " defined({0:12s}) ||".format(chip)
-			out = out[:-2] + ("\n" if onlyIf else "\n{ifdef}\n#else\n{ifndef}\n#endif\n")
+			out = out[:-2]
 			return out
 
 	def is_all_chips(self):

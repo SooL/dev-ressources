@@ -39,9 +39,9 @@ def init():
 		logger.warning("Delete" + os.path.realpath(file_path))
 		shutil.rmtree(file_path)
 	os.mkdir(file_path)
-	
-	
-def download_and_handle(archive : str,destination : str = file_path) -> T.List[str]:
+
+
+def download_and_handle(archive : str, destination : str = file_path) -> T.List[str]:
 	"""
 	This function will download the archive corresponding to archive, extract all .svd files
 	and put them whithin the destination folder.
@@ -53,7 +53,7 @@ def download_and_handle(archive : str,destination : str = file_path) -> T.List[s
 	if archive.upper() in defined_archives :
 		archive = defined_archives[archive.upper()]
 	url = base_url + "/" + archive
-	
+
 	#Create a temporary directory, download the .zip, extract it and retrieve files
 	with tempfile.TemporaryDirectory(prefix="SVD_RETR_") as temp_dir :
 		with open(temp_dir + "/archive.zip","wb") as temp_archive :
@@ -62,12 +62,12 @@ def download_and_handle(archive : str,destination : str = file_path) -> T.List[s
 			with urllib.request.urlopen(url) as response :
 				shutil.copyfileobj(response,temp_archive)
 				logger.info("Download complete !")
-		
+
 		logger.info("Unzipping archive...")
 		with zipfile.ZipFile(temp_archive.name) as zip_handler :
 			zip_handler.extractall(temp_dir)
 		logger.info("Done !")
-		
+
 		#Look for SVD files in the file tree
 		svd_files = []
 		for root,dirs,files in os.walk(temp_dir) :
@@ -75,15 +75,15 @@ def download_and_handle(archive : str,destination : str = file_path) -> T.List[s
 				if fnmatch.fnmatch(name,"*.svd") :
 					svd_files.append(os.path.join(root,name))
 		logger.info("Found " + str(len(svd_files)) + " SVD file(s)")
-		
+
 		for file in svd_files :
 			logger.info("\tRetrieving " + os.path.basename(file))
 			shutil.move(file,destination)
-			
+
 		return [os.path.basename(f) for f in svd_files]
-			
-			
-			
-	
-	
+
+
+
+
+
 
