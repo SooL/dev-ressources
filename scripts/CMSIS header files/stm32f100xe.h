@@ -11,7 +11,7 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripherals registers hardware
+  *           - Macros to access peripheral’s registers hardware
   *  
   ******************************************************************************
   * @attention
@@ -6688,6 +6688,8 @@ typedef struct
    ((INSTANCE) == TIM5)    || \
    ((INSTANCE) == TIM12)   || \
    ((INSTANCE) == TIM15))
+
+#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)  IS_TIM_MASTER_INSTANCE(INSTANCE)
 
 #define IS_TIM_DMABURST_INSTANCE(INSTANCE)\
   (((INSTANCE) == TIM1)    || \

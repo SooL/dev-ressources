@@ -8,8 +8,8 @@
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32F0xx device used in the target application
-  *              - To use or not the peripherals drivers in application code(i.e. 
-  *                code will be based on direct access to peripherals registers 
+  *              - To use or not the peripheral’s drivers in application code(i.e. 
+  *                code will be based on direct access to peripheral’s registers 
   *                rather than drivers API), this option is controlled by 
   *                "#define USE_HAL_DRIVER"
   *  
@@ -110,11 +110,11 @@
 #endif /* USE_HAL_DRIVER */
 
 /**
-  * @brief CMSIS Device version number V2.3.2
+  * @brief CMSIS Device version number V2.3.3
   */
 #define __STM32F0_DEVICE_VERSION_MAIN   (0x02) /*!< [31:24] main version */
 #define __STM32F0_DEVICE_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
-#define __STM32F0_DEVICE_VERSION_SUB2   (0x02) /*!< [15:8]  sub2 version */
+#define __STM32F0_DEVICE_VERSION_SUB2   (0x03) /*!< [15:8]  sub2 version */
 #define __STM32F0_DEVICE_VERSION_RC     (0x00) /*!< [7:0]  release candidate */ 
 #define __STM32F0_DEVICE_VERSION        ((__STM32F0_DEVICE_VERSION_MAIN << 24)\
                                         |(__STM32F0_DEVICE_VERSION_SUB1 << 16)\
