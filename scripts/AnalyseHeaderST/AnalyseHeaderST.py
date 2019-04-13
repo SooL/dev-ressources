@@ -15,8 +15,11 @@ import time
 
 import argparse
 import os
+from Jstructure.Peripheral import Peripheral
+from Jstructure.Field import Field
+from Jstructure.Register import Register
 
-from structure import Peripheral, Group
+#from structure import Peripheral, Group
 from tools import svd_retriever as svd
 from tools.utils import ChipSeriesManager
 from FileSetHandler.tsp import *
@@ -54,14 +57,14 @@ logger.info("Tool startup")
 # ________________________________________________________________________________________________________________ Paths
 
 OutputDirectory = "out/"
-tsp_path = "C:/Program Files (x86)/Atollic/TrueSTUDIO for STM32 9.3.0/ide/plugins/com.atollic.truestudio.tsp.stm32_1.0.0.20190212-0734/tsp.xml"
-# tsp_path = "/opt/Atollic_TrueSTUDIO_for_STM32_x86_64_9.2.0/ide/plugins/com.atollic.truestudio.tsp.stm32_1.0.0.20181203-0921/tsp.xml"
-cmsis_headers_dir = "C:/Users/RichardFrance/Documents/SOOL/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
-# cmsis_headers_dir = "/home/julien/Projets/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
+#tsp_path = "C:/Program Files (x86)/Atollic/TrueSTUDIO for STM32 9.3.0/ide/plugins/com.atollic.truestudio.tsp.stm32_1.0.0.20190212-0734/tsp.xml"
+tsp_path = "/opt/Atollic_TrueSTUDIO_for_STM32_x86_64_9.2.0/ide/plugins/com.atollic.truestudio.tsp.stm32_1.0.0.20181203-0921/tsp.xml"
+#cmsis_headers_dir = "C:/Users/RichardFrance/Documents/SOOL/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
+cmsis_headers_dir = "/home/julien/Projets/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
 
 # _______________________________________________________________________________________________Peripheral dictionaries
 
-groups: T.Dict[Group] = dict()
+#groups: T.Dict[Group] = dict()
 
 
 ########################################################################################################################
@@ -82,14 +85,44 @@ def compute_tsp(path=tsp_path):
 
 	f.build_mcu_custom_tree()
 	f.compute_designators(file_list)
+	
+	peripheral_list : T.Dict[str,T.List[Peripheral]] = dict()
+	svd_list = list()
+	i = 1
+	for group in f.mcu_custom_tree :
+		for desc in group :
+			if desc.svd_file in svd_list :
+				continue
+			else :
+				logger.info(f"Working on {desc.svd_file}")
+				svd_list.append(desc.svd_file)
+			svd_path = tsp_path[:tsp_path.rfind("/")] + "/tsp/sfr/" + desc.svd_file
+			
+			peripheral_list[desc.svd_file] = build_peripheral_list(svd_path)
+			
+	return peripheral_list
+			
+			
 
 
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
-def create_Peripheral(node):
+"""def create_Peripheral(node):
 	group_name = get_node_text(node, "groupName")
 	if group_name in
+"""
+
+def build_peripheral_list(svd_file):
+	root = ET.parse(svd_file).getroot()
+	out = list()
+	
+	for svd_periph in root.findall("peripherals/peripheral") :
+		out.append(Peripheral(svd_periph))
+		
+	return out
+
+
 
 def analyze_svd(svd_file : str) :
 	"""
@@ -102,6 +135,8 @@ def analyze_svd(svd_file : str) :
 
 	for svd_periph in root.findall("peripherals/peripheral"):
 
+
+		
 		periph_baseaddr = get_node_text(svd_periph, "baseAddress")
 
 		if "derivedForm" in svd_periph.attrib.keys():

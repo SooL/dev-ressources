@@ -93,6 +93,7 @@ class TSPFile :
 		self.xmlroot: ET.Element = None
 		#self.mcu_tree : T.List[MCUGroup] = list()
 		self.mcu_custom_tree : T.List[MCUGroup] = list()
+		
 	
 	def cache_and_remove_ns(self) :
 		"""
@@ -155,7 +156,8 @@ class TSPFile :
 		svd_group : T.Dict[str,MCUGroup] = dict()
 		for group in self.xmlroot.findall("MCUS/MCUSubGroup") :
 			for mcu in group.findall("MCU") :
-				
+				if "STM32" not in mcu.attrib["name"].upper() :
+					continue
 				sfr_data = mcu.find("SfrData")
 				svd_file : str = sfr_data.attrib["file"]
 				new_group = MCUGroup("{:x<11s}".format(svd_file[:-4].upper().replace("X","x")))
