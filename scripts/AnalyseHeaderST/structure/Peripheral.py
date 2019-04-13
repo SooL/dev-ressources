@@ -24,7 +24,7 @@ class {periph}
 
 
 class Peripheral(Component):
-	def __init__(self, name: str, chips: ChipSeriesManager):
+	def __init__(self, name: Union[str, None], chips: ChipSeriesManager):
 		super().__init__(name, chips)
 		self.registers: List[Union[Register, Peripheral]] = list()
 		"""list of registers inside the peripheral. A register can be a sub-peripheral (like CAN's FIFOs)"""

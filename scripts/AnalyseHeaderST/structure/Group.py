@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from AnalyseHeaderST.structure.Component import Component
 from AnalyseHeaderST.structure.Peripheral import Peripheral
