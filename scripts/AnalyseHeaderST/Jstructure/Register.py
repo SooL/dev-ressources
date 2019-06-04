@@ -31,9 +31,10 @@ class Register:
 
 		self.xml_data = xml_base
 		
-		self.name = get_node_text(xml_base,"name")
+		self.name = get_node_text(xml_base, "name").strip(None)
 		
-		dispName = get_node_text(xml_base,"displayName")
+		dispName = get_node_text(xml_base, "displayName").strip(None)
+
 		if dispName != self.name :
 			logger.warning(f"Register name and display discrepancy : {self.name} displayed as {dispName}")
 		

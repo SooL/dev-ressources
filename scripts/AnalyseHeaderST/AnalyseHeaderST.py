@@ -86,7 +86,7 @@ def compute_tsp(path=tsp_path):
 	f.build_mcu_custom_tree()
 	f.compute_designators(file_list)
 	
-	peripheral_list : T.Dict[str,T.List[Peripheral]] = dict()
+	peripheral_list : T.Dict[str, T.List[Peripheral]] = dict()
 	svd_list = list()
 	i = 1
 	for group in f.mcu_custom_tree :

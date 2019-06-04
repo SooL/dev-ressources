@@ -8,7 +8,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Peripheral:
-	def __init__(self,xml_base :ET.Element):
+	def __init__(self, xml_base : ET.Element):
 		"""
 		Build a Peripheral representation based upon XML node.
 		If relevant, build all registers.
