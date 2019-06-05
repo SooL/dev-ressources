@@ -1,8 +1,8 @@
 from typing import List, Dict
 
-from AnalyseHeaderST.structure.Component import Component
-from AnalyseHeaderST.structure.Peripheral import Peripheral
-from AnalyseHeaderST.tools.utils import ChipSeriesManager
+from structure.Component import Component
+from structure.Peripheral import Peripheral
+from tools.utils import ChipSeriesManager
 
 
 class Group(Component):
