@@ -4276,6 +4276,9 @@ namespace sool
 {
 	namespace core
 	{
+//region related-types
+		//SOOL-RCC-RELATED-TYPES
+//endregion
 		class RCC
 		{
 			//SOOL-RCC-ENUMS
