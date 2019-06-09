@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
 import typing as T
 
+from tools.utils import ChipSeriesManager
+
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
@@ -14,8 +16,9 @@ def get_node_text(root : ET.Element, node : str) -> str :
 </field>
 """
 
+
 class Field:
-	def __init__(self,xml_base : ET.Element):
+	def __init__(self,xml_base : ET.Element, chip : ChipSeriesManager = None):
 		"""
 		Build a field representation based upon XML node.
 		:param xml_base: xml <field> node, extracted from SVD file
@@ -29,5 +32,25 @@ class Field:
 		
 		self.xml_data = xml_base
 		
+		self.chips: ChipSeriesManager = chip
+		
 	def __repr__(self):
 		return self.name
+	
+	def __eq__(self, other):
+		if isinstance(other,Field) :
+			return (self.name == other.name and
+					self.offset == other.offset and
+					self.width == other.width)
+		elif isinstance(other,str) :
+			return other == self.name
+		raise TypeError()
+		
+	def __hash__(self):
+		return hash((self.name,self.offset,self.width,self.width))
+	
+	def __le__(self, other):
+		if isinstance(other,Field) :
+			return self.offset <= other.offset
+		raise TypeError()
+	

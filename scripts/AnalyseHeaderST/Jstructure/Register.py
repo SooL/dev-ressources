@@ -2,7 +2,7 @@ from .Field import Field
 import xml.etree.ElementTree as ET
 import logging
 import typing as T
-
+from tools.utils import ChipSeriesManager
 
 logger = logging.getLogger()
 
@@ -22,7 +22,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Register:
-	def __init__(self,xml_base : ET.Element):
+	def __init__(self,xml_base : ET.Element, chip: ChipSeriesManager):
 		"""
 		Build a register representation based upon XML node.
 		Also build all fields.
@@ -46,8 +46,39 @@ class Register:
 		
 		self.fields : T.List[Field] = list()
 		
+		self.chips : ChipSeriesManager = chip
+		
 		for xml_fields in xml_base.findall("fields/field") :
-			self.fields.append(Field(xml_fields))
+			self.fields.append(Field(xml_fields,self.chips))
 			
 	def __repr__(self) :
 		return self.name
+	
+	def __getitem__(self, item):
+		if (isinstance(item,Field) or isinstance(item,str)) :
+			for field in self.fields :
+				if item == field :
+					return field
+			return KeyError()
+		else :
+			raise TypeError()
+		
+	def __eq__(self, other):
+		if isinstance(other,Register) :
+			return (self.name == other.name and
+					self.offset == other.offset and
+					self.size == other.size)
+		elif isinstance(other,str):
+			return self.name == other
+		else:
+			raise TypeError()
+		
+	def __le__(self, other):
+		if isinstance(other,Register) :
+			return self.offset <= other.offset
+		raise TypeError()
+	
+	def rebuild_chip_list(self):
+		self.chips.clear()
+		for field in self :
+			self.chips.merge(field.chips)

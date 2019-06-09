@@ -225,7 +225,7 @@ if __name__ == "__main__" :
 		for chip in args.update_svd :
 			svd.download_and_handle(chip)
 
-	compute_tsp()
+	#compute_tsp()
 
 	FileListing = glob.glob(svd.file_path + "/*.svd")
 
@@ -234,6 +234,24 @@ if __name__ == "__main__" :
 
 	csm: T.Set[str] = full  # .select("STM32F07")
 	# csm.remove_chips(csm.select("F1"),"remove")
+	
+	periph_list : T.List[Peripheral] = list()
+	full_list : T.Dict[str,T.List[Peripheral]] = dict()
+	for svd_file in FileListing :
+		#svd_file = FileListing[0]
+		
+		root = ET.parse(svd_file).getroot()
+		output = dict()
+		chip_name = get_node_text(root,"name")
+		logger.info(f"Working on {svd_file}")
+		for svd_periph in root.findall("peripherals/peripheral") :
+			periph_list.append(Peripheral(svd_periph,ChipSeriesManager({chip_name})))
+		
+		full_list[svd_file] = copy(periph_list)
+		periph_list.clear()
+		
+	#Here, you have full_list with a dict : File -> list of peripherals
+	#Todo merge !
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :
 			file.write(license_header.read() + full.output_series_definition())
