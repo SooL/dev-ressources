@@ -25,7 +25,9 @@ defined_archives = {
 	"STM32L1"  : "stm32l1_svd.zip",
 	"STM32L4"  : "stm32l4_svd.zip",
 	"STM32L4+" : "stm32l4plus_svd.zip",
-	"STM32MP1" : "stm32mp1_svd.zip"
+	"STM32MP1" : "stm32mp1_svd.zip",
+	#"STM32G0"  : "stm32g0_svd.zip",
+	"STM32G4"  : "stm32g4_svd.zip"
 }
 
 
