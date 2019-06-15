@@ -22,7 +22,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Register:
-	def __init__(self,xml_base : ET.Element, chip: ChipSeriesManager):
+	def __init__(self,xml_base : ET.Element, chip: ChipSeriesManager, default_size : int = 32):
 		"""
 		Build a register representation based upon XML node.
 		Also build all fields.
@@ -40,7 +40,13 @@ class Register:
 		
 		self.descr = get_node_text(xml_base,"description")
 		self.offset = int(get_node_text(xml_base,"addressOffset"),0)
-		self.size = int(get_node_text(xml_base,"size"),0)
+		
+		read_size_value = get_node_text(xml_base,"size")
+		if read_size_value == str() :
+			self.size = default_size
+		else :
+			self.size = int(read_size_value,0)
+			
 		self.access = get_node_text(xml_base,"access")
 		#self.rst = int(get_node_text(xml_base,"resetValue"),0) #Is a mask
 		
