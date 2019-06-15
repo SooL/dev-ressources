@@ -206,7 +206,7 @@ if __name__ == "__main__" :
 						action="append",
 						dest="update_svd",
 						help="Add a family to the files to be updated.",
-						choices=svd.defined_archives.keys())
+						choices=svd.defined_archives_st.keys())
 
 	args = parser.parse_args()
 
@@ -216,14 +216,14 @@ if __name__ == "__main__" :
 
 	if args.update_all :
 		svd.init()
-		args.update_svd = svd.defined_archives.keys()
+		args.update_svd = svd.defined_archives_keil.keys()
 
 	if args.update_svd is not None and len(args.update_svd) :
 		logger.warning("Refresh definition for following families :")
 		for chip in args.update_svd :
 			logger.warning("\t" + chip)
 		for chip in args.update_svd :
-			svd.download_and_handle(chip)
+			svd.download_and_handle_keil(chip)
 
 	#compute_tsp()
 
