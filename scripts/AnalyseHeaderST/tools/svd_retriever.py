@@ -11,8 +11,8 @@ import zipfile
 import typing as T
 import json
 logger = logging.getLogger()
-file_path = "./.data/"
-
+file_path = "./.data/svd"
+fileset_path = "./.data/fileset"
 defined_archives_st = {
 	"STM32F0"  : "stm32f0_svd.zip",
 	"STM32F1"  : "stm32f1_svd.zip",
@@ -57,8 +57,12 @@ def init():
 	if os.path.exists(file_path) :
 		logger.warning("Delete" + os.path.realpath(file_path))
 		shutil.rmtree(file_path)
-	os.mkdir(file_path)
-
+	os.makedirs(file_path)
+	
+	if os.path.exists(fileset_path) :
+		logger.warning("Delete" + os.path.realpath(fileset_path))
+		shutil.rmtree(fileset_path)
+	os.makedirs(fileset_path)
 
 def download_and_handle_st(archive : str, destination : str = file_path) -> T.List[str]:
 	"""
@@ -121,9 +125,7 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 			t = json.loads(response.read().decode())
 			check_ok = t["Success"]
 			new_version = t["LatestVersion"]
-			#check_ok = t[t.find("<Success>") + len("<Success>"): t.find("</Success>")].lower() == "true"
-			#new_version = t[t.find("<LatestVersion>") + len("<LatestVersion>"): t.find("</LatestVersion>")]
-		
+			
 			if not check_ok :
 				logger.error(f"Unable to retrieve {archive}'s version value")
 				return list()
@@ -154,6 +156,13 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 				for file in svd_files :
 					logger.info("\tRetrieving " + os.path.basename(file))
 					shutil.move(file,destination)
+					
+				logger.info(f"Looking for {temp_dir}/{archive}pdsc")
+				if os.path.exists(temp_dir + "/"+archive + "pdsc") :
+					logger.info("\tFileset found !")
+					shutil.move(temp_dir + "/"+archive + "pdsc",fileset_path)
+				else :
+					logger.warning("Fileset not found")
 				
 				return [os.path.basename(f) for f in svd_files]
 	
