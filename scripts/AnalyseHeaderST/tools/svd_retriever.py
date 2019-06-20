@@ -81,7 +81,7 @@ def download_and_handle_st(archive : str, destination : str = file_path) -> T.Li
 	url = base_url + "/" + archive
 
 	#Create a temporary directory, download the .zip, extract it and retrieve files
-	with tempfile.TemporaryDirectory(prefix="SVD_RETR_") as temp_dir :
+	with tempfile.TemporaryDirectory(prefix=f"SVD_RETR_ST_{archive}_") as temp_dir :
 		with open(temp_dir + "/archive.zip","wb") as temp_archive :
 			logger.info("Trying to download " + url + " ...")
 			logger.debug("Temp path is " + temp_archive.name)
@@ -104,7 +104,7 @@ def download_and_handle_st(archive : str, destination : str = file_path) -> T.Li
 
 		for file in svd_files :
 			logger.info("\tRetrieving " + os.path.basename(file))
-			shutil.move(file,destination)
+			shutil.copy(file,destination)
 
 		return [os.path.basename(f) for f in svd_files]
 
@@ -132,7 +132,7 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 			else :
 				url = "https://keilpack.azureedge.net/pack/" + archive + new_version + ".pack"
 			
-			with tempfile.TemporaryDirectory(prefix="SVD_RETR_") as temp_dir :
+			with tempfile.TemporaryDirectory(prefix=f"SVD_RETR_Keil_{archive[:-1]}_") as temp_dir :
 				with open(temp_dir + "/archive.zip","wb") as temp_archive :
 					logger.info("Trying to download " + url + " ...")
 					logger.debug("Temp path is " + temp_archive.name)
@@ -155,12 +155,12 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 				
 				for file in svd_files :
 					logger.info("\tRetrieving " + os.path.basename(file))
-					shutil.move(file,destination)
+					shutil.copy(file,destination)
 					
 				logger.info(f"Looking for {temp_dir}/{archive}pdsc")
 				if os.path.exists(temp_dir + "/"+archive + "pdsc") :
 					logger.info("\tFileset found !")
-					shutil.move(temp_dir + "/"+archive + "pdsc",fileset_path)
+					shutil.copy(temp_dir + "/"+archive + "pdsc",fileset_path)
 				else :
 					logger.warning("Fileset not found")
 				
