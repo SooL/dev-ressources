@@ -48,6 +48,11 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
 
+log_file_handler = logging.FileHandler("run.issues.log", "w")
+log_file_handler.setLevel(logging.WARNING)
+log_file_handler.setFormatter(formatter)
+logger.addHandler(log_file_handler)
+
 logger.info("Tool startup")
 
 
