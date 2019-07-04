@@ -26,6 +26,7 @@ from FileSetHandler.tsp import *
 import typing as T
 import xml.etree.ElementTree as ET
 
+from FileSetHandler.pdsc import *
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -61,7 +62,7 @@ OutputDirectory = "out/"
 tsp_path = "/opt/Atollic_TrueSTUDIO_for_STM32_x86_64_9.2.0/ide/plugins/com.atollic.truestudio.tsp.stm32_1.0.0.20181203-0921/tsp.xml"
 #cmsis_headers_dir = "C:/Users/RichardFrance/Documents/SOOL/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
 cmsis_headers_dir = "/home/julien/Projets/sool-main/dev-ressources/scripts/CMSIS header files/stm32*.h"
-
+pdsc_path_model = ".data/fileset/*.pdsc"
 # _______________________________________________________________________________________________Peripheral dictionaries
 
 #groups: T.Dict[Group] = dict()
@@ -237,6 +238,16 @@ if __name__ == "__main__" :
 	
 	periph_list : T.List[Peripheral] = list()
 	full_list : T.Dict[str,T.List[Peripheral]] = dict()
+	
+	mapping_stm2svd: T.List[PDSCFile] = list()
+	
+	logger.info("Reading .pdsc files to map STM number to svd...")
+	for pdsc_file in glob.glob(pdsc_path_model) :
+		logger.info(f"\tReading {pdsc_file}...")
+		
+		mapping_stm2svd.append(PDSCFile(pdsc_file))
+		
+	
 	for svd_file in FileListing :
 		#svd_file = FileListing[0]
 		
