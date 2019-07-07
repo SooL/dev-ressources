@@ -60,3 +60,58 @@ class Peripheral:
 			return self.address <= other.address
 		else:
 			raise TypeError()
+		
+	def __getitem__(self, item) -> Register:
+		if (isinstance(item,Register) or isinstance(item,str)) :
+			for register in self.registers :
+				if item == register :
+					return register
+			return KeyError()
+		elif isinstance(item,int) :
+			return self.registers[item]
+		else :
+			raise TypeError()
+		
+	def fill_from_xml(self):
+		for xml_reg in self.xml_data.findall("registers/register"):
+			self.registers.append(Register(xml_reg,self.chips))
+	
+	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
+		"""
+		Check if the mapping is equivalent between self and other.
+		That is if both peripheral are equals and their contents recursively are too.
+		:param other:
+		"""
+		
+		for register in self :
+			if register not in other or not other[register].mapping_equivalent_to(register) :
+				return False
+		return True
+		
+
+def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
+	"""
+	This function takes a finished list of peripherals and will resolve all derivation.
+	Therefore, a periph with derivation will receive the same structure as the one it derives from
+	and will be considered as complete.
+	
+	It will, however, not affect the memory base address and the name.
+	:param periph_list: A list containing all peripheral to look at. Both references and derivates.
+	"""
+	logger.info("Starting peripheral derivation resolution")
+	name_ref : T.Dict[str,Peripheral] = dict()
+	
+	logger.info("\tBuilding reference dictionary")
+	for p in periph_list :
+		name_ref[p.name] = p
+	
+	for p in periph_list :
+		if not p.complete :
+			
+			ref = name_ref[p.derivation]
+			logger.info(f"\tResolving {p.name} to {ref.name}")
+			p.brief: str = ref.brief
+			p.group: str = ref.group
+			p.registers = ref.registers
+			
+			p.complete = True

@@ -66,6 +66,8 @@ class Register:
 				if item == field :
 					return field
 			return KeyError()
+		elif isinstance(item,int) :
+			return self.fields[item]
 		else :
 			raise TypeError()
 		
