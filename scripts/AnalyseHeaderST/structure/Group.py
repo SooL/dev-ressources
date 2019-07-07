@@ -10,3 +10,6 @@ class Group:
 
 	def add_peripheral(self, peripheral):
 		self.peripherals.append(peripheral)
+		
+	def __str__(self):
+		return self.name
