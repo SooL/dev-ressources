@@ -16,3 +16,5 @@ class ChipSet :
 	def add_chips(self, chips: List[Chip]):
 		self.chips.extend(chips)
 
+	def add_chip(self, chip: Chip):
+		self.chips.append(chip)
