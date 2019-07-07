@@ -40,13 +40,36 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]
 	:return: Dict with the group name as key  and the group as value.
 	"""
 	output : T.Dict[str,S.Group.Group] = dict()
+	models: T.Dict[str,T.List[JS.Peripheral.Peripheral]] = dict()
+	refd_names : T.List[str] = list()
+	logger.info("Begin Group analysis...")
 	for svd in svd_to_periphlist.keys() :
+		logger.info(f"Processing {svd}")
 		for per in svd_to_periphlist[svd] :
 			grp = per.group
 			if grp not in output :
 				output[grp] = S.Group.Group(grp)
+				models[grp] = list()
 			#TODO WARNING : JS Peripheral inserted here !!!
-			output[grp].add_peripheral(per)
+			
+			for model in models[grp] :
+				if per.mapping_equivalent_to(model) :
+					per.variance_id = model.variance_id
+			if per.variance_id is None :
+				per.variance_id = len(models[grp])
+				models[grp].append(per)
+			
+			id_seq = f"{per.name}.{per.variance_id}"
+			if id_seq not in refd_names :
+				refd_names.append(id_seq)
+				output[grp].add_peripheral(per)
+			else :
+				#TODO Handle adding chips to registered periph.
+				pass
+	
+	for k in sorted(models.keys()) :
+		logger.info(f"Group {k:20s} : {len(models[k]):3d} variants")
+	logger.info(f"Total of {len(refd_names)} instances")
 
 	return output
 	

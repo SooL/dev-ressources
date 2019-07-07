@@ -274,7 +274,7 @@ if __name__ == "__main__" :
 	
 	cs = StructureMapper.build_chip_set(mapping_stm2svd)
 	grps = StructureMapper.build_groups(full_list)
-	grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
+	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :
 			file.write(license_header.read() + full.output_series_definition())
