@@ -3,12 +3,12 @@ import typing as T
 from .Register import Register
 from tools.utils import ChipSeriesManager
 import logging
-def get_node_text(root : ET.Element, node : str) -> str :
-	return str() if root.find(node) is None else root.find(node).text
 
 logger = logging.getLogger()
 
 
+def get_node_text(root : ET.Element, node : str) -> str :
+	return str() if root.find(node) is None else root.find(node).text
 
 class Peripheral:
 	def __init__(self, xml_base : ET.Element, chip : ChipSeriesManager = ChipSeriesManager()):

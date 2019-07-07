@@ -32,8 +32,13 @@ def build_chip_set(pdsc_list :T.List[PDSC] = list()) -> T.Dict[str,S.ChipSet.Chi
 #def map_peripheral(xml_periph : JS.Peripheral.Peripheral) -> S.Peripheral.Peripheral:
 
 
-def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]) -> T.Dict[str,S.Group.Group] :
-	grp_names : T.Set[str] = set()
+def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]) -> T.Dict[str, S.Group.Group]:
+	"""
+	This function will create groups containing actual peripherals.
+	:param svd_to_periphlist: a dict for which the values are a list of peripherals.
+	The key should be a SVD path/file but this isn't really relevant.
+	:return: Dict with the group name as key  and the group as value.
+	"""
 	output : T.Dict[str,S.Group.Group] = dict()
 	for svd in svd_to_periphlist.keys() :
 		for per in svd_to_periphlist[svd] :
@@ -45,9 +50,24 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]
 
 	return output
 	
-def compute_peripherals_variances(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]],
-								  computed_groups : T.Dict[str,S.Group.Group] = None) -> T.Dict[str,S.Group.Group]:
 	
+def compute_peripherals_variances(svd_to_periphlist:T.Dict[str, T.List[JS.Peripheral.Peripheral]],
+								computed_groups: T.Dict[str, S.Group.Group] = None) -> T.Dict[str, S.Group.Group]:
+	"""
+	This function will compute the variance_id of all peripherals lists provided through svd_to_periphlist
+	(it will compute groups) or réusing (and updating) an already existing dict of groups.
+	
+	See also build_groups.
+	
+	:param svd_to_periphlist: a dict for which the values are a list of peripherals.
+	The key should be a SVD path/file but this isn't really relevant.
+	
+	Can be filled with anything if computed_groups is provided.
+	//TODO To be cleaned up.
+	
+	:param computed_groups: An already existing computed group <b>which will be updated</b>
+	:return: The edited group.
+	"""
 	groups = computed_groups if computed_groups is not None else build_groups(svd_to_periphlist)
 	logger.info("Compute groups...")
 	for grp in sorted(groups.keys()) :
