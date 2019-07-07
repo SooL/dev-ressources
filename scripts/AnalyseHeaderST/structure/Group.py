@@ -1,18 +1,12 @@
-from typing import List, Dict
+from typing import List
 
-from structure.Component import Component
-from structure.Peripheral import Peripheral
-from tools.utils import ChipSeriesManager
+from structure import Peripheral
 
 
-class Group(Component):
-	def __init__(self, name: str, chips: ChipSeriesManager):
-		super().__init__(name, chips)
+class Group:
+	def __init__(self, name):
+		self.name = name
 		self.peripherals: List[Peripheral] = list()
 
-	def add_peripheral(self, periph: Peripheral):
-		self.peripherals.append(periph)
-
-	def create_peripheral(self, periph_node):
-
-		instance_name
+	def add_peripheral(self, peripheral):
+		self.peripherals.append(peripheral)
