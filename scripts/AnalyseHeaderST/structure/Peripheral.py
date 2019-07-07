@@ -1,7 +1,7 @@
 import string
 from typing import Union, List
 
-from structure import Register
+from structure.Register import Register
 from structure.ChipSet import ChipSet
 
 
@@ -32,7 +32,7 @@ class Peripheral:
 	def set_parent(self, parent):
 		self.parent = parent
 
-	def add_register(self, register: Union[Register, 'Peripheral']):
+	def add_register(self, register: Union[Register, "Peripheral"]):
 		register.set_parent(self)
 		self.registers.append(register)
 
