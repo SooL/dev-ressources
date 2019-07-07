@@ -17,7 +17,7 @@ class PeripheralInstance:
 
 
 class Peripheral:
-	def __init__(self, name: Union[None, string], chips: ChipSet):
+	def __init__(self, name: Union[None, str], chips: ChipSet):
 		"""
 
 		:param name: name of the field (or None)

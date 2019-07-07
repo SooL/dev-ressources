@@ -5,7 +5,7 @@ from structure.ChipSet import ChipSet
 
 
 class Field :
-	def __init__(self, name: Union[None, string], offset: int, size: int, chips: ChipSet):
+	def __init__(self, name: Union[None, str], offset: int, size: int, chips: ChipSet):
 		"""
 
 		:param name: name of the field (or None)
