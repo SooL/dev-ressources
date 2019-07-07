@@ -15,7 +15,7 @@ import time
 
 import argparse
 import os
-from Jstructure.Peripheral import Peripheral
+from Jstructure.Peripheral import Peripheral, resolve_peripheral_derivation
 from Jstructure.Field import Field
 from Jstructure.Register import Register
 
@@ -27,6 +27,7 @@ import typing as T
 import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
+from generators import StructureMapper
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -263,11 +264,17 @@ if __name__ == "__main__" :
 		for svd_periph in root.findall("peripherals/peripheral") :
 			periph_list.append(Peripheral(svd_periph,ChipSeriesManager({chip_name})))
 		
+		resolve_peripheral_derivation(periph_list)
+		
 		full_list[svd_file] = copy(periph_list)
 		periph_list.clear()
 		
 	#Here, you have full_list with a dict : File -> list of peripherals
 	#Todo merge !
+	
+	cs = StructureMapper.build_chip_set(mapping_stm2svd)
+	grps = StructureMapper.build_groups(full_list)
+	grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :
 			file.write(license_header.read() + full.output_series_definition())

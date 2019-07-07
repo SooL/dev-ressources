@@ -13,6 +13,7 @@ import json
 logger = logging.getLogger()
 file_path = "./.data/svd"
 fileset_path = "./.data/fileset"
+
 defined_archives_st = {
 	"STM32F0"  : "stm32f0_svd.zip",
 	"STM32F1"  : "stm32f1_svd.zip",

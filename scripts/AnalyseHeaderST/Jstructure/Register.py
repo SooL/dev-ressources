@@ -90,3 +90,17 @@ class Register:
 		self.chips.clear()
 		for field in self :
 			self.chips.merge(field.chips)
+
+	def mapping_equivalent_to(self,other : "Register") -> bool:
+		"""
+		Compare if two registers are structurally equivalents.
+		:param other:
+		:return:
+		"""
+		if self == other :
+			for field in self.fields :
+				if field not in other or field != other[field] :
+					return False
+		else :
+			return False
+		return True

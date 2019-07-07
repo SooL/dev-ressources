@@ -2,9 +2,12 @@ import xml.etree.ElementTree as ET
 import typing as T
 from .Register import Register
 from tools.utils import ChipSeriesManager
-
+import logging
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
+
+logger = logging.getLogger()
+
 
 
 class Peripheral:
@@ -37,15 +40,11 @@ class Peripheral:
 		self.name = self.xml_data.find("name").text
 		self.address = int(self.xml_data.find("baseAddress").text,0)
 		
-		
+		self.variance_id : str = None
 		
 	def __repr__(self):
-		return self.name
-	
-	def fill_from_xml(self):
-		for xml_reg in self.xml_data.findall("registers/register"):
-			self.registers.append(Register(xml_reg,self.chips))
-			
+		return f"{self.name:20s} var {self.variance_id}"
+		
 	def __eq__(self, other):
 		if isinstance(other,Peripheral) :
 			return (self.name == other.name and
