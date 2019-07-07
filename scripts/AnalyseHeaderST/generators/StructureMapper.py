@@ -43,6 +43,7 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]
 	models: T.Dict[str,T.List[JS.Peripheral.Peripheral]] = dict()
 	refd_names : T.List[str] = list()
 	logger.info("Begin Group analysis...")
+	removed = 0
 	for svd in svd_to_periphlist.keys() :
 		logger.info(f"Processing {svd}")
 		for per in svd_to_periphlist[svd] :
@@ -65,11 +66,12 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]
 				output[grp].add_peripheral(per)
 			else :
 				#TODO Handle adding chips to registered periph.
+				removed += 1
 				pass
 	
 	for k in sorted(models.keys()) :
 		logger.info(f"Group {k:20s} : {len(models[k]):3d} variants")
-	logger.info(f"Total of {len(refd_names)} instances")
+	logger.info(f"Total of {len(refd_names)} instances kept. {removed:d} Instances removed.")
 
 	return output
 	
