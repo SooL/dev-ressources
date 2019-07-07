@@ -3,7 +3,7 @@ from typing import List
 
 
 class Chip :
-	def __init__(self, name: string, svd: string, families: List[string]):
+	def __init__(self, name: str, svd: str, families: List[str]):
 		self.name = name
 		self.svd = svd
 		self.families = families
