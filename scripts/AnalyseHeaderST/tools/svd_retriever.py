@@ -49,6 +49,7 @@ defined_archives_keil = {
 	"STM32WB"  : "Keil.STM32WBxx_DFP."
 }
 
+
 def init():
 	"""
 	This function will re-init the data folder for svd storage.

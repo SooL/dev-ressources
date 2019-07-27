@@ -11,6 +11,10 @@ class Group:
 
 	def add_peripheral(self, peripheral):
 		self.peripherals.append(peripheral)
+		if peripheral.group is None:
+			peripheral.group = self
+		elif peripheral.group != self:
+			raise AssertionError()
 		
 	def __str__(self):
 		return self.name

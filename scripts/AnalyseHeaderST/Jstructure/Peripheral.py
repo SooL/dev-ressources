@@ -1,14 +1,11 @@
 import xml.etree.ElementTree as ET
 import typing as T
-#from tools.utils import ChipSeriesManager
 import logging
 from Jstructure import *
+from Jstructure.utils import get_node_text
 
 logger = logging.getLogger()
 
-
-def get_node_text(root : ET.Element, node : str) -> str :
-	return str() if root.find(node) is None else root.find(node).text
 
 class Peripheral:
 	def __init__(self, xml_base : ET.Element, chip : ChipSet = ChipSet()):
@@ -17,28 +14,18 @@ class Peripheral:
 		If relevant, build all registers.
 		:param xml_base: xml <peripheral> node, extracted from SVD file
 		"""
-		self.name : str 		= None
-		self.address : int 		= None
-		self.brief : str 		= None
-		self.derivation : str 	= None
-		self.group : str 		= None
-		self.registers : T.List = list()
-		
-		self.complete : bool = False
 		self.xml_data : ET.Element = xml_base
+
+		self.name : str = self.xml_data.find("name").text
+		self.brief = get_node_text(self.xml_data,"description")
+
+		self.group : Group 		= None
+		self.registers : T.List = list()
 		self.chips = chip
-	
-		if "derivedFrom" in self.xml_data.attrib:
-			self.derivation = self.xml_data.attrib["derivedFrom"]
-			self.complete = False
-		else :
-			self.complete = True
-			self.brief = get_node_text(self.xml_data,"description")
-			self.group = get_node_text(self.xml_data,"groupName")
-			self.fill_from_xml()
-		
-		self.name = self.xml_data.find("name").text
-		self.address = int(self.xml_data.find("baseAddress").text,0)
+
+		self.fill_from_xml()
+
+		#self.address = int(self.xml_data.find("baseAddress").text,0)
 		
 		self.variance_id : str = None
 		self.instances : T.List[PeripheralInstance] = list()
@@ -62,7 +49,7 @@ class Peripheral:
 			raise TypeError()
 		
 	def __getitem__(self, item) -> Register:
-		if isinstance(item,Register or isinstance(item,str)) :
+		if isinstance(item, Register or isinstance(item,str)) :
 			for register in self.registers :
 				if item == register :
 					return register
@@ -75,6 +62,9 @@ class Peripheral:
 	def fill_from_xml(self):
 		for xml_reg in self.xml_data.findall("registers/register"):
 			self.registers.append(Register(xml_reg,self.chips))
+
+	def add_instance(self, instance):
+		self.instances.append(instance)
 	
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
@@ -89,7 +79,7 @@ class Peripheral:
 		return True
 		
 class PeripheralInstance :
-	def __init__(self,reference : Peripheral, name : str, address : int, chips):
+	def __init__(self, reference : Peripheral, name : str, address : int, chips):
 		self.reference = reference
 		self.name = name
 		self.address = address

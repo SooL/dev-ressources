@@ -15,7 +15,7 @@ import time
 
 import argparse
 import os
-from Jstructure.Peripheral import resolve_peripheral_derivation
+from Jstructure.Peripheral import resolve_peripheral_derivation, PeripheralInstance
 from Jstructure import *
 from Jstructure.Field import Field
 from Jstructure.Register import Register
@@ -263,14 +263,26 @@ if __name__ == "__main__" :
 		output = dict()
 		chip_name = get_node_text(root,"name")
 		logger.info(f"Working on {svd_file}")
+		periph_instances_dict : T.Dict[PeripheralInstance] = dict()
 		
 		for svd_periph in root.findall("peripherals/peripheral") :
-			new_periph = Peripheral(svd_periph,ChipSet({chip_name}))
-			if new_periph.group not in group_list :
-				group_list[new_periph.group] = Group(new_periph.group)
-			group_list[new_periph.group].add_peripheral(new_periph)
-			
-			periph_list.append(new_periph)
+			periph = None
+			if "derivedFrom" not in svd_periph.attrib :
+				group_name = get_node_text(svd_periph, "groupName")
+				if group_name not in group_list :
+					group_list[group_name] = Group(group_name)
+
+				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+
+				group_list[group_name].add_peripheral(periph)
+
+				periph_list.append(periph)
+			else :
+				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
+
+			inst_name = svd_periph.find("name").text
+			inst_addr = int(svd_periph.find("baseAddress").text, 0)
+			periph.add_instance(PeripheralInstance(periph, inst_name, inst_addr, ChipSet({chip_name})))
 		
 		resolve_peripheral_derivation(periph_list)
 		

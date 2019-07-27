@@ -2,12 +2,10 @@
 import xml.etree.ElementTree as ET
 import logging
 import typing as T
-from tools.utils import ChipSeriesManager
+from Jstructure.utils import get_node_text
 from Jstructure import *
 logger = logging.getLogger()
 
-def get_node_text(root : ET.Element, node : str) -> str :
-	return str() if root.find(node) is None else root.find(node).text
 
 
 """
