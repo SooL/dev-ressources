@@ -41,6 +41,7 @@ class Peripheral:
 		self.address = int(self.xml_data.find("baseAddress").text,0)
 		
 		self.variance_id : str = None
+		self.instances : T.List[PeripheralInstance] = list()
 		
 	def __repr__(self):
 		return f"{self.name:20s} var {self.variance_id}"
@@ -87,6 +88,21 @@ class Peripheral:
 				return False
 		return True
 		
+class PeripheralInstance :
+	def __init__(self,reference : Peripheral, name : str, address : int, chips):
+		self.reference = reference
+		self.name = name
+		self.address = address
+		self.chips = chips
+		
+class PeripheralMapping:
+	def __init__(self, reference : Peripheral, name : str, chips):
+		self.reference = reference
+		self.name = name
+		self.chips = chips
+		
+		self.register_list = list()
+	
 
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
