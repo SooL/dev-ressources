@@ -1,7 +1,7 @@
 from typing import List
 
 #from structure import Peripheral
-from Jstructure.Peripheral import Peripheral
+from Jstructure import Peripheral
 
 
 class Group:

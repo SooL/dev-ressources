@@ -2,7 +2,7 @@ import string
 from typing import Union, List
 
 from structure.Register import Register
-from structure.ChipSet import ChipSet
+from Jstructure import ChipSet
 
 
 class PeripheralInstance:

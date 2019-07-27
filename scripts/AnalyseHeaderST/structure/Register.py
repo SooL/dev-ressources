@@ -2,7 +2,7 @@ import string
 from typing import Union
 
 from structure import Field
-from structure.ChipSet import ChipSet
+from Jstructure import ChipSet
 
 
 class Register:

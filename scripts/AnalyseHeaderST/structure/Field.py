@@ -1,7 +1,7 @@
 import string
 from typing import Union
 
-from structure.ChipSet import ChipSet
+from Jstructure import ChipSet
 
 
 class Field :
