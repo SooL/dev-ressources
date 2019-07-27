@@ -1,6 +1,6 @@
 import logging
 from Jstructure import *
-import structure as S
+#import structure as S
 from FileSetHandler.pdsc import PDSCFile as PDSC
 import typing as T
 from copy import copy
@@ -32,14 +32,14 @@ def build_chip_set(pdsc_list :T.List[PDSC] = list()) -> T.Dict[str,ChipSet]:
 #def map_peripheral(xml_periph : JS.Peripheral.Peripheral) -> S.Peripheral.Peripheral:
 
 
-def build_groups(svd_to_periphlist :T.Dict[str,T.List[Peripheral]]) -> T.Dict[str, S.Group.Group]:
+def build_groups(svd_to_periphlist :T.Dict[str,T.List[Peripheral]]) -> T.Dict[str, Group]:
 	"""
 	This function will create groups containing actual peripherals.
 	:param svd_to_periphlist: a dict for which the values are a list of peripherals.
 	The key should be a SVD path/file but this isn't really relevant.
 	:return: Dict with the group name as key  and the group as value.
 	"""
-	output : T.Dict[str,S.Group.Group] = dict()
+	output : T.Dict[str,Group] = dict()
 	models: T.Dict[str,T.List[Peripheral]] = dict()
 	refd_names : T.List[str] = list()
 	logger.info("Begin Group analysis...")
@@ -51,7 +51,7 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[Peripheral]]) -> T.Dict[st
 			grp = per.group
 			#Group creation
 			if grp not in output :
-				output[grp] = S.Group.Group(grp)
+				output[grp] = Group(grp)
 				models[grp] = list()
 			#TODO WARNING : JS Peripheral inserted here !!!
 			#Compute peripheral variance.
@@ -79,7 +79,7 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[Peripheral]]) -> T.Dict[st
 	
 	
 def compute_peripherals_variances(svd_to_periphlist:T.Dict[str, T.List[Peripheral]],
-								computed_groups: T.Dict[str, S.Group.Group] = None) -> T.Dict[str, S.Group.Group]:
+								computed_groups: T.Dict[str, Group] = None) -> T.Dict[str, Group]:
 	"""
 	This function will compute the variance_id of all peripherals lists provided through svd_to_periphlist
 	(it will compute groups) or réusing (and updating) an already existing dict of groups.
