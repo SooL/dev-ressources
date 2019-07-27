@@ -15,7 +15,8 @@ import time
 
 import argparse
 import os
-from Jstructure.Peripheral import Peripheral, resolve_peripheral_derivation
+from Jstructure.Peripheral import resolve_peripheral_derivation
+from Jstructure import *
 from Jstructure.Field import Field
 from Jstructure.Register import Register
 
@@ -253,6 +254,7 @@ if __name__ == "__main__" :
 		
 		mapping_stm2svd.append(PDSCFile(pdsc_file))
 		
+	group_list : T.Dict[str,Group] = dict()
 	
 	for svd_file in FileListing :
 		#svd_file = FileListing[0]
@@ -261,8 +263,14 @@ if __name__ == "__main__" :
 		output = dict()
 		chip_name = get_node_text(root,"name")
 		logger.info(f"Working on {svd_file}")
+		
 		for svd_periph in root.findall("peripherals/peripheral") :
-			periph_list.append(Peripheral(svd_periph,ChipSeriesManager({chip_name})))
+			new_periph = Peripheral(svd_periph,ChipSet({chip_name}))
+			if new_periph.group not in group_list :
+				group_list[new_periph.group] = Group(new_periph.group)
+			group_list[new_periph.group].add_peripheral(new_periph)
+			
+			periph_list.append(new_periph)
 		
 		resolve_peripheral_derivation(periph_list)
 		

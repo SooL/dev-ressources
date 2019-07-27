@@ -10,8 +10,8 @@ class Chip :
 
 
 class ChipSet :
-	def __init__(self):
-		self.chips: List[Chip] = list()
+	def __init__(self,chips : List[Chip] = list()):
+		self.chips: List[Chip] = chips
 
 	def add_chips(self, chips: List[Chip]):
 		self.chips.extend(chips)

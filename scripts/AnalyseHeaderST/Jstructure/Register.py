@@ -1,9 +1,9 @@
-from .Field import Field
+
 import xml.etree.ElementTree as ET
 import logging
 import typing as T
 from tools.utils import ChipSeriesManager
-
+from Jstructure import *
 logger = logging.getLogger()
 
 def get_node_text(root : ET.Element, node : str) -> str :
@@ -22,7 +22,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Register:
-	def __init__(self,xml_base : ET.Element, chip: ChipSeriesManager, default_size : int = 32):
+	def __init__(self,xml_base : ET.Element, chip: ChipSet, default_size : int = 32):
 		"""
 		Build a register representation based upon XML node.
 		Also build all fields.
@@ -52,7 +52,7 @@ class Register:
 		
 		self.fields : T.List[Field] = list()
 		
-		self.chips : ChipSeriesManager = chip
+		self.chips : ChipSet = chip
 		
 		for xml_fields in xml_base.findall("fields/field") :
 			self.fields.append(Field(xml_fields,self.chips))
@@ -61,7 +61,7 @@ class Register:
 		return self.name
 	
 	def __getitem__(self, item):
-		if (isinstance(item,Field) or isinstance(item,str)) :
+		if isinstance(item,Field or isinstance(item,str)) :
 			for field in self.fields :
 				if item == field :
 					return field

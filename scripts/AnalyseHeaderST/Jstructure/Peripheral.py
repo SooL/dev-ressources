@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 import typing as T
-from .Register import Register
-from tools.utils import ChipSeriesManager
+#from tools.utils import ChipSeriesManager
 import logging
+from Jstructure import *
 
 logger = logging.getLogger()
 
@@ -11,7 +11,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
 class Peripheral:
-	def __init__(self, xml_base : ET.Element, chip : ChipSeriesManager = ChipSeriesManager()):
+	def __init__(self, xml_base : ET.Element, chip : ChipSet = ChipSet()):
 		"""
 		Build a Peripheral representation based upon XML node.
 		If relevant, build all registers.
@@ -62,11 +62,11 @@ class Peripheral:
 			raise TypeError()
 		
 	def __getitem__(self, item) -> Register:
-		if (isinstance(item,Register) or isinstance(item,str)) :
+		if isinstance(item,Register or isinstance(item,str)) :
 			for register in self.registers :
 				if item == register :
 					return register
-			return KeyError()
+			raise KeyError()
 		elif isinstance(item,int) :
 			return self.registers[item]
 		else :

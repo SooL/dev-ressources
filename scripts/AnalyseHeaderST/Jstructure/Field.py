@@ -1,8 +1,7 @@
 import xml.etree.ElementTree as ET
 import typing as T
 
-from tools.utils import ChipSeriesManager
-
+from Jstructure import *
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
@@ -18,7 +17,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Field:
-	def __init__(self,xml_base : ET.Element, chip : ChipSeriesManager = None):
+	def __init__(self,xml_base : ET.Element, chip : ChipSet = None):
 		"""
 		Build a field representation based upon XML node.
 		:param xml_base: xml <field> node, extracted from SVD file
@@ -32,7 +31,7 @@ class Field:
 		
 		self.xml_data = xml_base
 		
-		self.chips: ChipSeriesManager = chip
+		self.chips: ChipSet = chip
 		
 	def __repr__(self):
 		return self.name
