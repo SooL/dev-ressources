@@ -44,22 +44,24 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[JS.Peripheral.Peripheral]]
 	refd_names : T.List[str] = list()
 	logger.info("Begin Group analysis...")
 	removed = 0
+	
 	for svd in svd_to_periphlist.keys() :
 		logger.info(f"Processing {svd}")
 		for per in svd_to_periphlist[svd] :
 			grp = per.group
+			#Group creation
 			if grp not in output :
 				output[grp] = S.Group.Group(grp)
 				models[grp] = list()
 			#TODO WARNING : JS Peripheral inserted here !!!
-			
+			#Compute peripheral variance.
 			for model in models[grp] :
 				if per.mapping_equivalent_to(model) :
 					per.variance_id = model.variance_id
 			if per.variance_id is None :
 				per.variance_id = len(models[grp])
 				models[grp].append(per)
-			
+			#Save name to keep all instance names
 			id_seq = f"{per.name}.{per.variance_id}"
 			if id_seq not in refd_names :
 				refd_names.append(id_seq)
