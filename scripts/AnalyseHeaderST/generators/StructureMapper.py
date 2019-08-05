@@ -82,7 +82,7 @@ def compute_peripherals_variances(svd_to_periphlist:T.Dict[str, T.List[Periphera
 								computed_groups: T.Dict[str, Group] = None) -> T.Dict[str, Group]:
 	"""
 	This function will compute the variance_id of all peripherals lists provided through svd_to_periphlist
-	(it will compute groups) or réusing (and updating) an already existing dict of groups.
+	(it will compute groups) or re-using (and updating) an already existing dict of groups.
 	
 	See also build_groups.
 	

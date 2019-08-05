@@ -267,22 +267,30 @@ if __name__ == "__main__" :
 		
 		for svd_periph in root.findall("peripherals/peripheral") :
 			periph = None
-			if "derivedFrom" not in svd_periph.attrib :
+			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
+
+				# if peripheral group doesn't exist yet, create it
 				group_name = get_node_text(svd_periph, "groupName")
 				if group_name not in group_list :
 					group_list[group_name] = Group(group_name)
 
+				# create the peripheral, add it to the group
 				periph = Peripheral(svd_periph, ChipSet({chip_name}))
-
 				group_list[group_name].add_peripheral(periph)
 
+				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
 				periph_list.append(periph)
-			else :
+			else :  # peripheral already exists
 				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
 
+			# create instance from its name, address and base peripheral
 			inst_name = svd_periph.find("name").text
 			inst_addr = int(svd_periph.find("baseAddress").text, 0)
-			periph.add_instance(PeripheralInstance(periph, inst_name, inst_addr, ChipSet({chip_name})))
+			instance = PeripheralInstance(periph, inst_name, inst_addr, ChipSet({chip_name}))
+
+			# add the instance to its peripheral, and to the instances list
+			periph.add_instance(instance)
+			periph_instances_dict[inst_name] = instance
 		
 		resolve_peripheral_derivation(periph_list)
 		
