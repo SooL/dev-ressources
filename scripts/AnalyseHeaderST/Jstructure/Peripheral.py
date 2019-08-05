@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 import typing as T
 import logging
-from Jstructure import *
+from Jstructure.Register import Register
+from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 
 logger = logging.getLogger()
@@ -17,7 +18,7 @@ class Peripheral:
 		self.xml_data : ET.Element = xml_base
 
 		self.name : str = self.xml_data.find("name").text
-		self.brief = get_node_text(self.xml_data,"description")
+		self.brief = get_node_text(self.xml_data, "description")
 
 		self.group : Group 		= None
 		self.registers : T.List = list()
@@ -61,7 +62,7 @@ class Peripheral:
 		
 	def fill_from_xml(self):
 		for xml_reg in self.xml_data.findall("registers/register"):
-			self.registers.append(Register(xml_reg,self.chips))
+			self.registers.append(Register(xml_reg, self.chips))
 
 	def add_instance(self, instance):
 		self.instances.append(instance)

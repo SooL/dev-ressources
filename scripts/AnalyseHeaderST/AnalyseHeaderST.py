@@ -261,9 +261,9 @@ if __name__ == "__main__" :
 		
 		root = ET.parse(svd_file).getroot()
 		output = dict()
-		chip_name = get_node_text(root,"name")
+		chip_name = get_node_text(root, "name")
 		logger.info(f"Working on {svd_file}")
-		periph_instances_dict : T.Dict[PeripheralInstance] = dict()
+		periph_instances_dict : T.Dict[str, PeripheralInstance] = dict()
 		
 		for svd_periph in root.findall("peripherals/peripheral") :
 			periph = None

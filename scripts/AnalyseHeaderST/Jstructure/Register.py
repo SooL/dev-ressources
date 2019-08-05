@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import logging
 import typing as T
 from Jstructure.utils import get_node_text
-from Jstructure import *
+from Jstructure.Field import Field
 logger = logging.getLogger()
 
 
@@ -53,7 +53,7 @@ class Register:
 		self.chips : ChipSet = chip
 		
 		for xml_fields in xml_base.findall("fields/field") :
-			self.fields.append(Field(xml_fields,self.chips))
+			self.fields.append(Field(xml_fields, self.chips))
 			
 	def __repr__(self) :
 		return self.name
