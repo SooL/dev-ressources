@@ -292,7 +292,7 @@ if __name__ == "__main__" :
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
 		
-		resolve_peripheral_derivation(periph_list)
+		#resolve_peripheral_derivation(periph_list)
 		
 		full_list[svd_file] = copy(periph_list)
 		periph_list.clear()
@@ -301,7 +301,7 @@ if __name__ == "__main__" :
 	#Todo merge !
 	
 	cs = StructureMapper.build_chip_set(mapping_stm2svd)
-	grps = StructureMapper.build_groups(full_list)
+	#grps = StructureMapper.build_groups(full_list)
 	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :
