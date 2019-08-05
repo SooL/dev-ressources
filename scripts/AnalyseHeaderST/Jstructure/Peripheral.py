@@ -4,7 +4,7 @@ import logging
 from Jstructure.Register import Register
 from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
-
+from Jstructure.Group import Group
 logger = logging.getLogger()
 
 
@@ -37,7 +37,9 @@ class Peripheral:
 	def __eq__(self, other):
 		if isinstance(other,Peripheral) :
 			return (self.name == other.name and
-					self.address == other.address)
+					self.mapping_equivalent_to(other))
+			#return (self.name == other.name and
+			#		self.address == other.address)
 		elif isinstance(other,str):
 			return other == self.name
 		else:
@@ -80,11 +82,14 @@ class Peripheral:
 		return True
 		
 class PeripheralInstance :
-	def __init__(self, reference : Peripheral, name : str, address : int, chips):
+	def __init__(self, reference : Peripheral, name : str, address : int, chips: ChipSet):
 		self.reference = reference
 		self.name = name
 		self.address = address
 		self.chips = chips
+	
+	def __repr__(self):
+		return f"{self.name:20s} {self.chips}"
 		
 class PeripheralMapping:
 	def __init__(self, reference : Peripheral, name : str, chips):

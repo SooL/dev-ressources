@@ -13,6 +13,9 @@ class ChipSet :
 	def __init__(self,chips : List[Chip] = list()):
 		self.chips: List[Chip] = chips
 
+	def __str__(self):
+		return "\t".join(self.chips)
+	
 	def add_chips(self, chips: List[Chip]):
 		self.chips.extend(chips)
 

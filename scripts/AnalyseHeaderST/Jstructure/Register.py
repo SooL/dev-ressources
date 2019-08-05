@@ -4,6 +4,8 @@ import logging
 import typing as T
 from Jstructure.utils import get_node_text
 from Jstructure.Field import Field
+from Jstructure import Register
+from Jstructure import ChipSet
 logger = logging.getLogger()
 
 
