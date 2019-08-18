@@ -66,8 +66,13 @@ class Peripheral:
 			raise TypeError()
 		
 	def fill_from_xml(self):
+		#TODO Name ?
+		new_mapping = PeripheralMapping(self,self.name,self.chips)
+		
 		for xml_reg in self.xml_data.findall("registers/register"):
-			self.registers.append(Register(xml_reg, self.chips))
+			new_mapping.register_list.append(Register(xml_reg, self.chips))
+			#self.registers.append(Register(xml_reg, self.chips))
+		self.mappings.append(new_mapping)
 
 	def add_instance(self, instance):
 		self.instances.append(instance)
@@ -78,30 +83,99 @@ class Peripheral:
 		That is if both peripheral are equals and their contents recursively are too.
 		:param other:
 		"""
-		
 		for register in self :
 			if register not in other or not other[register].mapping_equivalent_to(register) :
 				return False
 		return True
+
+	def merge_peripheral(self,other : "Peripheral"):
+		"""
+		Will merge another peripheral to this one. Adding instances and mapping.
 		
-class PeripheralInstance :
-	def __init__(self, reference : Peripheral, name : str, address : int, chips: ChipSet):
-		self.reference = reference
-		self.name = name
-		self.address = address
-		self.chips = chips
-	
-	def __repr__(self):
-		return f"{self.name:20s} {self.chips}"
+		**The other peripheral is supposed to have only one instance and one mapping.**
+		
+		
+		:param other: The peripheral to merge into this one.
+		:return:
+		"""
+		equivalent_mapping = None
+		equivalent_instance = None
+		
+		#If a mapping, equivalent to the one of the other peripheral, is found, we will use it
+		#In this case, we only have to append the chip(s) of the other peripheral.
+		for mapping in self.mappings:
+			if mapping == other:
+				equivalent_mapping = mapping
+				break
+		
+		#Same principle with instances
+		for instance in self.instances:
+			if instance == other:
+				equivalent_instance = instance
+				break
+		
+		#If no equivalent mapping is found, we create a new one based on the other one.
+		if equivalent_mapping is None:
+			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
+			equivalent_mapping.register_list = other.mappings[0].register_list
+			self.mappings.append(equivalent_mapping)
+		else :
+			equivalent_mapping.chips.add(other.chips)
+		
+		#Same for instances
+		if equivalent_instance is None:
+			equivalent_instance = PeripheralInstance(equivalent_mapping,
+													 other.instances[0].name,
+													 other.instances[0].address,
+													 other.chips)
+			self.instances.append(equivalent_instance)
+		else:
+			equivalent_instance.chips.add(other.chips)
+		
 		
 class PeripheralMapping:
-	def __init__(self, reference : Peripheral, name : str, chips):
+	def __init__(self, reference: Peripheral, name: str, chips : ChipSet):
 		self.reference = reference
 		self.name = name
 		self.chips = chips
 		
 		self.register_list = list()
 	
+	def __repr__(self):
+		return " ".join([repr(x) for x in self.register_list]) + " : " + " ".join(sorted(list(self.chips.chips)))
+		
+	def __eq__(self, other):
+		if isinstance(other,PeripheralMapping):
+			return len(set(self.register_list).difference(other.register_list)) == 0
+		elif isinstance(other,Peripheral) :
+			for mapping in other.mappings :
+				if mapping == self :
+					return True
+		else :
+			raise TypeError()
+		return False
+		
+		
+class PeripheralInstance :
+	def __init__(self, reference : PeripheralMapping, name : str, address : int, chips: ChipSet):
+		self.reference : PeripheralMapping = reference
+		self.name = name
+		self.address = address
+		self.chips = chips
+	
+	def __repr__(self):
+		return f"{self.name:20s} {self.chips}"
+	
+	def __eq__(self, other):
+		if isinstance(other,PeripheralInstance):
+			return self.name == other.name and self.address == other.address and self.reference == other.reference
+		elif isinstance(other,Peripheral) :
+			for instance in other.instances :
+				if instance == self :
+					return True
+		else :
+			raise TypeError()
+		return False
 
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
