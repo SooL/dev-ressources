@@ -23,16 +23,19 @@ class Peripheral:
 		self.group : Group 		= None
 		self.registers : T.List = list()
 		self.chips = chip
+		
+		self.variance_id: str = None
+		self.instances: T.List[PeripheralInstance] = list()
+		self.mappings: T.List[PeripheralMapping] = list()
 
 		self.fill_from_xml()
 
 		#self.address = int(self.xml_data.find("baseAddress").text,0)
 		
-		self.variance_id : str = None
-		self.instances : T.List[PeripheralInstance] = list()
+		
 		
 	def __repr__(self):
-		return f"{self.name:20s} var {self.variance_id}"
+		return f"{self.name:20s} : {' '.join(sorted(self.chips.chips))}"
 		
 	def __eq__(self, other):
 		if isinstance(other,Peripheral) :
