@@ -5,6 +5,7 @@ from Jstructure.Register import Register
 from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 from Jstructure.Group import Group
+from copy import copy, deepcopy
 logger = logging.getLogger()
 
 
@@ -68,10 +69,10 @@ class Peripheral:
 		
 	def fill_from_xml(self):
 		#TODO Name ?
-		new_mapping = PeripheralMapping(self,self.name,self.chips)
+		new_mapping = PeripheralMapping(self,self.name,deepcopy(self.chips))
 		
 		for xml_reg in self.xml_data.findall("registers/register"):
-			new_mapping.register_list.append(Register(xml_reg, self.chips))
+			new_mapping.register_list.append(Register(xml_reg, deepcopy(self.chips)))
 			#self.registers.append(Register(xml_reg, self.chips))
 		self.mappings.append(new_mapping)
 

@@ -23,6 +23,7 @@ def TIM_create_cleaner(periph : Peripheral) :
 
 
 def DEFAULT_create_cleaner(periph : Peripheral) :
+	
 	periph.name = periph.group_name
 
 

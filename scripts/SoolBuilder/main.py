@@ -91,6 +91,30 @@ def get_node_text(root : ET.Element, node : str) -> str :
 #                                                         MAIN                                                         #
 ########################################################################################################################
 
+def report_debilus(group_list : T.Dict[str,Group]) :
+	out =""
+	for group in group_list :
+		out += f"Group : {group}\n"
+		for p in group_list[group].peripherals :
+			out += f"\tPeripheral : {p.name}\n"
+			chips_sum : T.Dict[str,T.List[int]] = dict()
+			
+			for m in p.mappings :
+				for c in m.chips.chips :
+					if c not in chips_sum :
+						chips_sum[c] = [p.mappings.index(m)]
+					else :
+						chips_sum[c].append(p.mappings.index(m))
+			i = 1
+			for chip_name, lst in chips_sum.items() :
+				if len(lst) > 1 :
+					out += f"\t\tIssue : Chip {chip_name} is found {len(lst)} times. Indexes : {str(lst)}\n"
+	
+	return out
+			
+		
+
+
 
 if __name__ == "__main__" :
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
@@ -191,7 +215,6 @@ if __name__ == "__main__" :
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
-			periph.chips.add(instance.chips)
 		#resolve_peripheral_derivation(periph_list)
 		
 		full_list[svd_file] = copy(periph_list)
@@ -225,6 +248,12 @@ if __name__ == "__main__" :
 	
 	#grps = StructureMapper.build_groups(full_list)
 	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
+
+	debilus = report_debilus(group_list)
+	print(debilus)
+	with open("report_debilus.txt","w") as out :
+		out.write(debilus)
+		
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :
 			file.write(license_header.read() + full.output_series_definition())
