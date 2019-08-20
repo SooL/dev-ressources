@@ -297,12 +297,12 @@ if __name__ == "__main__" :
 				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
 				periph_list.append(periph)
 			else :  # peripheral already exists
-				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
+				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference.reference
 
 			# create instance from its name, address and base peripheral
 			inst_name = svd_periph.find("name").text
 			inst_addr = int(svd_periph.find("baseAddress").text, 0)
-			instance = PeripheralInstance(periph, inst_name, inst_addr, ChipSet({chip_name}))
+			instance = PeripheralInstance(periph.mappings[0], inst_name, inst_addr, ChipSet({chip_name}))
 
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
@@ -314,9 +314,20 @@ if __name__ == "__main__" :
 		periph_list.clear()
 		
 	#Here, you have full_list with a dict : File -> list of peripherals
-	#Todo merge !
 	
 	cs = StructureMapper.build_chip_set(mapping_stm2svd)
+	
+	#Brutal merging. The first peripheral of each group will be used as reference.
+	#All other peripherals will be kept for debug purpose. To be cleaned up afterward.
+	#Maybe using a while loop with pop to remove all handled periphs ?
+	logger.info("Merging peripherals...")
+	for group in group_list :
+		logger.info(f"\tWorking on group {group}")
+		ref = group_list[group].peripherals[0]
+		for periph in group_list[group].peripherals[1:] :
+			ref.merge_peripheral(periph)
+			
+	
 	#grps = StructureMapper.build_groups(full_list)
 	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 	with open(OutputDirectory + "chips.h", "w") as file :

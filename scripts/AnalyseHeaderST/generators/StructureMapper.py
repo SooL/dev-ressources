@@ -24,7 +24,7 @@ def build_chip_set(pdsc_list :T.List[PDSC] = list()) -> T.Dict[str,ChipSet]:
 				new_chip = Chip(chip_name,
 										  pdsc_handler.define_to_svd[header_key],
 										  [header_key])
-				new_chipset.add_chip(new_chip)
+				new_chipset.add(new_chip)
 			output[pdsc_handler.define_to_svd[header_key]] = copy(new_chipset)
 	logger.info("Done")
 	return output

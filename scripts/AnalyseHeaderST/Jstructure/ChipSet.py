@@ -1,6 +1,6 @@
 import string
-from typing import List
-
+from typing import List, Set, Union
+from deprecated import deprecated
 
 class Chip :
 	def __init__(self, name: str, svd: str, families: List[str]):
@@ -10,14 +10,26 @@ class Chip :
 
 
 class ChipSet :
-	def __init__(self,chips : List[Chip] = list()):
-		self.chips: List[Chip] = chips
+	def __init__(self,chips : Set[Chip] = set()):
+		self.chips: Set[Chip] = chips
 
 	def __str__(self):
 		return "\t".join(self.chips)
 	
-	def add_chips(self, chips: List[Chip]):
-		self.chips.extend(chips)
-
-	def add_chip(self, chip: Chip):
-		self.chips.append(chip)
+	def add(self, other: Union[List[Chip], 'ChipSet', Chip]):
+		if isinstance(other,ChipSet) :
+			self.chips.update(other.chips)
+		elif isinstance(other,list) :
+			self.chips.update(other)
+		elif isinstance(other,Chip):
+			self.chips.add(other)
+		else :
+			raise TypeError
+	
+	def __iadd__(self, other: Union[List[Chip], 'ChipSet', Chip]):
+		self.add(other)
+	
+	def __add__(self, other: Union[List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
+		ret : ChipSet = ChipSet(self.chips)
+		ret.add(other)
+		return ret

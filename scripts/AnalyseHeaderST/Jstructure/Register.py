@@ -56,7 +56,10 @@ class Register:
 		
 		for xml_fields in xml_base.findall("fields/field") :
 			self.fields.append(Field(xml_fields, self.chips))
-			
+	
+	def __hash__(self):
+		return hash((self.name,self.offset,self.size,tuple(self.fields)))
+	
 	def __repr__(self) :
 		return self.name
 	
