@@ -20,7 +20,8 @@ class Peripheral:
 		self.name : str = self.xml_data.find("name").text
 		self.brief = " ".join(get_node_text(self.xml_data, "description").lower().replace("-"," ").replace("\n"," ").split())
 
-		self.group : Group 		= None
+		self.group_name = get_node_text(self.xml_data, "groupName")
+		self.group : Group 		=  None
 		self.registers : T.List = list()
 		self.chips = chip
 		

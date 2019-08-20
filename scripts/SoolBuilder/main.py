@@ -43,6 +43,8 @@ import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
 from generators import StructureMapper
+from cleaners.create_peripheral import create_association_table
+from copy import copy
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -158,13 +160,19 @@ if __name__ == "__main__" :
 			periph = None
 			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
 
-				# if peripheral group doesn't exist yet, create it
-				group_name = get_node_text(svd_periph, "groupName")
-				if group_name not in group_list :
-					group_list[group_name] = Group(group_name)
-
 				# create the peripheral, add it to the group
 				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+
+				if periph.group_name in create_association_table :
+					create_association_table[periph.group_name](periph)
+				else :
+					create_association_table[None](periph)
+
+				# if peripheral group doesn't exist yet, create it
+				group_name = periph.group_name
+				if group_name not in group_list:
+					group_list[group_name] = Group(group_name)
+
 				group_list[group_name].add_peripheral(periph)
 
 				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
@@ -200,11 +208,18 @@ if __name__ == "__main__" :
 		# if group != "GPIO" :
 		#	continue
 		logger.info(f"\tWorking on group {group}")
-		ref = group_list[group].peripherals[0]
-		next_periph_indice = 1
+		refs : T.Dict[str,Peripheral] = dict()
+
+		next_periph_indice = 0
 		while len(group_list[group].peripherals) > next_periph_indice :
-			ref.merge_peripheral(group_list[group].peripherals[next_periph_indice])
-			group_list[group].peripherals.pop(next_periph_indice)
+			current_periph = group_list[group].peripherals[next_periph_indice]
+			if current_periph.name not in refs :
+				refs[current_periph.name] = current_periph
+				next_periph_indice += 1
+				continue
+			else :
+				refs[current_periph.name].merge_peripheral(current_periph)
+				group_list[group].peripherals.pop(next_periph_indice)
 
 			
 	
