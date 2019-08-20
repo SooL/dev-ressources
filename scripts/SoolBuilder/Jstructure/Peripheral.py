@@ -18,7 +18,7 @@ class Peripheral:
 		self.xml_data : ET.Element = xml_base
 
 		self.name : str = self.xml_data.find("name").text
-		self.brief = get_node_text(self.xml_data, "description")
+		self.brief = " ".join(get_node_text(self.xml_data, "description").lower().replace("-"," ").replace("\n"," ").split())
 
 		self.group : Group 		= None
 		self.registers : T.List = list()
