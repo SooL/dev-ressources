@@ -131,15 +131,21 @@ if __name__ == "__main__" :
 	full_list : T.Dict[str,T.List[Peripheral]] = dict()
 
 	mapping_stm2svd: T.List[PDSCFile] = list()
-	
+
+	group_list : T.Dict[str,Group] = dict()
+
+	# To be removed, for test only
+	peripheral_description_list : T.Dict[str,T.Set[str]] = dict()
+
+
 	logger.info("Reading .pdsc files to map STM number to svd...")
 	for pdsc_file in glob.glob(pdsc_path_model) :
 		logger.info(f"\tReading {pdsc_file}...")
 		
 		mapping_stm2svd.append(PDSCFile(pdsc_file))
 		
-	group_list : T.Dict[str,Group] = dict()
-	
+
+
 	for svd_file in FileListing :
 		# svd_file = FileListing[0]
 		
@@ -163,6 +169,9 @@ if __name__ == "__main__" :
 
 				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
 				periph_list.append(periph)
+				if group_name not in peripheral_description_list :
+					peripheral_description_list[group_name] = set()
+				peripheral_description_list[group_name].add(periph.brief)
 			else :  # peripheral already exists
 				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
 
@@ -174,7 +183,7 @@ if __name__ == "__main__" :
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
-		
+			periph.chips.add(instance.chips)
 		#resolve_peripheral_derivation(periph_list)
 		
 		full_list[svd_file] = copy(periph_list)
@@ -185,16 +194,18 @@ if __name__ == "__main__" :
 	cs = StructureMapper.build_chip_set(mapping_stm2svd)
 	
 	# Brutal merging. The first peripheral of each group will be used as reference.
-	# All other peripherals will be kept for debug purpose. To be cleaned up afterward.
-	# Maybe using a while loop with pop to remove all handled periphs ?
 	logger.info("Merging peripherals...")
+
 	for group in group_list :
 		# if group != "GPIO" :
 		#	continue
 		logger.info(f"\tWorking on group {group}")
 		ref = group_list[group].peripherals[0]
-		for periph in group_list[group].peripherals[1:] :
-			ref.merge_peripheral(periph)
+		next_periph_indice = 1
+		while len(group_list[group].peripherals) > next_periph_indice :
+			ref.merge_peripheral(group_list[group].peripherals[next_periph_indice])
+			group_list[group].peripherals.pop(next_periph_indice)
+
 			
 	
 	#grps = StructureMapper.build_groups(full_list)
