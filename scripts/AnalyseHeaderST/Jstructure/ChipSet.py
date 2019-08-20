@@ -1,6 +1,6 @@
 import string
 from typing import List, Set, Union
-from deprecated import deprecated
+
 
 class Chip :
 	def __init__(self, name: str, svd: str, families: List[str]):
