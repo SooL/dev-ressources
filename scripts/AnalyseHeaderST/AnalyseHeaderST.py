@@ -100,7 +100,7 @@ if __name__ == "__main__" :
 						action="append",
 						dest="update_svd",
 						help="Add a family to the files to be updated.",
-						choices=svd.defined_archives_st.keys())
+						choices=svd.defined_archives_keil.keys())
 
 	args = parser.parse_args()
 
