@@ -92,7 +92,7 @@ class Peripheral:
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
 		
-		**The other peripheral is supposed to have only one instance and one mapping.**
+		**The other peripheral is supposed to have one mapping and one or more instances.**
 		
 		
 		:param other: The peripheral to merge into this one.
@@ -107,30 +107,33 @@ class Peripheral:
 			if mapping == other:
 				equivalent_mapping = mapping
 				break
-		
-		# Same principle with instances
-		for instance in self.instances:
-			if instance == other:
-				equivalent_instance = instance
-				break
-		
+
 		# If no equivalent mapping is found, we create a new one based on the other one.
 		if equivalent_mapping is None:
 			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
 			equivalent_mapping.register_list = other.mappings[0].register_list
 			self.mappings.append(equivalent_mapping)
-		else :
-			equivalent_mapping.chips.add(other.chips)
-		
-		# Same for instances
-		if equivalent_instance is None:
-			equivalent_instance = PeripheralInstance(self,
-													 other.instances[0].name,
-													 other.instances[0].address,
-													 other.chips)
-			self.instances.append(equivalent_instance)
 		else:
-			equivalent_instance.chips.add(other.chips)
+			equivalent_mapping.chips.add(other.chips)
+
+
+		# Same principle with instances
+		for other_instance in other.instances :
+
+			for instance in self.instances:
+				if instance == other_instance:
+					equivalent_instance = instance
+					break
+
+			# Same for instances
+			if equivalent_instance is None:
+				equivalent_instance = PeripheralInstance(self,
+														 other_instance.name,
+														 other_instance.address,
+														 other.chips)
+				self.instances.append(equivalent_instance)
+			else:
+				equivalent_instance.chips.add(other.chips)
 		
 		
 class PeripheralMapping:
