@@ -113,8 +113,10 @@ class Peripheral:
 			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
 			equivalent_mapping.register_list = other.mappings[0].register_list
 			self.mappings.append(equivalent_mapping)
+			self.chips.add(other.chips)
 		else:
 			equivalent_mapping.chips.add(other.chips)
+			self.chips.add(other.chips)
 
 
 		# Same principle with instances
@@ -132,8 +134,10 @@ class Peripheral:
 														 other_instance.address,
 														 other.chips)
 				self.instances.append(equivalent_instance)
+				self.chips.add(other_instance.chips)
 			else:
 				equivalent_instance.chips.add(other.chips)
+				self.chips.add(other_instance.chips)
 		
 		
 class PeripheralMapping:
