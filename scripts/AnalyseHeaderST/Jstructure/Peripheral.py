@@ -101,20 +101,20 @@ class Peripheral:
 		equivalent_mapping = None
 		equivalent_instance = None
 		
-		#If a mapping, equivalent to the one of the other peripheral, is found, we will use it
-		#In this case, we only have to append the chip(s) of the other peripheral.
+		# If a mapping, equivalent to the one of the other peripheral, is found, we will use it
+		# In this case, we only have to append the chip(s) of the other peripheral.
 		for mapping in self.mappings:
 			if mapping == other:
 				equivalent_mapping = mapping
 				break
 		
-		#Same principle with instances
+		# Same principle with instances
 		for instance in self.instances:
 			if instance == other:
 				equivalent_instance = instance
 				break
 		
-		#If no equivalent mapping is found, we create a new one based on the other one.
+		# If no equivalent mapping is found, we create a new one based on the other one.
 		if equivalent_mapping is None:
 			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
 			equivalent_mapping.register_list = other.mappings[0].register_list
@@ -122,9 +122,9 @@ class Peripheral:
 		else :
 			equivalent_mapping.chips.add(other.chips)
 		
-		#Same for instances
+		# Same for instances
 		if equivalent_instance is None:
-			equivalent_instance = PeripheralInstance(equivalent_mapping,
+			equivalent_instance = PeripheralInstance(self,
 													 other.instances[0].name,
 													 other.instances[0].address,
 													 other.chips)
@@ -157,8 +157,8 @@ class PeripheralMapping:
 		
 		
 class PeripheralInstance :
-	def __init__(self, reference : PeripheralMapping, name : str, address : int, chips: ChipSet):
-		self.reference : PeripheralMapping = reference
+	def __init__(self, reference : Peripheral, name : str, address : int, chips: ChipSet):
+		self.reference : Peripheral = reference
 		self.name = name
 		self.address = address
 		self.chips = chips
@@ -168,7 +168,7 @@ class PeripheralInstance :
 	
 	def __eq__(self, other):
 		if isinstance(other,PeripheralInstance):
-			return self.name == other.name and self.address == other.address and self.reference == other.reference
+			return self.name == other.name and self.address == other.address
 		elif isinstance(other,Peripheral) :
 			for instance in other.instances :
 				if instance == self :
@@ -176,6 +176,7 @@ class PeripheralInstance :
 		else :
 			raise TypeError()
 		return False
+
 
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
