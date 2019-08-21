@@ -1,4 +1,4 @@
-from typing import List, Dict
+import typing as T
 
 from Jstructure import Peripheral
 import logging
@@ -8,15 +8,15 @@ logger = logging.getLogger()
 
 class Group :
 
-	name_correction: Dict[str, str] = {
+	name_correction: T.Dict[str, str] = {
 		"TIM1" : "TIM",
 		"TIMs" : "TIM",
 		"TIMER": "TIM"
 	}
 
-	def __init__(self, name, name_helper: function = None):
+	def __init__(self, name, name_helper: T.Callable = None):
 		self.name = name if (name not in Group.name_correction) else Group.name_correction[name]
-		self.peripherals: List[Peripheral] = list()
+		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = name_helper
 
 	def add_peripheral(self, peripheral):

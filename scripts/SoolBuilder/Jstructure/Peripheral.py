@@ -6,7 +6,7 @@ from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 from Jstructure.Group import Group
 from copy import copy, deepcopy
-
+from deprecated import deprecated
 logger = logging.getLogger()
 
 
@@ -71,7 +71,8 @@ class Peripheral:
 		new_mapping = PeripheralMapping(self, self.chips)
 
 		for xml_reg in self.xml_data.findall("registers/register"):
-			new_mapping.register_list.append(Register(xml_reg, self.chips))
+			new_register = Register(xml_reg,self.chips)
+			new_mapping.register_mapping[new_register.offset] = new_register
 			# self.registers.append(Register(xml_reg, self.chips))
 		self.mappings.append(new_mapping)
 
@@ -92,6 +93,7 @@ class Peripheral:
 				return False
 		return True
 
+	@deprecated
 	def merge_peripheral(self,other : "Peripheral"):
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
@@ -113,8 +115,10 @@ class Peripheral:
 
 		# If no equivalent mapping is found, we create a new one based on the other one.
 		if equivalent_mapping is None:
-			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
-			equivalent_mapping.register_list = other.mappings[0].register_list
+			equivalent_mapping = PeripheralMapping(self, other.chips)
+			for key, reg in other.mappings[0].register_mapping.items() :
+				equivalent_mapping.register_mapping[key] = reg
+			# equivalent_mapping.register_list = other.mappings[0].register_list
 			self.mappings.append(equivalent_mapping)
 			self.chips.add(other.chips)
 		else:
@@ -145,14 +149,14 @@ class Peripheral:
 class PeripheralMapping:
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
-		self.name = None # the name will be determined when the whole structure is built
-		self.chips = chips
+		self.name: str = None # the name will be determined when the whole structure is built
+		self.chips: ChipSet = chips
 		
 		self.register_mapping: T.Dict[int, Register] = dict()
 	
 	def __repr__(self):
-		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()])\
-		       + " : " + " ".join(sorted(list(self.chips.chips)))
+		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()]) + " : " \
+			   + str(self.chips)
 		
 	def __eq__(self, other):
 		if isinstance(other,PeripheralMapping):
@@ -193,7 +197,7 @@ class PeripheralInstance :
 			raise TypeError()
 		return False
 
-
+@deprecated
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
 	This function takes a finished list of peripherals and will resolve all derivation.

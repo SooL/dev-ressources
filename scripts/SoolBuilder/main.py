@@ -185,12 +185,12 @@ if __name__ == "__main__" :
 			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
 
 				# create the peripheral, add it to the group
-				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+				# periph = Peripheral(svd_periph, ChipSet({chip_name}))
 
-				if periph.group_name in create_association_table :
-					create_association_table[periph.group_name](periph)
-				else :
-					create_association_table[None](periph)
+				# if periph.group_name in create_association_table :
+				# 	create_association_table[periph.group_name](periph)
+				# else :
+				# 	create_association_table[None](periph)
 
 				# if peripheral group doesn't exist yet, create it
 				group_name = get_node_text(svd_periph, "groupName")
