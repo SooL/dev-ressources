@@ -193,17 +193,16 @@ if __name__ == "__main__" :
 					create_association_table[None](periph)
 
 				# if peripheral group doesn't exist yet, create it
-				group_name = periph.group_name
-				if group_name not in group_list:
+				group_name = get_node_text(svd_periph, "groupName")
+				if group_name not in group_list :
 					group_list[group_name] = Group(group_name)
 
+				# create the peripheral, add it to the group
+				periph = Peripheral(svd_periph, ChipSet({chip_name}))
 				group_list[group_name].add_peripheral(periph)
 
 				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
 				periph_list.append(periph)
-				if group_name not in peripheral_description_list :
-					peripheral_description_list[group_name] = set()
-				peripheral_description_list[group_name].add(periph.brief)
 			else :  # peripheral already exists
 				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
 
@@ -215,6 +214,7 @@ if __name__ == "__main__" :
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
+
 		#resolve_peripheral_derivation(periph_list)
 		
 		full_list[svd_file] = copy(periph_list)
@@ -251,7 +251,7 @@ if __name__ == "__main__" :
 
 	debilus = report_debilus(group_list)
 	print(debilus)
-	with open("report_debilus.txt","w") as out :
+	with open("report_debilus.txt", "w") as out :
 		out.write(debilus)
 		
 	with open(OutputDirectory + "chips.h", "w") as file :

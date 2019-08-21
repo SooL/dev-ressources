@@ -6,6 +6,7 @@ from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 from Jstructure.Group import Group
 from copy import copy, deepcopy
+
 logger = logging.getLogger()
 
 
@@ -16,45 +17,43 @@ class Peripheral:
 		If relevant, build all registers.
 		:param xml_base: xml <peripheral> node, extracted from SVD file
 		"""
-		self.xml_data : ET.Element = xml_base
+		self.xml_data: ET.Element = xml_base
 
-		self.name : str = self.xml_data.find("name").text
-		self.brief = " ".join(get_node_text(self.xml_data, "description").lower().replace("-"," ").replace("\n"," ").split())
+		self.name: str = None
+		self.brief = " ".join(
+			get_node_text(self.xml_data, "description").lower().replace("-", " ").replace("\n", " ").split())
 
-		self.group_name = get_node_text(self.xml_data, "groupName")
-		self.group : Group 		=  None
-		self.registers : T.List = list()
+		self.group: Group = None
+		self.registers: T.List = list()
 		self.chips = chip
-		
+
 		self.variance_id: str = None
 		self.instances: T.List[PeripheralInstance] = list()
 		self.mappings: T.List[PeripheralMapping] = list()
 
 		self.fill_from_xml()
 
-		#self.address = int(self.xml_data.find("baseAddress").text,0)
-		
-		
-		
+	# self.address = int(self.xml_data.find("baseAddress").text,0)
+
 	def __repr__(self):
 		return f"{self.name:20s} : {' '.join(sorted(self.chips.chips))}"
-		
+
 	def __eq__(self, other):
-		if isinstance(other,Peripheral) :
+		if isinstance(other, Peripheral) :
 			return (self.name == other.name and
+					self.brief == other.brief and
 					self.mapping_equivalent_to(other))
-			#return (self.name == other.name and
-			#		self.address == other.address)
-		elif isinstance(other,str):
+
+		elif isinstance(other, str) :
 			return other == self.name
-		else:
+		else :
 			raise TypeError()
 		
-	def __le__(self, other):
-		if isinstance(other,Peripheral):
-			return self.address <= other.address
-		else:
-			raise TypeError()
+#	def __le__(self, other) :
+#		if isinstance(other, Peripheral):
+#			return self.address <= other.address
+#		else:
+#			raise TypeError()
 		
 	def __getitem__(self, item) -> Register:
 		if isinstance(item, Register or isinstance(item,str)) :
@@ -68,16 +67,19 @@ class Peripheral:
 			raise TypeError()
 		
 	def fill_from_xml(self):
-		#TODO Name ?
-		new_mapping = PeripheralMapping(self,self.name,deepcopy(self.chips))
-		
+		# TODO Name ?
+		new_mapping = PeripheralMapping(self, self.chips)
+
 		for xml_reg in self.xml_data.findall("registers/register"):
-			new_mapping.register_list.append(Register(xml_reg, deepcopy(self.chips)))
-			#self.registers.append(Register(xml_reg, self.chips))
+			new_mapping.register_list.append(Register(xml_reg, self.chips))
+			# self.registers.append(Register(xml_reg, self.chips))
 		self.mappings.append(new_mapping)
 
 	def add_instance(self, instance):
 		self.instances.append(instance)
+
+	def add_instances(self, instances):
+		self.instances.extend(instances)
 	
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
@@ -94,8 +96,7 @@ class Peripheral:
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
 		
-		**The other peripheral is supposed to have one mapping and one or more instances.**
-		
+		**The other peripheral is supposed to have one mapping and one or more instance.**
 		
 		:param other: The peripheral to merge into this one.
 		:return:
@@ -120,7 +121,6 @@ class Peripheral:
 			equivalent_mapping.chips.add(other.chips)
 			self.chips.add(other.chips)
 
-
 		# Same principle with instances
 		for other_instance in other.instances :
 
@@ -143,28 +143,35 @@ class Peripheral:
 		
 		
 class PeripheralMapping:
-	def __init__(self, reference: Peripheral, name: str, chips : ChipSet):
+	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
-		self.name = name
+		self.name = None # the name will be determined when the whole structure is built
 		self.chips = chips
 		
-		self.register_list = list()
+		self.register_mapping: T.Dict[int, Register] = dict()
 	
 	def __repr__(self):
-		return " ".join([repr(x) for x in self.register_list]) + " : " + " ".join(sorted(list(self.chips.chips)))
+		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()])\
+		       + " : " + " ".join(sorted(list(self.chips.chips)))
 		
 	def __eq__(self, other):
 		if isinstance(other,PeripheralMapping):
-			return len(set(self.register_list).difference(other.register_list)) == 0
-		elif isinstance(other,Peripheral) :
-			for mapping in other.mappings :
-				if mapping == self :
+			positions = self.register_mapping.keys()
+			if set(positions).symmetric_difference(set(other.register_mapping.keys())) != 0:
+				return False
+			for pos in positions :
+				if self.register_mapping[pos] is not other.register_mapping[pos]:
+					return False
+			return True
+		elif isinstance(other, Peripheral):
+			for mapping in other.mappings:
+				if mapping == self:
 					return True
-		else :
+		else:
 			raise TypeError()
 		return False
-		
-		
+
+
 class PeripheralInstance :
 	def __init__(self, reference : Peripheral, name : str, address : int, chips: ChipSet):
 		self.reference : Peripheral = reference
@@ -176,9 +183,9 @@ class PeripheralInstance :
 		return f"{self.name:20s} {self.chips}"
 	
 	def __eq__(self, other):
-		if isinstance(other,PeripheralInstance):
+		if isinstance(other, PeripheralInstance) :
 			return self.name == other.name and self.address == other.address
-		elif isinstance(other,Peripheral) :
+		elif isinstance(other, Peripheral) :
 			for instance in other.instances :
 				if instance == self :
 					return True
@@ -198,14 +205,14 @@ def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
 	logger.info("Starting peripheral derivation resolution")
 	name_ref : T.Dict[str,Peripheral] = dict()
-	
+
 	logger.info("\tBuilding reference dictionary")
 	for p in periph_list :
 		name_ref[p.name] = p
-	
+
 	for p in periph_list :
 		if not p.complete :
-			
+
 			ref = name_ref[p.derivation]
 			logger.info(f"\tResolving {p.name} to {ref.name}")
 			p.brief: str = ref.brief

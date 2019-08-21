@@ -10,7 +10,9 @@ class Chip :
 
 
 class ChipSet :
-	def __init__(self,chips : Set[Chip] = set()):
+	def __init__(self, chips=None):
+		if chips is None:
+			chips = set()
 		self.chips: Set[Chip] = chips
 
 	def __str__(self):
@@ -21,7 +23,7 @@ class ChipSet :
 			self.chips.update(other.chips)
 		elif isinstance(other,list) :
 			self.chips.update(other)
-		elif isinstance(other,Chip):
+		elif isinstance(other, Chip) :
 			self.chips.add(other)
 		else :
 			raise TypeError

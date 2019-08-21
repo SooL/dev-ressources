@@ -4,7 +4,6 @@ import logging
 import typing as T
 from Jstructure.utils import get_node_text
 from Jstructure.Field import Field
-from Jstructure import Register
 from Jstructure import ChipSet
 logger = logging.getLogger()
 
@@ -39,7 +38,7 @@ class Register:
 			logger.warning(f"Register name and display discrepancy : {self.name} displayed as {dispName}")
 		
 		self.descr = get_node_text(xml_base,"description")
-		self.offset = int(get_node_text(xml_base,"addressOffset"),0)
+		# self.offset = int(get_node_text(xml_base,"addressOffset"),0)
 		
 		read_size_value = get_node_text(xml_base,"size")
 		if read_size_value == str() :
@@ -58,7 +57,7 @@ class Register:
 			self.fields.append(Field(xml_fields, self.chips))
 	
 	def __hash__(self):
-		return hash((self.name,self.offset,self.size,tuple(self.fields)))
+		return hash((self.name,self.size,tuple(self.fields)))
 	
 	def __repr__(self) :
 		return self.name
@@ -77,17 +76,16 @@ class Register:
 	def __eq__(self, other):
 		if isinstance(other,Register) :
 			return (self.name == other.name and
-					self.offset == other.offset and
 					self.size == other.size)
 		elif isinstance(other,str):
 			return self.name == other
 		else:
 			raise TypeError()
 		
-	def __le__(self, other):
-		if isinstance(other,Register) :
-			return self.offset <= other.offset
-		raise TypeError()
+#	def __le__(self, other):
+#		if isinstance(other,Register) :
+#			return self.offset <= other.offset
+#		raise TypeError()
 	
 	def rebuild_chip_list(self):
 		self.chips.clear()
