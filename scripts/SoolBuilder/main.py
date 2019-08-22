@@ -158,7 +158,7 @@ if __name__ == "__main__" :
 
 	mapping_stm2svd: T.List[PDSCFile] = list()
 
-	group_list : T.Dict[str,Group] = dict()
+	group_dict : T.Dict[str, Group] = dict()
 
 	# To be removed, for test only
 	peripheral_description_list : T.Dict[str,T.Set[str]] = dict()
@@ -185,24 +185,20 @@ if __name__ == "__main__" :
 			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
 
 				# create the peripheral, add it to the group
-				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+#				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+#
+#				if periph.group_name in create_association_table :
+#					create_association_table[periph.group_name](periph)
+#				else :
+#					create_association_table[None](periph)
 
-				if periph.group_name in create_association_table :
-					create_association_table[periph.group_name](periph)
-				else :
-					create_association_table[None](periph)
-
-				# if peripheral group doesn't exist yet, create it
-				group_name = get_node_text(svd_periph, "groupName")
-				if group_name not in group_list :
-					group_list[group_name] = Group(group_name)
+				# return the group associated with the name, and creates it if necessary
+				group = Group.get_group(group_dict, get_node_text(svd_periph, "groupName"))
 
 				# create the peripheral, add it to the group
 				periph = Peripheral(svd_periph, ChipSet({chip_name}))
-				group_list[group_name].add_peripheral(periph)
+				group.add_peripheral(periph)
 
-				# add the new peripheral to the list. TODO see if list is necessary (group list already exists)
-				periph_list.append(periph)
 			else :  # peripheral already exists
 				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
 
@@ -216,7 +212,12 @@ if __name__ == "__main__" :
 			periph_instances_dict[inst_name] = instance
 
 		#resolve_peripheral_derivation(periph_list)
-		
+
+		periph_list = list()
+		for grp_name in group_dict :
+			group_dict[grp_name].merge_peripherals()
+			periph_list.extend(group_dict[grp_name].peripherals)
+
 		full_list[svd_file] = copy(periph_list)
 		periph_list.clear()
 		
@@ -227,29 +228,29 @@ if __name__ == "__main__" :
 	# Brutal merging. The first peripheral of each group will be used as reference.
 	logger.info("Merging peripherals...")
 
-	for group in group_list :
+	for group in group_dict :
 		# if group != "GPIO" :
 		#	continue
 		logger.info(f"\tWorking on group {group}")
 		refs : T.Dict[str,Peripheral] = dict()
 
 		next_periph_indice = 0
-		while len(group_list[group].peripherals) > next_periph_indice :
-			current_periph = group_list[group].peripherals[next_periph_indice]
+		while len(group_dict[group].peripherals) > next_periph_indice :
+			current_periph = group_dict[group].peripherals[next_periph_indice]
 			if current_periph.name not in refs :
 				refs[current_periph.name] = current_periph
 				next_periph_indice += 1
 				continue
 			else :
 				refs[current_periph.name].merge_peripheral(current_periph)
-				group_list[group].peripherals.pop(next_periph_indice)
+				group_dict[group].peripherals.pop(next_periph_indice)
 
 			
 	
 	#grps = StructureMapper.build_groups(full_list)
 	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 
-	debilus = report_debilus(group_list)
+	debilus = report_debilus(group_dict)
 	print(debilus)
 	with open("report_debilus.txt", "w") as out :
 		out.write(debilus)

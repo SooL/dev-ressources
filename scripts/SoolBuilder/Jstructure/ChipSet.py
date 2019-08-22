@@ -19,19 +19,19 @@ class ChipSet :
 		return "\t".join(self.chips)
 	
 	def add(self, other: Union[List[Chip], 'ChipSet', Chip]):
-		if isinstance(other,ChipSet) :
+		if isinstance(other, ChipSet) :
 			self.chips.update(other.chips)
-		elif isinstance(other,list) :
+		elif isinstance(other, list) :
 			self.chips.update(other)
 		elif isinstance(other, Chip) :
 			self.chips.add(other)
-		else :
+		else:
 			raise TypeError
 	
 	def __iadd__(self, other: Union[List[Chip], 'ChipSet', Chip]):
 		self.add(other)
 	
 	def __add__(self, other: Union[List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
-		ret : ChipSet = ChipSet(self.chips)
+		ret: ChipSet = ChipSet(self.chips)
 		ret.add(other)
 		return ret

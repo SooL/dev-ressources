@@ -20,8 +20,12 @@ class Peripheral:
 		self.xml_data: ET.Element = xml_base
 
 		self.name: str = None
-		self.brief = " ".join(
-			get_node_text(self.xml_data, "description").lower().replace("-", " ").replace("\n", " ").split())
+		brief: str = get_node_text(self.xml_data, "description")\
+			.lower()\
+			.replace("-", " ")\
+			.replace("\n", " ")
+		self.brief = " ".join(brief.split())
+
 
 		self.group: Group = None
 		self.registers: T.List = list()
@@ -49,14 +53,8 @@ class Peripheral:
 		else :
 			raise TypeError()
 		
-#	def __le__(self, other) :
-#		if isinstance(other, Peripheral):
-#			return self.address <= other.address
-#		else:
-#			raise TypeError()
-		
 	def __getitem__(self, item) -> Register:
-		if isinstance(item, Register or isinstance(item,str)) :
+		if isinstance(item, Register) or isinstance(item,str) :
 			for register in self.registers :
 				if item == register :
 					return register
@@ -71,8 +69,9 @@ class Peripheral:
 		new_mapping = PeripheralMapping(self, self.chips)
 
 		for xml_reg in self.xml_data.findall("registers/register"):
-			new_mapping.register_list.append(Register(xml_reg, self.chips))
-			# self.registers.append(Register(xml_reg, self.chips))
+			register = Register(xml_reg, self.chips)
+			self.registers.append(register)
+			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = register
 		self.mappings.append(new_mapping)
 
 	def add_instance(self, instance):
@@ -92,6 +91,17 @@ class Peripheral:
 				return False
 		return True
 
+	def compatible(self, other: "Peripheral") -> bool :
+		if self.mapping_equivalent_to(other) :
+			return True
+
+		for pos in other.mappings[0].register_mapping :
+			if pos in self.mappings[0].register_mapping :
+				if not other.mappings[0].register_mapping[pos]\
+						.compatible(self.mappings[0].register_mapping[pos]):
+					return False
+		return True
+
 	def merge_peripheral(self,other : "Peripheral"):
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
@@ -103,9 +113,21 @@ class Peripheral:
 		"""
 		equivalent_mapping = None
 		equivalent_instance = None
+
+		# Merge chips
+		self.chips.add(other.chips)
+
+		# Merge registers
+		for reg in other :
+			if reg.name in self :
+				""# TODO self[reg].merge_register(reg)
+			else :
+				self.registers.append(reg)
 		
 		# If a mapping, equivalent to the one of the other peripheral, is found, we will use it
 		# In this case, we only have to append the chip(s) of the other peripheral.
+		if len(other.mappings) != 1 :
+			logger.error("multiple mappings on new peripheral")
 		for mapping in self.mappings:
 			if mapping == other:
 				equivalent_mapping = mapping
@@ -113,8 +135,14 @@ class Peripheral:
 
 		# If no equivalent mapping is found, we create a new one based on the other one.
 		if equivalent_mapping is None:
-			equivalent_mapping = PeripheralMapping(self, other.name, other.chips)
-			equivalent_mapping.register_list = other.mappings[0].register_list
+			# copy mapping
+			equivalent_mapping = PeripheralMapping(self, other.chips)
+			equivalent_mapping.register_mapping = other.mappings[0].register_mapping
+			# change registers references
+			for pos in equivalent_mapping.register_mapping :
+				reg = equivalent_mapping.register_mapping[pos]
+				equivalent_mapping.register_mapping[pos] = self[reg.name]
+
 			self.mappings.append(equivalent_mapping)
 			self.chips.add(other.chips)
 		else:

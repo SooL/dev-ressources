@@ -52,4 +52,9 @@ class Field:
 		if isinstance(other,Field) :
 			return self.offset <= other.offset
 		raise TypeError()
-	
+
+	def overlap(self, other: "Field"):
+		if other.offset > self.offset :
+			return (self.offset + self.width) > other.offset
+		else :
+			return (other.offset + other.width) > self.offset
