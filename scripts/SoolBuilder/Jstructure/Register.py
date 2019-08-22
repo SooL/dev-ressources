@@ -37,7 +37,7 @@ class Register :
 			logger.warning(f"Register name and display discrepancy : {self.name} displayed as {disp_name}")
 		
 		self.descr = get_node_text(xml_base,"description")
-		# self.offset = int(get_node_text(xml_base,"addressOffset"),0)
+		self.offset = int(get_node_text(xml_base,"addressOffset"),0)
 		
 		read_size_value = get_node_text(xml_base,"size")
 		if read_size_value == str() :

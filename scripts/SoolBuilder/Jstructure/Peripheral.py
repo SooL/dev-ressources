@@ -6,7 +6,7 @@ from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 from Jstructure.Group import Group
 from copy import copy, deepcopy
-
+from deprecated import deprecated
 logger = logging.getLogger()
 
 
@@ -52,7 +52,7 @@ class Peripheral:
 			return other == self.name
 		else :
 			raise TypeError()
-		
+
 	def __getitem__(self, item) -> Register:
 		if isinstance(item, Register) or isinstance(item,str) :
 			for register in self.registers :
@@ -69,9 +69,9 @@ class Peripheral:
 		new_mapping = PeripheralMapping(self, self.chips)
 
 		for xml_reg in self.xml_data.findall("registers/register"):
-			register = Register(xml_reg, self.chips)
-			self.registers.append(register)
-			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = register
+			new_register = Register(xml_reg, self.chips)
+			self.registers.append(new_register)
+			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = new_register
 		self.mappings.append(new_mapping)
 
 	def add_instance(self, instance):
@@ -102,6 +102,7 @@ class Peripheral:
 					return False
 		return True
 
+	@deprecated
 	def merge_peripheral(self,other : "Peripheral"):
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
@@ -123,7 +124,7 @@ class Peripheral:
 				""# TODO self[reg].merge_register(reg)
 			else :
 				self.registers.append(reg)
-		
+
 		# If a mapping, equivalent to the one of the other peripheral, is found, we will use it
 		# In this case, we only have to append the chip(s) of the other peripheral.
 		if len(other.mappings) != 1 :
@@ -173,14 +174,14 @@ class Peripheral:
 class PeripheralMapping:
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
-		self.name = None # the name will be determined when the whole structure is built
-		self.chips = chips
+		self.name: str = None # the name will be determined when the whole structure is built
+		self.chips: ChipSet = chips
 		
 		self.register_mapping: T.Dict[int, Register] = dict()
 	
 	def __repr__(self):
-		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()])\
-		       + " : " + " ".join(sorted(list(self.chips.chips)))
+		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()]) + " : " \
+			   + str(self.chips)
 		
 	def __eq__(self, other):
 		if isinstance(other,PeripheralMapping):
@@ -221,7 +222,7 @@ class PeripheralInstance :
 			raise TypeError()
 		return False
 
-
+@deprecated
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
 	This function takes a finished list of peripherals and will resolve all derivation.

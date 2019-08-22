@@ -1,4 +1,4 @@
-from typing import List, Dict
+import typing as T
 
 from Jstructure import Peripheral
 import logging
@@ -13,7 +13,7 @@ class Group :
 #                                                    GROUP CREATION                                                    #
 ########################################################################################################################
 
-	name_correction: Dict[str, str] = {
+	name_correction: T.Dict[str, str] = {
 		"TIM1" : "TIM",
 		"TIMS" : "TIM",
 		"TIMER": "TIM",
@@ -40,7 +40,7 @@ class Group :
 
 	def __init__(self, name, name_helper: callable = None):
 		self.name = name if (name not in Group.name_correction) else Group.name_correction[name]
-		self.peripherals: List[Peripheral] = list()
+		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = name_helper
 
 ########################################################################################################################
@@ -114,7 +114,6 @@ class Group :
 			             f" for chip {repr(list(unnamed)[0].chips.chips)}"
 			             f" cannot be named.")
 
-		# TODO step 3 : merge new peripherals with existing peripherals
 		# verify that there is no two new peripherals with the same name
 		for periph_1 in new_peripherals :
 			for periph_2 in new_peripherals :

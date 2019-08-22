@@ -8,6 +8,8 @@ class Chip :
 		self.svd = svd
 		self.families = families
 
+	def __str__(self):
+		return self.name
 
 class ChipSet :
 	def __init__(self, chips=None):
@@ -16,7 +18,7 @@ class ChipSet :
 		self.chips: Set[Chip] = chips
 
 	def __str__(self):
-		return "\t".join(self.chips)
+		return "\t".join(sorted([str(x) for x in self.chips]))
 	
 	def add(self, other: Union[List[Chip], 'ChipSet', Chip]):
 		if isinstance(other, ChipSet) :
