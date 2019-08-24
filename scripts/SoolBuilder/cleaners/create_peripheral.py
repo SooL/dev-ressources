@@ -50,7 +50,7 @@ def ETHERNET_create_cleaner(periph: "Peripheral") :
 		periph.name = "ETHERNET_GENERIC"
 	pass
 
-def ADC_create_cleaner(periph: "Periph") :
+def ADC_create_cleaner(periph: "Peripheral") :
 
 	if "common" in periph.brief.lower() :
 		periph.name = "ADC_Common"
@@ -61,6 +61,10 @@ def DEFAULT_create_cleaner(periph : "Peripheral") :
 	
 	periph.name = periph.group_name
 
+def I2C_create_cleaner(periph: "Peripheral") :
+
+	if "TIMINGR" in periph and "TIMEOUTR" in periph and "PECR" in periph:
+		periph.name = "FMPI2C"
 
 # For a given group, provide a proper cleaner function. None is the default one.
 create_association_table : T.Dict[str,T.Callable] = {
@@ -69,5 +73,6 @@ create_association_table : T.Dict[str,T.Callable] = {
 	"USB"       : USB_create_cleaner,
 	"ETHERNET"  : ETHERNET_create_cleaner,
 	"ADC"       : ADC_create_cleaner,
+	"I2C"       : I2C_create_cleaner,
 	None        : DEFAULT_create_cleaner
 }

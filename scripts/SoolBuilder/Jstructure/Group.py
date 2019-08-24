@@ -103,9 +103,18 @@ class Group :
 			unnamed = [p for p in unnamed if p.name is None] #update the 'unnamed' list
 
 		# if there is only 1 peripheral in the group, the peripheral shall take the name of the group (if no exception)
-		elif len(unnamed) == 1:
+		if len(unnamed) == 1:
 			unnamed[0].name = self.name
 			unnamed.clear()
+
+		for periph in unnamed :
+			if len(periph.instances) == 1 :
+				logger.info(f"name unspecified for single-instance peripheral {periph.instances[0]}"
+				            f" in group {self.name}, where multiple peripheral are left unnamed."
+				            f" instance name chosen as peripheral class name.")
+				periph.name = periph.instances[0].name
+
+		unnamed = [p for p in unnamed if p.name is None]  # update the 'unnamed' list
 
 		# if there is still unnamed peripherals in the group, their name cannot be chosen.
 		#  A name helper must be created for them
