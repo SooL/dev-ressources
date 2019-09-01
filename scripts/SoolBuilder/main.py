@@ -43,7 +43,7 @@ import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
 from generators import StructureMapper
-from cleaners.create_peripheral import create_association_table
+from cleaners.create_peripheral import create_association_table, TIM_log
 from copy import copy
 
 ########################################################################################################################
@@ -222,7 +222,8 @@ if __name__ == "__main__" :
 		periph_list.clear()
 		
 	# Here, you have full_list with a dict : File -> list of peripherals
-	
+	TIM_log() # DEGUB
+
 	cs = StructureMapper.build_chip_set(mapping_stm2svd)
 	
 	# Brutal merging. The first peripheral of each group will be used as reference.

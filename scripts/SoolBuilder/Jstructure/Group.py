@@ -58,28 +58,25 @@ class Group :
 #                                                  PERIPHERALS FUSION                                                  #
 ########################################################################################################################
 
-	def merge_peripherals(self):
-
-		# ---------- step 1 : merge identical unnamed peripherals
-
+	def __merge_new_peripherals(self):
 		length = len(self.peripherals)
-		i=0
-		while i < (length - 1) :
+		i = 0
+		while i < (length - 1):
 			periph_1 = self.peripherals[i]
 			i += 1
 
-			if periph_1.name is not None: # peripheral already has a name
+			if periph_1.name is not None:  # peripheral already named
 				continue
 
-			j = i # begin at next peripheral
-			while j < length :
+			j = i  # begin at next peripheral
+			while j < length:
 				periph_2 = self.peripherals[j]
-				if (periph_2.name is not None) or (periph_1 is periph_2) :
+				if periph_2.name is not None :  # peripheral already named
 					j += 1
 					continue
 
-				if periph_1.compatible(periph_2) : # registers, fields are the same.
-					if periph_1.brief != periph_2.brief :
+				if periph_1.mapping_equivalent_to(periph_2):  # registers, fields are the same.
+					if periph_1.brief != periph_2.brief:
 						logger.warning(f"peripherals {repr(periph_1.instances)} and {repr(periph_2.instances)}"
 						               f" don't have the same description, despite being identical :"
 						               f" {periph_1.brief}, {periph_2.brief}")
@@ -87,28 +84,29 @@ class Group :
 					self.peripherals.pop(j)
 					length -= 1
 
-				else :
+				else:
 					j += 1
 
-		# ---------- step 2 : assign the peripheral name.
+
+	def __identify_unnamed(self):
+
 
 		new_peripherals = [p for p in self.peripherals if p.name is None]
-		old_peripherals = [p for p in self.peripherals if p.name is not None]
 		unnamed = [p for p in new_peripherals]
 
 		# special cases, that require a particular function to determine the name
 		if self.name_helper is not None:
-			for p in unnamed :
+			for p in unnamed:
 				self.name_helper(p)
-			unnamed = [p for p in unnamed if p.name is None] #update the 'unnamed' list
+			unnamed = [p for p in unnamed if p.name is None]  # update the 'unnamed' list
 
 		# if there is only 1 peripheral in the group, the peripheral shall take the name of the group (if no exception)
 		if len(unnamed) == 1:
 			unnamed[0].name = self.name
 			unnamed.clear()
 
-		for periph in unnamed :
-			if len(periph.instances) == 1 :
+		for periph in unnamed:
+			if len(periph.instances) == 1:
 				logger.info(f"name unspecified for single-instance peripheral {periph.instances[0]}"
 				            f" in group {self.name}, where multiple peripheral are left unnamed."
 				            f" instance name chosen as peripheral class name.")
@@ -118,19 +116,31 @@ class Group :
 
 		# if there is still unnamed peripherals in the group, their name cannot be chosen.
 		#  A name helper must be created for them
-		if len(unnamed) != 0 :
+		if len(unnamed) != 0:
 			logger.error(f"Peripherals {str(list(p.brief for p in list(unnamed)))}"
 			             f" for chip {repr(list(unnamed)[0].chips.chips)}"
 			             f" cannot be named.")
 
 		# verify that there is no two new peripherals with the same name
-		for periph_1 in new_peripherals :
-			for periph_2 in new_peripherals :
-				if (periph_1 is not periph_2) and (periph_1.name == periph_2.name) :
-					logger.error(f"two peripherals fo the name {periph_1.name} :\n"
+		for periph_1 in new_peripherals:
+			for periph_2 in new_peripherals:
+				if (periph_1 is not periph_2) and (periph_1.name == periph_2.name):
+					logger.error(f"two peripherals for the name {periph_1.name} :\n"
 					             f"{repr(periph_1.instances)} and\n"
 					             f"{repr(periph_2.instances)}")
-					periph_2.name += "_2"
+					periph_2.name = str(periph_2.name) + "_2"
+
+
+	def merge_peripherals(self):
+
+		# ---------- step 1 : merge identical unnamed peripherals
+		self.__merge_new_peripherals()
+
+		# ---------- step 2 : assign the peripheral name.
+
+		new_peripherals = [p for p in self.peripherals if p.name is None]
+		old_peripherals = [p for p in self.peripherals if p.name is not None]
+		self.__identify_unnamed()
 
 		# look for already-defined peripherals with the same name as the new ones
 		for new_p in new_peripherals :

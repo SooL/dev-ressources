@@ -6,7 +6,7 @@ from Jstructure.ChipSet import ChipSet
 from Jstructure.utils import get_node_text
 from Jstructure.Group import Group
 from copy import copy, deepcopy
-from deprecated import deprecated
+# from deprecated import deprecated
 logger = logging.getLogger()
 
 
@@ -102,7 +102,6 @@ class Peripheral:
 					return False
 		return True
 
-	@deprecated
 	def merge_peripheral(self,other : "Peripheral"):
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
@@ -222,7 +221,7 @@ class PeripheralInstance :
 			raise TypeError()
 		return False
 
-@deprecated
+#@deprecated
 def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
 	"""
 	This function takes a finished list of peripherals and will resolve all derivation.

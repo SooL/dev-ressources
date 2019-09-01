@@ -3,8 +3,13 @@ import logging
 
 logger = logging.getLogger()
 
+tim_log: str = ""
+
+def TIM_log():
+	return tim_log
 
 def TIM_create_cleaner(periph : "Peripheral") :
+	global tim_log
 
 	brief_tokens = periph.brief.split()
 
@@ -17,6 +22,14 @@ def TIM_create_cleaner(periph : "Peripheral") :
 		periph.name = "TIM_BASIC"
 	elif "general" in brief_tokens :
 		periph.name = "TIM_GENERAL"
+
+		tim_log += f"{periph.chips} :" \
+		           f" {repr(list(inst.name for inst in periph.instances))} :" \
+		           f" {repr(list(reg.name for reg in periph.registers))}"
+
+		# TODO arbitrary, not safe way to split general purpose timers in 2 categories
+		if int(periph.instances[0].name[3:]) > 8:
+			periph.name += "_2"
 
 	else :
 		logger.error(f"TIM type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
