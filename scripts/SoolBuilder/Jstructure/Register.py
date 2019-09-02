@@ -169,37 +169,37 @@ class Register :
 		:param other: Field to merge
 		:return: True if the field was merged, false otherwise
 		"""
-		if self.can_integrate(other) :
+		if self.can_integrate(other):
 			local_field = list(self.get_fields_by_memory(other.memory_usage()))
 			if len(local_field) > 0:
 				local_field[0].chips.add(other.chips)
 			else:
 				self.fields.append(other)
-				self.fields.sort(key=lambda x : x.offset)
+				self.fields.sort(key=lambda x: x.offset)
 			return True
 		else :
 			return False
 
-	def can_fully_merge(self,other : "Register") -> bool :
+	def can_fully_merge(self, other: "Register") -> bool:
 		"""
 		This function determine if a given register can be fully merged into the current one
 		:param other:
 		:return: True if the full merge is possible
 		"""
 		for f in other.fields :
-			if not self.can_integrate(f) :
+			if not self.can_integrate(f):
 				return False
 		return True
 
-	def merge_as_possible(self,other : "Register") -> T.List[Field]:
+	def merge_as_possible(self, other: "Register") -> T.List[Field]:
 		"""
 		This function will merge as much fields as possible and return the non-merged fields.
 		:param other:
 		:return:
 		"""
 		out = list()
-		for f in other.fields :
-			if not self.merge_field(f) :
+		for f in other.fields:
+			if not self.merge_field(f):
 				out.append(f)
 		return out
 

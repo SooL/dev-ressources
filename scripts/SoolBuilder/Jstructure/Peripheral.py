@@ -183,7 +183,7 @@ class PeripheralMapping:
 			   + str(self.chips)
 		
 	def __eq__(self, other):
-		if isinstance(other,PeripheralMapping):
+		if isinstance(other, PeripheralMapping):
 			positions = self.register_mapping.keys()
 			if set(positions).symmetric_difference(set(other.register_mapping.keys())) != 0:
 				return False
