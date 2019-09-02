@@ -58,3 +58,6 @@ class Field:
 			return (self.offset + self.width) > other.offset
 		else :
 			return (other.offset + other.width) > self.offset
+
+	def memory_usage(self):
+		return set(range(self.offset,self.offset+self.width))
