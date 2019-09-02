@@ -54,9 +54,14 @@ class Peripheral:
 			raise TypeError()
 
 	def __getitem__(self, item) -> Register:
-		if isinstance(item, Register) or isinstance(item,str) :
+		if isinstance(item, Register):
 			for register in self.registers :
 				if item == register :
+					return register
+			raise KeyError()
+		elif isinstance(item,str) :
+			for register in self.registers :
+				if register.name == item :
 					return register
 			raise KeyError()
 		elif isinstance(item,int) :
@@ -120,6 +125,11 @@ class Peripheral:
 		# Merge registers
 		for reg in other :
 			if reg.name in self :
+
+				leftover = self[reg.name].merge_as_possible(reg)
+				if len(leftover) > 0 :
+					logger.debug(f"Skipped merge of {self.name}.{reg.name}'s {str(leftover)}")
+
 				""# TODO self[reg].merge_register(reg)
 			else :
 				self.registers.append(reg)

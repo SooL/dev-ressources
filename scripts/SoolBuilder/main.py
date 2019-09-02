@@ -228,12 +228,11 @@ if __name__ == "__main__" :
 	
 	# Brutal merging. The first peripheral of each group will be used as reference.
 	logger.info("Merging peripherals...")
-
+	refs: T.Dict[str, Peripheral] = dict()
 	for group in group_dict :
 		# if group != "GPIO" :
 		#	continue
 		logger.info(f"\tWorking on group {group}")
-		refs : T.Dict[str,Peripheral] = dict()
 
 		next_periph_indice = 0
 		while len(group_dict[group].peripherals) > next_periph_indice :

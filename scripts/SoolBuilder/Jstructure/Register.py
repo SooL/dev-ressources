@@ -134,6 +134,7 @@ class Register :
 		for f in self.fields :
 			if mem.intersection(f.memory_usage()) != set() :
 				out.add(f)
+		return out
 
 	def can_integrate(self,other: Field) -> bool:
 		"""
