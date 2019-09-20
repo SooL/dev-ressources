@@ -37,7 +37,21 @@ class Peripheral:
 
 		self.fill_from_xml()
 
-	# self.address = int(self.xml_data.find("baseAddress").text,0)
+		# self.address = int(self.xml_data.find("baseAddress").text,0)
+
+	def fill_from_xml(self):
+		# TODO Name ?
+		new_mapping = PeripheralMapping(self, self.chips)
+
+		for xml_reg in self.xml_data.findall("registers/register"):
+			new_register = Register(xml_reg, self.chips)
+			self.registers.append(new_register)
+			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = new_register
+		self.mappings.append(new_mapping)
+
+########################################################################################################################
+#                                                      OPERATORS                                                       #
+########################################################################################################################
 
 	def __repr__(self):
 		return f"{self.name:20s} : {' '.join(sorted(self.chips.chips))}"
@@ -68,23 +82,21 @@ class Peripheral:
 			return self.registers[item]
 		else :
 			raise TypeError()
-		
-	def fill_from_xml(self):
-		# TODO Name ?
-		new_mapping = PeripheralMapping(self, self.chips)
 
-		for xml_reg in self.xml_data.findall("registers/register"):
-			new_register = Register(xml_reg, self.chips)
-			self.registers.append(new_register)
-			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = new_register
-		self.mappings.append(new_mapping)
+########################################################################################################################
+#                                                 INSTANCES MANAGEMENT                                                 #
+########################################################################################################################
 
 	def add_instance(self, instance):
 		self.instances.append(instance)
 
 	def add_instances(self, instances):
 		self.instances.extend(instances)
-	
+
+########################################################################################################################
+#                                                  PERIPHERAL MERGING                                                  #
+########################################################################################################################
+
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
 		Check if the mapping is equivalent between self and other.
@@ -178,8 +190,12 @@ class Peripheral:
 			else:
 				equivalent_instance.chips.add(other.chips)
 				self.chips.add(other_instance.chips)
-		
-		
+
+########################################################################################################################
+#                                                 PERIPHERAL MAPPING                                                 #
+########################################################################################################################
+
+
 class PeripheralMapping:
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
@@ -208,6 +224,10 @@ class PeripheralMapping:
 		else:
 			raise TypeError()
 		return False
+
+########################################################################################################################
+#                                                 PERIPHERAL INSTANCE                                                  #
+########################################################################################################################
 
 
 class PeripheralInstance :

@@ -24,6 +24,8 @@ class Register :
 	def __init__(self,xml_base : ET.Element, chip: ChipSet, default_size : int = 32):
 		"""
 		Build a register representation based upon XML node.
+		extract the name, size and description from the xml node.
+		Also stores the address offset, but it is not relevant when the register
 		Also build all fields.
 		:param xml_base: xml <register> node, extracted from SVD file
 		"""
@@ -31,13 +33,14 @@ class Register :
 		self.xml_data = xml_base
 		
 		self.name = get_node_text(xml_base, "name").strip(None)
-		
+
+# check if displayName is different from name
 		disp_name = get_node_text(xml_base, "displayName").strip(None)
 		if disp_name != self.name :
 			logger.warning(f"Register name and display discrepancy : {self.name} displayed as {disp_name}")
 		
 		self.descr = get_node_text(xml_base,"description")
-		self.offset = int(get_node_text(xml_base,"addressOffset"),0)
+		self.extracted_offset = int(get_node_text(xml_base, "addressOffset"), 0)
 		
 		read_size_value = get_node_text(xml_base,"size")
 		if read_size_value == str() :
@@ -47,37 +50,70 @@ class Register :
 			
 		self.access = get_node_text(xml_base,"access")
 		#self.rst = int(get_node_text(xml_base,"resetValue"),0) #Is a mask
-		
-		self.fields : T.List[Field] = list()
+
 		
 		self.chips : ChipSet = chip
+
+		self.variants : T.List["RegisterVariant"] = list()
+		self.variants.append(RegisterVariant(self, self.chips))
 		
-		for xml_fields in xml_base.findall("fields/field") :
-			self.fields.append(Field(xml_fields, self.chips))
-	
+		for xml_field in xml_base.findall("fields/field") :
+			self.add_field(Field(xml_field, self.chips))
+
+########################################################################################################################
+#                                                      OPERATORS                                                       #
+########################################################################################################################
+
 	def __hash__(self) :
-		return hash((self.name,self.size,tuple(self.fields)))
+		"""
+		builds an hash based on the name and size of the register, and the hashes of all the variants
+		:return: the calculated hash
+		"""
+		return hash((self.name,self.size,tuple(self.variants)))
 	
 	def __repr__(self) :
+		"""
+		the string representation of the register is its name
+		:return: the register name
+		"""
 		return self.name
 	
 	def __getitem__(self, item) :
-		if isinstance(item,Field or isinstance(item,str)) :
-			for field in self.fields :
-				if item == field :
-					return field
+		"""
+		return the field corresponding o the specified value.
+		if the specified value is a string, the returned value id the first field with the specified name.
+		If it is a field, the returned value is the field of this register which is equal to the specified field
+		(identical name, offset and size).
+		:param item: the name of the required field, or an equivalent field
+		:return: the required field, or KeyError if it doesn't exist, or TypeError
+				if the parameter is neither a string or a field.
+		"""
+		if isinstance(item,Field) or isinstance(item,str) :
+			for variant in self.variants :
+				for field in variant.fields :
+					if field == item :
+						return field
 			return KeyError()
-		elif isinstance(item,int) :
-			return self.fields[item]
 		else :
 			raise TypeError()
 		
 	def __eq__(self, other) :
+		"""
+		If the parameter is a register, this function returns True if all the fields are common to both registers.
+		If the parameter is a string, this function returns True if the name of the register is the same
+		as the specified one.
+		:param other: register of string to test
+		:return: True if the register is equal to the specified one (or the name is the specified one),
+				False if different, or TypeError is the type of the parameter is wrong
+		"""
 		if isinstance(other,Register) :
 			if self.name != other.name or self.size != other.size:
 				return False
 			for field in other:
 				if field not in self :
+					return False
+			for field in self:
+				if field not in other :
 					return False
 			return True
 		elif isinstance(other,str):
@@ -89,11 +125,25 @@ class Register :
 #		if isinstance(other,Register) :
 #			return self.offset <= other.offset
 #		raise TypeError()
-	
-	def rebuild_chip_list(self) :
-		self.chips.clear()
-		for field in self :
-			self.chips.merge(field.chips)
+
+########################################################################################################################
+#                                                  FIELDS MANAGEMENT                                                   #
+########################################################################################################################
+
+	def add_field(self, field: Field):
+		for variant in self.variants :
+			if variant.has_room_for(field) :
+				variant.add_field(field)
+				return
+
+		new_variant = RegisterVariant(self, self.chips)
+		new_variant.add_field(field)
+
+		self.variants.append(new_variant)
+
+########################################################################################################################
+#                                                   REGISTER MERGING                                                   #
+########################################################################################################################
 
 	def mapping_equivalent_to(self,other : "Register") -> bool :
 		"""
@@ -117,24 +167,6 @@ class Register :
 				if f_1.overlap(f_2) and f_1 != f_2 :
 					return False
 		return True
-
-	def get_memory_usage(self) -> T.Set[int]:
-		"""
-		This function will return a set of used memory zone. If the set is {0,1,4}
-		it means that bits 0,1 and 4 are used. All others are unused.
-		:return:
-		"""
-		out = set()
-		for field in self.fields :
-			out |= field.memory_usage()
-		return out
-
-	def get_fields_by_memory(self,mem : T.Set[int]) -> T.Set[Field]:
-		out = set()
-		for f in self.fields :
-			if mem.intersection(f.memory_usage()) != set() :
-				out.add(f)
-		return out
 
 	def can_integrate(self,other: Field) -> bool:
 		"""
@@ -204,5 +236,74 @@ class Register :
 				out.append(f)
 		return out
 
+########################################################################################################################
+#                                                 MEMORY USAGE STATUS                                                  #
+########################################################################################################################
+
+	def get_memory_usage(self) -> T.Set[int]:
+		"""
+		This function will return a set of used memory zone. If the set is {0,1,4}
+		it means that bits 0,1 and 4 are used. All others are unused.
+		:return:
+		"""
+		out = set()
+		for field in self.fields :
+			out |= field.memory_usage()
+		return out
+
+	def get_fields_by_memory(self, mem: T.Set[int]) -> T.Set[Field]:
+		out = set()
+		for f in self.fields:
+			if mem.intersection(f.memory_usage()) != set():
+				out.add(f)
+		return out
+
+########################################################################################################################
+#                                                     FINALISATION                                                     #
+########################################################################################################################
+
+	def rebuild_chip_list(self) :
+		self.chips.clear()
+		for field in self :
+			self.chips.merge(field.chips)
+
+
+########################################################################################################################
+#                                                   REGISTER VARIANT                                                   #
+########################################################################################################################
+
+class RegisterVariant :
+
+	def __init__(self, register: Register, chips: ChipSet):
+		self.register = register
+		self.fields: T.List[Field] = list()
+		self.name = None
+		self.chips = chips
+
+	def __contains__(self, item) :
+		if isinstance(item, Field) :
+			if item in self.fields :
+				return True
+		return False
+
+	def __getitem__(self, item):
+		if isinstance(item, Field) or isinstance(item, str):
+			for field in self.fields :
+				if field == item :
+					return field
+
+	def __hash__(self) :
+		return hash(tuple(self.fields))
+
+
+	def has_room_for(self, field: Field):
+		for f in self.fields :
+			if f.overlap(field) :
+				return False
+		return True
+
+	def add_field(self, field: Field):
+		self.fields.append(field)
+		self.chips.add(field.chips)
 
 

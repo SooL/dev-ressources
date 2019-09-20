@@ -27,9 +27,8 @@ def TIM_create_cleaner(periph : "Peripheral") :
 		           f" {repr(list(inst.name for inst in periph.instances))} :" \
 		           f" {repr(list(reg.name for reg in periph.registers))}"
 
-		# TODO arbitrary, not safe way to split general purpose timers in 2 categories
-		if int(periph.instances[0].name[3:]) > 8:
-			periph.name += "_2"
+		# TODO split timers depending on numbers or registers presence
+		periph.name += "_" + periph.instances[0].name[3:]
 
 	else :
 		logger.error(f"TIM type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
