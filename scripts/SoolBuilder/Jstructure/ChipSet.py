@@ -1,4 +1,4 @@
-import string
+from fnmatch import fnmatch
 from typing import List, Set, Union
 
 
@@ -10,6 +10,9 @@ class Chip :
 
 	def __str__(self):
 		return self.name
+
+	def match(self,pattern):
+		return fnmatch(self.name,pattern)
 
 class ChipSet :
 	def __init__(self, chips=None):
@@ -37,3 +40,9 @@ class ChipSet :
 		ret: ChipSet = ChipSet(self.chips)
 		ret.add(other)
 		return ret
+
+	def match(self,pattern):
+		for chip in self.chips :
+			if fnmatch(chip.name,pattern) :
+				return True
+		return False
