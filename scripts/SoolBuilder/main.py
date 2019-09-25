@@ -245,11 +245,13 @@ if __name__ == "__main__" :
 				refs[current_periph.name].merge_peripheral(current_periph)
 				group_dict[group].peripherals.pop(next_periph_indice)
 
-			
-	
-	#grps = StructureMapper.build_groups(full_list)
-	#grps_varied = StructureMapper.compute_peripherals_variances(full_list,grps)
 
+	for name, periph in refs.items() :
+		logger.info(f"Finalizing {name}")
+		periph.finalize()
+
+	# The output variable of this mess is group_dict
+	
 	debilus = report_debilus(group_dict)
 	print(debilus)
 	with open("report_debilus.txt", "w") as out :

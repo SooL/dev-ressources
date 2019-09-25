@@ -5,6 +5,7 @@ import typing as T
 from Jstructure.utils import get_node_text
 from Jstructure.Field import Field
 from Jstructure import ChipSet
+from deprecated import deprecated
 logger = logging.getLogger()
 
 
@@ -34,7 +35,7 @@ class Register :
 		
 		self.name = get_node_text(xml_base, "name").strip(None)
 
-# check if displayName is different from name
+		# check if displayName is different from name
 		disp_name = get_node_text(xml_base, "displayName").strip(None)
 		if disp_name != self.name :
 			logger.warning(f"Register name and display discrepancy : {self.name} displayed as {disp_name}")
@@ -96,7 +97,37 @@ class Register :
 			return KeyError()
 		else :
 			raise TypeError()
-		
+
+	def __iter__(self):
+		"""
+		Will iterate through all fields in all variants of the register.
+		:return:
+		"""
+		self._iter_variant = 0
+		self._iter_field = 0
+		return self
+
+	def __next__(self):
+		"""
+		Will iterate through all fields in all variants of the register.
+		:return: the next field in the list
+		"""
+		out = None
+		if self._iter_variant < len(self.variants) :
+			if self._iter_field < len(self.variants[self._iter_variant].fields) :
+				out = self.variants[self._iter_variant].fields[self._iter_field]
+				self._iter_field += 1
+			elif self._iter_variant < len(self.variants) -1 :
+				self._iter_variant += 1
+				self._iter_field = 0
+				out = self.variants[self._iter_variant].fields[self._iter_field]
+			else :
+				raise StopIteration
+
+			return out
+		else :
+			raise StopIteration
+
 	def __eq__(self, other) :
 		"""
 		If the parameter is a register, this function returns True if all the fields are common to both registers.
@@ -132,7 +163,7 @@ class Register :
 
 	def add_field(self, field: Field):
 		for variant in self.variants :
-			if variant.has_room_for(field) :
+			if field in variant or variant.has_room_for(field):
 				variant.add_field(field)
 				return
 
@@ -152,7 +183,7 @@ class Register :
 		:return:
 		"""
 		if self == other :
-			for field in self.fields :
+			for field in self :
 				if field not in other or field != other[field] :
 					return False
 		else :
@@ -162,8 +193,8 @@ class Register :
 	def compatible(self, other: "Register") -> bool :
 		if self.name != other.name or self.size != other.size:
 			return False
-		for f_1 in self.fields :
-			for f_2 in other.fields :
+		for f_1 in self :
+			for f_2 in other :
 				if f_1.overlap(f_2) and f_1 != f_2 :
 					return False
 		return True
@@ -179,7 +210,7 @@ class Register :
 		:param other: Field that you try to merge
 		:return: Is able to be merged.
 		"""
-		if other in self.fields:
+		if other in self:
 			return True
 
 		other_mem = other.memory_usage()
@@ -196,33 +227,40 @@ class Register :
 		# Check on position, size and name
 		return list(mapped_fields)[0] == other
 
+	@deprecated(reason="self.fields do not exists anymore. Use add_field instead")
 	def merge_field(self,other : Field) -> bool:
 		"""
 		This function will merge if possible the given field within the current register.
 		:param other: Field to merge
 		:return: True if the field was merged, false otherwise
 		"""
-		if self.can_integrate(other):
-			local_field = list(self.get_fields_by_memory(other.memory_usage()))
-			if len(local_field) > 0:
-				local_field[0].chips.add(other.chips)
-			else:
-				self.fields.append(other)
-				self.fields.sort(key=lambda x: x.offset)
-			return True
-		else :
-			return False
+		# Todo Re-do if required
 
+		# if self.can_integrate(other):
+		# 	local_field = list(self.get_fields_by_memory(other.memory_usage()))
+		# 	if len(local_field) > 0:
+		# 		local_field[0].chips.add(other.chips)
+		# 	else:
+		# 		self.fields.append(other)
+		# 		self.fields.sort(key=lambda x: x.offset)
+		# 	return True
+		# else :
+		# 	return False
+
+	@deprecated(reason="By definition, we always can merge by adding variant. Use add_field.")
 	def can_fully_merge(self, other: "Register") -> bool:
 		"""
 		This function determine if a given register can be fully merged into the current one
 		:param other:
 		:return: True if the full merge is possible
 		"""
-		for f in other.fields :
-			if not self.can_integrate(f):
-				return False
-		return True
+		# Todo Redo if required.
+		pass
+
+		# for f in other.fields :
+		# 	if not self.can_integrate(f):
+		# 		return False
+		# return True
 
 	def merge_as_possible(self, other: "Register") -> T.List[Field]:
 		"""
@@ -231,7 +269,7 @@ class Register :
 		:return:
 		"""
 		out = list()
-		for f in other.fields:
+		for f in other:
 			if not self.merge_field(f):
 				out.append(f)
 		return out
@@ -247,13 +285,13 @@ class Register :
 		:return:
 		"""
 		out = set()
-		for field in self.fields :
+		for field in self :
 			out |= field.memory_usage()
 		return out
 
 	def get_fields_by_memory(self, mem: T.Set[int]) -> T.Set[Field]:
 		out = set()
-		for f in self.fields:
+		for f in self:
 			if mem.intersection(f.memory_usage()) != set():
 				out.add(f)
 		return out
@@ -261,11 +299,29 @@ class Register :
 ########################################################################################################################
 #                                                     FINALISATION                                                     #
 ########################################################################################################################
-
+	@deprecated
 	def rebuild_chip_list(self) :
-		self.chips.clear()
-		for field in self :
-			self.chips.merge(field.chips)
+		pass
+		# TODO To be re-done if required
+
+		# self.chips.clear()
+		# for field in self :
+		# 	self.chips.merge(field.chips)
+
+	def finalize(self):
+		"""
+		Function grouping all final cleanup steps for registers.
+		"""
+		# This functions should not contains anything else aside simple functions calls, in order to keep it simple
+
+		self.sort_fields()
+
+	def sort_fields(self):
+		"""
+		Sort all fields in all variants, by offset.
+		"""
+		for var in self.variants:
+			var.sort()
 
 
 ########################################################################################################################
@@ -295,7 +351,6 @@ class RegisterVariant :
 	def __hash__(self) :
 		return hash(tuple(self.fields))
 
-
 	def has_room_for(self, field: Field):
 		for f in self.fields :
 			if f.overlap(field) :
@@ -303,7 +358,18 @@ class RegisterVariant :
 		return True
 
 	def add_field(self, field: Field):
-		self.fields.append(field)
+		"""
+		Add the given field to the current variant. If the field already exist, it is merged.
+		:param field: Field to add
+		"""
+		if field not in self :
+			self.fields.append(field)
+		else :
+			self[field].chips.add(field.chips)
 		self.chips.add(field.chips)
+
+	def sort(self):
+		self.fields = sorted(self.fields)
+
 
 

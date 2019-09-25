@@ -138,11 +138,14 @@ class Peripheral:
 		for reg in other :
 			if reg.name in self :
 
-				leftover = self[reg.name].merge_as_possible(reg)
-				if len(leftover) > 0 :
-					logger.debug(f"Skipped merge of {self.name}.{reg.name}'s {str(leftover)}")
-
+				# leftover = self[reg.name].merge_as_possible(reg)
+				# if len(leftover) > 0 :
+				# 	logger.debug(f"Skipped merge of {self.name}.{reg.name}'s {str(leftover)}")
+				local_register = self[reg.name]
+				for field in reg :
+					local_register.add_field(field)
 				""# TODO self[reg].merge_register(reg)
+
 			else :
 				self.registers.append(reg)
 
@@ -190,6 +193,10 @@ class Peripheral:
 			else:
 				equivalent_instance.chips.add(other.chips)
 				self.chips.add(other_instance.chips)
+
+	def finalize(self):
+		for register in self :
+			register.finalize()
 
 ########################################################################################################################
 #                                                 PERIPHERAL MAPPING                                                 #

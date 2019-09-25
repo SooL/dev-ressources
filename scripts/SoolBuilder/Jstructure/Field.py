@@ -48,9 +48,9 @@ class Field:
 	def __hash__(self):
 		return hash((self.name,self.offset,self.width,self.width))
 	
-	def __le__(self, other):
+	def __lt__(self, other):
 		if isinstance(other,Field) :
-			return self.offset <= other.offset
+			return self.offset < other.offset
 		raise TypeError()
 
 	def overlap(self, other: "Field"):
