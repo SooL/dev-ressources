@@ -150,53 +150,31 @@ if __name__ == "__main__" :
 	full = ChipSeriesManager()
 	full.from_file_path(FileListing)
 
-	csm: T.Set[str] = full  # .select("STM32F07")
-	# csm.remove_chips(csm.select("F1"),"remove")
-
 	periph_list : T.List[Peripheral] = list()
-	full_list : T.Dict[str,T.List[Peripheral]] = dict()
-
 	mapping_stm2svd: T.List[PDSCFile] = list()
-
 	group_dict : T.Dict[str, Group] = dict()
 
-	# To be removed, for test only
-	peripheral_description_list : T.Dict[str,T.Set[str]] = dict()
-
-
 	logger.info("Reading .pdsc files to map STM number to svd...")
-	for pdsc_file in glob.glob(pdsc_path_model) :
+	for pdsc_file in glob.glob(pdsc_path_model):
 		logger.info(f"\tReading {pdsc_file}...")
-		
 		mapping_stm2svd.append(PDSCFile(pdsc_file))
-		
 
+	for svd_file in FileListing:
 
-	for svd_file in FileListing :
-		# svd_file = FileListing[0]
-		
 		root = ET.parse(svd_file).getroot()
 		chip_name = get_node_text(root, "name")
+		local_chipset = ChipSet({Chip(chip_name,svd_file)})
 		logger.info(f"Working on {svd_file}")
 		periph_instances_dict : T.Dict[str, PeripheralInstance] = dict()
 		
 		for svd_periph in root.findall("peripherals/peripheral") :
 			periph = None
 			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
-
-				# create the peripheral, add it to the group
-				# periph = Peripheral(svd_periph, ChipSet({chip_name}))
-				#
-				# if periph.group_name in create_association_table :
-				#	create_association_table[periph.group_name](periph)
-				# else :
-#					create_association_table[None](periph)
-
 				# return the group associated with the name, and creates it if necessary
 				group = Group.get_group(group_dict, get_node_text(svd_periph, "groupName"))
 
 				# create the peripheral, add it to the group
-				periph = Peripheral(svd_periph, ChipSet({chip_name}))
+				periph = Peripheral(svd_periph, copy(local_chipset))
 				group.add_peripheral(periph)
 
 			else :  # peripheral already exists
@@ -205,37 +183,25 @@ if __name__ == "__main__" :
 			# create instance from its name, address and base peripheral
 			inst_name = svd_periph.find("name").text
 			inst_addr = int(svd_periph.find("baseAddress").text, 0)
-			instance = PeripheralInstance(periph, inst_name, inst_addr, ChipSet({chip_name}))
+			instance = PeripheralInstance(periph, inst_name, inst_addr, periph.chips)
 
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
 
-		#resolve_peripheral_derivation(periph_list)
-
-		periph_list = list()
-		for grp_name in group_dict :
-			group_dict[grp_name].merge_peripherals()
-			periph_list.extend(group_dict[grp_name].peripherals)
-
-		full_list[svd_file] = copy(periph_list)
-		periph_list.clear()
-		
-	# Here, you have full_list with a dict : File -> list of peripherals
 	TIM_log() # DEGUB
-
-	cs = StructureMapper.build_chip_set(mapping_stm2svd)
 	
 	# Brutal merging. The first peripheral of each group will be used as reference.
 	logger.info("Merging peripherals...")
 	refs: T.Dict[str, Peripheral] = dict()
-	for group in group_dict :
+	for group in sorted(group_dict.keys()) :
 		# if group != "GPIO" :
-		#	continue
+		# 	continue
 		logger.info(f"\tWorking on group {group}")
-
+		# Todo Cleanup and atomize merge_peripherals.
+		group_dict[group].merge_peripherals()
 		next_periph_indice = 0
-		while len(group_dict[group].peripherals) > next_periph_indice :
+		while len(group_dict[group].peripherals) > next_periph_indice:
 			current_periph = group_dict[group].peripherals[next_periph_indice]
 			if current_periph.name not in refs :
 				refs[current_periph.name] = current_periph
@@ -245,12 +211,11 @@ if __name__ == "__main__" :
 				refs[current_periph.name].merge_peripheral(current_periph)
 				group_dict[group].peripherals.pop(next_periph_indice)
 
-
 	for name, periph in refs.items() :
 		logger.info(f"Finalizing {name}")
 		periph.finalize()
 
-	# The output variable of this mess is group_dict
+	# The output variable of this mess is refs
 
 	debilus = report_debilus(group_dict)
 	print(debilus)

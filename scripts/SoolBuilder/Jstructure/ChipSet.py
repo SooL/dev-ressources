@@ -3,16 +3,16 @@ from typing import List, Set, Union
 
 
 class Chip :
-	def __init__(self, name: str, svd: str, families: List[str]):
+	def __init__(self, name: str, svd: str, families: List[str] = list()):
 		self.name = name
 		self.svd = svd
-		self.families = families
+		self.families : List[str] = families
 
 	def __str__(self):
 		return self.name
 
 	def match(self,pattern):
-		return fnmatch(self.name,pattern)
+		return fnmatch(self.name, pattern)
 
 class ChipSet :
 	def __init__(self, chips=None):
@@ -43,6 +43,6 @@ class ChipSet :
 
 	def match(self,pattern):
 		for chip in self.chips :
-			if fnmatch(chip.name,pattern) :
+			if fnmatch(str(chip), pattern) :
 				return True
 		return False

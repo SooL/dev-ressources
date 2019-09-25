@@ -52,7 +52,7 @@ class Peripheral:
 ########################################################################################################################
 
 	def __repr__(self):
-		return f"{self.name:20s} : {' '.join(sorted(self.chips.chips))}"
+		return f"{self.name:20s} : {str(self.chips)}"
 
 	def __eq__(self, other):
 		if isinstance(other, Peripheral) :
@@ -85,11 +85,18 @@ class Peripheral:
 #                                                 INSTANCES MANAGEMENT                                                 #
 ########################################################################################################################
 
-	def add_instance(self, instance):
+	def add_instance(self, instance : "PeripheralInstance"):
+		self.chips.add(instance.chips)
+		for inst in self.instances :
+			if instance == inst :
+				inst.chips.add(instance.chips)
+				return
 		self.instances.append(instance)
 
+	# Todo merge into add_instance, cf chips.
 	def add_instances(self, instances):
-		self.instances.extend(instances)
+		for inst in instances :
+			self.add_instance(inst)
 
 ########################################################################################################################
 #                                                  PERIPHERAL MERGING                                                  #
@@ -159,7 +166,7 @@ class Peripheral:
 		# If no equivalent mapping is found, we create a new one based on the other one.
 		if equivalent_mapping is None:
 			# copy mapping
-			equivalent_mapping = PeripheralMapping(self, other.chips)
+			equivalent_mapping = PeripheralMapping(self, copy(other.chips))
 			equivalent_mapping.register_mapping = other.mappings[0].register_mapping
 			# change registers references
 			for pos in equivalent_mapping.register_mapping :
@@ -210,7 +217,7 @@ class PeripheralMapping:
 		self.register_mapping: T.Dict[int, Register] = dict()
 	
 	def __repr__(self):
-		return " ".join([f"{self.register_mapping[pos]}{pos}" for pos in self.register_mapping.keys()]) + " : " \
+		return ", ".join([f"{pos:3d}: {self.register_mapping[pos]}" for pos in self.register_mapping.keys()]) + " : " \
 			   + str(self.chips)
 		
 	def __eq__(self, other):

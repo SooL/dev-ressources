@@ -112,9 +112,9 @@ class Group :
 
 		for periph in unnamed:
 			if len(periph.instances) == 1:
-				logger.info(f"name unspecified for single-instance peripheral {periph.instances[0]}"
-				            f" in group {self.name}, where multiple peripheral are left unnamed."
-				            f" instance name chosen as peripheral class name.")
+				logger.info(f"Name unspecified for single-instance peripheral {periph.instances[0]}"
+				            " in group {self.name}, where multiple peripheral are left unnamed."
+				            " instance name chosen as peripheral class name.")
 				periph.name = periph.instances[0].name
 
 		unnamed = [p for p in unnamed if p.name is None]  # update the 'unnamed' list
@@ -130,8 +130,8 @@ class Group :
 		for periph_1 in new_peripherals:
 			for periph_2 in new_peripherals:
 				if (periph_1 is not periph_2) and (periph_1.name == periph_2.name):
-					logger.error(f"two peripherals for the name {periph_1.name} :\n"
-					             f"{repr(periph_1.instances)} and\n"
+					logger.error(f"Two peripherals for the name {periph_1.name} : "
+					             f"{repr(periph_1.instances)} and "
 					             f"{repr(periph_2.instances)}")
 					periph_2.name = str(periph_2.name) + "_2"
 
