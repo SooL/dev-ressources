@@ -53,7 +53,7 @@ def build_groups(svd_to_periphlist :T.Dict[str,T.List[Peripheral]]) -> T.Dict[st
 			if grp not in output :
 				output[grp] = Group(grp)
 				models[grp] = list()
-			#TODO WARNING : JS Peripheral inserted here !!!
+
 			#Compute peripheral variance.
 			for model in models[grp] :
 				if per.mapping_equivalent_to(model) :

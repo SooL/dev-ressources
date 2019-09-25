@@ -26,7 +26,6 @@ class Peripheral:
 			.replace("\n", " ")
 		self.brief = " ".join(brief.split())
 
-
 		self.group: Group = None
 		self.registers: T.List = list()
 		self.chips = chip
@@ -40,7 +39,6 @@ class Peripheral:
 		# self.address = int(self.xml_data.find("baseAddress").text,0)
 
 	def fill_from_xml(self):
-		# TODO Name ?
 		new_mapping = PeripheralMapping(self, self.chips)
 
 		for xml_reg in self.xml_data.findall("registers/register"):

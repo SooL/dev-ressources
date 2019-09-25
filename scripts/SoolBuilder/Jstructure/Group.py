@@ -23,7 +23,14 @@ class Group :
 	}
 
 	@staticmethod
-	def get_group(group_dict, group_name) :
+	def get_group(group_dict : T.Dict[str,"Group"], group_name : str) -> "Group":
+		"""
+		This method will return the given group object if it exists in group dict.
+		Otherwise the group will be created and then returned.
+		:param group_dict: Dict to lookup
+		:param group_name: Group to find
+		:return:
+		"""
 		group_name = group_name.upper()
 		if group_name in Group.name_correction :
 			group_name = Group.name_correction[group_name]
@@ -31,17 +38,16 @@ class Group :
 		if group_name in group_dict :
 			return group_dict[group_name]
 
-		name_helper = create_association_table[group_name] if (group_name in create_association_table) else None
-
-		group = Group(group_name, name_helper)
-
+		group = Group(group_name)
 		group_dict[group_name] = group
 		return group
 
-	def __init__(self, name, name_helper: callable = None):
+	#def __init__(self, name, name_helper: callable = None):
+	def __init__(self, name : str):
+		name = name.upper()
 		self.name = name if (name not in Group.name_correction) else Group.name_correction[name]
 		self.peripherals: T.List[Peripheral] = list()
-		self.name_helper = name_helper
+		self.name_helper = create_association_table[self.name] if self.name in create_association_table else None
 
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
@@ -89,7 +95,6 @@ class Group :
 
 
 	def __identify_unnamed(self):
-
 
 		new_peripherals = [p for p in self.peripherals if p.name is None]
 		unnamed = [p for p in new_peripherals]

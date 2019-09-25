@@ -33,6 +33,7 @@ def TIM_create_cleaner(periph : "Peripheral") :
 	else :
 		logger.error(f"TIM type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
 		periph.name = "TIM_GENERIC"
+		periph.name += "_" + periph.instances[0].name[3:]
 	pass
 
 def HRTIM_create_cleaner(periph: "Peripheral") :

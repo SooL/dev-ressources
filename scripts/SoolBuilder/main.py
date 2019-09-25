@@ -251,7 +251,7 @@ if __name__ == "__main__" :
 		periph.finalize()
 
 	# The output variable of this mess is group_dict
-	
+
 	debilus = report_debilus(group_dict)
 	print(debilus)
 	with open("report_debilus.txt", "w") as out :
