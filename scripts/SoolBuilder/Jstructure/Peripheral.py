@@ -200,6 +200,7 @@ class Peripheral:
 				self.chips.add(other_instance.chips)
 
 	def finalize(self):
+		self.instances = sorted(self.instances,key=lambda x : (x.name,len(x.chips.chips),x.address))
 		for register in self :
 			register.finalize()
 
@@ -223,10 +224,10 @@ class PeripheralMapping:
 	def __eq__(self, other):
 		if isinstance(other, PeripheralMapping):
 			positions = self.register_mapping.keys()
-			if set(positions).symmetric_difference(set(other.register_mapping.keys())) != 0:
+			if len(set(positions).symmetric_difference(set(other.register_mapping.keys()))) != 0:
 				return False
 			for pos in positions :
-				if self.register_mapping[pos] is not other.register_mapping[pos]:
+				if self.register_mapping[pos] != other.register_mapping[pos]:
 					return False
 			return True
 		elif isinstance(other, Peripheral):
@@ -250,7 +251,7 @@ class PeripheralInstance :
 		self.chips = chips
 	
 	def __repr__(self):
-		return f"{self.name:20s} {self.chips}"
+		return f"{self.name:20s} @ 0x{self.address:08X} {self.chips}"
 	
 	def __eq__(self, other):
 		if isinstance(other, PeripheralInstance) :
