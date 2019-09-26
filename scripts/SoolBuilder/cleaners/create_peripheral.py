@@ -79,6 +79,8 @@ def I2C_create_cleaner(periph: "Peripheral") :
 	if "TIMINGR" in periph and "TIMEOUTR" in periph and "PECR" in periph:
 		periph.name = "FMPI2C"
 
+def GPIO_create_cleaner(periph) :
+	periph.name = "GPIO"
 # For a given group, provide a proper cleaner function. None is the default one.
 create_association_table : T.Dict[str,T.Callable] = {
 	"TIM"       : TIM_create_cleaner,
@@ -87,5 +89,6 @@ create_association_table : T.Dict[str,T.Callable] = {
 	"ETHERNET"  : ETHERNET_create_cleaner,
 	"ADC"       : ADC_create_cleaner,
 	"I2C"       : I2C_create_cleaner,
+	"Toto"		: GPIO_create_cleaner,
 	None        : DEFAULT_create_cleaner
 }
