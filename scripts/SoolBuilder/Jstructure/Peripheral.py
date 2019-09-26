@@ -52,7 +52,7 @@ class Peripheral:
 ########################################################################################################################
 
 	def __repr__(self):
-		return f"{self.name:20s} : {str(self.chips)}"
+		return f"{str(self.name):20s} : {str(self.chips)}"
 
 	def __eq__(self, other):
 		if isinstance(other, Peripheral) :

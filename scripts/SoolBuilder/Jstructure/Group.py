@@ -93,7 +93,6 @@ class Group :
 				else:
 					j += 1
 
-
 	def __identify_unnamed(self):
 
 		new_peripherals = [p for p in self.peripherals if p.name is None]
@@ -104,6 +103,8 @@ class Group :
 			for p in unnamed:
 				self.name_helper(p)
 			unnamed = [p for p in unnamed if p.name is None]  # update the 'unnamed' list
+			#if len(unnamed) == 0 :
+			#	return
 
 		# if there is only 1 peripheral in the group, the peripheral shall take the name of the group (if no exception)
 		if len(unnamed) == 1:
@@ -113,7 +114,7 @@ class Group :
 		for periph in unnamed:
 			if len(periph.instances) == 1:
 				logger.info(f"Name unspecified for single-instance peripheral {periph.instances[0]}"
-				            " in group {self.name}, where multiple peripheral are left unnamed."
+				            f" in group {self.name}, where multiple peripheral are left unnamed."
 				            " instance name chosen as peripheral class name.")
 				periph.name = periph.instances[0].name
 
@@ -127,6 +128,7 @@ class Group :
 			             f" cannot be named.")
 
 		# verify that there is no two new peripherals with the same name
+
 		for periph_1 in new_peripherals:
 			for periph_2 in new_peripherals:
 				if (periph_1 is not periph_2) and (periph_1.name == periph_2.name):
@@ -142,12 +144,13 @@ class Group :
 		self.__merge_new_peripherals()
 
 		# ---------- step 2 : assign the peripheral name.
-
+		# Store the new and already named peripherals beforehand.
 		new_peripherals = [p for p in self.peripherals if p.name is None]
 		old_peripherals = [p for p in self.peripherals if p.name is not None]
 		self.__identify_unnamed()
+		# After that, we will be able to handle all new_peripherals which should now have a proper name.
 
-		# look for already-defined peripherals with the same name as the new ones
+		# Look for already-defined peripherals with the same name as the new ones
 		for new_p in new_peripherals :
 			for old_p in old_peripherals :
 				if new_p.name == old_p.name :
@@ -159,7 +162,7 @@ class Group :
 					while i >= 0 and self.peripherals[i] is not new_p :
 						i = self.peripherals.index(new_p, i+1)
 					if i < 0 :
-						raise IndexError(f"peripheral {new_p} is not in the group {self}")
+						raise IndexError(f"Peripheral {new_p} is not in the group {self}")
 					self.peripherals.pop(i)
 
 
