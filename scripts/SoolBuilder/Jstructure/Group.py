@@ -68,7 +68,7 @@ class Group :
 		length = len(self.peripherals)
 		i = 0
 		while i < (length - 1):
-			periph_1 = self.peripherals[i]
+			periph_1 : Peripheral = self.peripherals[i]
 			i += 1
 
 			if periph_1.name is not None:  # peripheral already named
@@ -76,7 +76,7 @@ class Group :
 
 			j = i  # begin at next peripheral
 			while j < length:
-				periph_2 = self.peripherals[j]
+				periph_2 : Peripheral = self.peripherals[j]
 				if periph_2.name is not None :  # peripheral already named
 					j += 1
 					continue
@@ -87,6 +87,12 @@ class Group :
 						               f" don't have the same description, despite being identical :"
 						               f" {periph_1.brief}, {periph_2.brief}")
 					periph_1.add_instances(periph_2.instances)
+					self.peripherals.pop(j)
+					length -= 1
+
+				# If only one mapping each and mapping compatibles
+				elif len(periph_1.mappings) == 1 and len(periph_2.mappings) == 1 and periph_1.compatible(periph_2) :
+					periph_1.merge_peripheral(periph_2)
 					self.peripherals.pop(j)
 					length -= 1
 
@@ -136,6 +142,7 @@ class Group :
 					             f"{repr(periph_1.instances)} and "
 					             f"{repr(periph_2.instances)}")
 					periph_2.name = str(periph_2.name) + "_2"
+
 
 
 	def merge_peripherals(self):
