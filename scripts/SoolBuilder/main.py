@@ -169,8 +169,12 @@ if __name__ == "__main__" :
 		
 		for svd_periph in root.findall("peripherals/peripheral") :
 			periph = None
+
 			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
 				# return the group associated with the name, and creates it if necessary
+				if get_node_text(svd_periph, "groupName").upper() != "GPIO" :
+					continue
+
 				group = Group.get_group(group_dict, get_node_text(svd_periph, "groupName"))
 
 				# create the peripheral, add it to the group
@@ -178,7 +182,10 @@ if __name__ == "__main__" :
 				group.add_peripheral(periph)
 
 			else :  # peripheral already exists
-				periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
+				if svd_periph.attrib["derivedFrom"] in periph_instances_dict :
+					periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
+				else :
+					continue
 
 			# create instance from its name, address and base peripheral
 			inst_name = svd_periph.find("name").text
@@ -189,6 +196,9 @@ if __name__ == "__main__" :
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
 
+		for grp_name in group_dict :
+			group_dict[grp_name].merge_peripherals()
+
 	TIM_log() # DEGUB
 	
 	# Brutal merging. The first peripheral of each group will be used as reference.
@@ -198,8 +208,6 @@ if __name__ == "__main__" :
 		# if group != "GPIO" :
 		# 	continue
 		logger.info(f"\tWorking on group {group}")
-		# Todo Cleanup and atomize merge_peripherals.
-		group_dict[group].merge_peripherals()
 		next_periph_indice = 0
 		while len(group_dict[group].peripherals) > next_periph_indice:
 			current_periph = group_dict[group].peripherals[next_periph_indice]
