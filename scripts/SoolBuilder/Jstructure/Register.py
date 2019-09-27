@@ -32,7 +32,6 @@ class Register :
 		"""
 
 		self.xml_data = xml_base
-		
 		self.name = get_node_text(xml_base, "name").strip(None)
 
 		# check if displayName is different from name
@@ -52,7 +51,6 @@ class Register :
 		self.access = get_node_text(xml_base,"access")
 		#self.rst = int(get_node_text(xml_base,"resetValue"),0) #Is a mask
 
-		
 		self.chips : ChipSet = chip
 
 		self.variants : T.List["RegisterVariant"] = list()
@@ -122,10 +120,14 @@ class Register :
 				self._iter_field = 0
 				out = self.variants[self._iter_variant].fields[self._iter_field]
 			else :
+				del self._iter_field
+				del self._iter_variant
 				raise StopIteration
 
 			return out
 		else :
+			del self._iter_field
+			del self._iter_variant
 			raise StopIteration
 
 	def __eq__(self, other) :
@@ -137,6 +139,7 @@ class Register :
 		:return: True if the register is equal to the specified one (or the name is the specified one),
 				False if different, or TypeError is the type of the parameter is wrong
 		"""
+		if other is self : return True
 		if isinstance(other,Register) :
 			if self.name != other.name or self.size != other.size:
 				return False
@@ -173,14 +176,24 @@ class Register :
 ########################################################################################################################
 
 	def add_field(self, field: Field):
+		"""
+		Add a field to the register through best effort filling.
+		The variants will be filled up as much as possible before creating a new variant.
+
+		:param field: Field to add
+		:return: None
+		"""
 		for variant in self.variants :
 			if field in variant or variant.has_room_for(field):
 				variant.add_field(field)
+				self.chips.add(field.chips)
+				# if len(field.chips.chips - self.chips.chips) > 0 :
+				# 	logger.warning(f"Chips descriptor discrepancy for field {field} within {self.name}")
 				return
 
 		new_variant = RegisterVariant(self, self.chips)
 		new_variant.add_field(field)
-
+		self.chips.add(field.chips)
 		self.variants.append(new_variant)
 
 ########################################################################################################################
@@ -357,6 +370,9 @@ class RegisterVariant :
 		self.fields: T.List[Field] = list()
 		self.name = None
 		self.chips = chips
+
+	def __repr__(self):
+		return f"{self.register.name} : {str(self.fields)}"
 
 	def __contains__(self, item) :
 		if isinstance(item, Field) :

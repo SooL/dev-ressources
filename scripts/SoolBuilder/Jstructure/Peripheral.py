@@ -168,25 +168,38 @@ class Peripheral:
 		# In this case, we only have to append the chip(s) of the other peripheral.
 		if len(other.mappings) != 1 :
 			logger.error("multiple mappings on new peripheral")
-		for mapping in self.mappings:
-			if mapping == other:
-				equivalent_mapping = mapping
-				break
 
-		# If no equivalent mapping is found, we create a new one based on the other one.
-		if equivalent_mapping is None:
-			# copy mapping
+		mapping_index = 0
+
+		while mapping_index < len(self.mappings):
+			mapping = self.mappings[mapping_index]
+			# If we find a mapping that superset the other one, we merge the other into the current.
+			if mapping.superset(other.mappings[0]) :
+				mapping.chips.add(other.chips)
+				self.chips.add(other.chips)
+				break
+			# If we have a subset, we shall use the other as reference and replace the current one.
+			elif mapping.subset(other.mappings[0]) :
+				equivalent_mapping = other.mappings[0]
+				other.mappings[0].chips.add(mapping.chips)
+				self.mappings.pop(mapping_index)
+				self.mappings.insert(mapping_index,other.mappings[0])
+				#self.mappings[mapping_index] = equivalent_mapping
+				self.chips.add(other.chips)
+				break
+			# If its unrelated
+
+			mapping_index += 1
+		#If no suitable mapping found for merge operation
+		if mapping_index == len(self.mappings) :
 			equivalent_mapping = PeripheralMapping(self, copy(other.chips))
 			equivalent_mapping.register_mapping = other.mappings[0].register_mapping
 			# change registers references
-			for pos in equivalent_mapping.register_mapping :
+			for pos in equivalent_mapping.register_mapping:
 				reg = equivalent_mapping.register_mapping[pos]
 				equivalent_mapping.register_mapping[pos] = self[reg.name]
 
 			self.mappings.append(equivalent_mapping)
-			self.chips.add(other.chips)
-		else:
-			equivalent_mapping.chips.add(other.chips)
 			self.chips.add(other.chips)
 
 		# Same principle with instances
