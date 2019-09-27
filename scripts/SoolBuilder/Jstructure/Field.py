@@ -54,6 +54,12 @@ class Field:
 		raise TypeError()
 
 	def overlap(self, other: "Field"):
+		"""
+		This function test if two fields are overlapping.
+
+		:param other: The field to test again
+		:return: True if there is an overlapping.
+		"""
 		if other.offset > self.offset :
 			return (self.offset + self.width) > other.offset
 		else :

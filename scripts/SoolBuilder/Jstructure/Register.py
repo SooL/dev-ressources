@@ -191,6 +191,17 @@ class Register :
 		return True
 
 	def compatible(self, other: "Register") -> bool :
+		"""
+		Checks if the given register is compatible with the current one.
+		Two register are said compatibles if all fields of the current register are present or could fit within the
+		other one
+
+		This function is not symmetrical. It'll try to fit all **current** register fields within the given other
+		register and not the other way around;
+
+		:param other: The register that we are using as reference.
+		:return: True if the current register cant fit within the other one.
+		"""
 		if self.name != other.name or self.size != other.size:
 			return False
 		for f_1 in self :
