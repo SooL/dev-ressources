@@ -1,6 +1,7 @@
 import typing as T
 
 from Jstructure import Peripheral
+from Jstructure import ChipSet
 import logging
 
 from cleaners.create_peripheral import create_association_table
@@ -49,6 +50,16 @@ class Group :
 		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = create_association_table[self.name] if self.name in create_association_table else None
 
+	@property
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		out = ChipSet()
+		for per in self.peripherals :
+			out.add(per.computed_chips)
+		return out
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################

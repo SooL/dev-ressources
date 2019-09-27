@@ -112,10 +112,6 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 	return out
 			
-		
-
-
-
 if __name__ == "__main__" :
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
 	parser.add_argument("--update-all",
@@ -225,10 +221,10 @@ if __name__ == "__main__" :
 
 	# The output variable of this mess is refs
 
-	debilus = report_debilus(group_dict)
-	print(debilus)
-	with open("report_debilus.txt", "w") as out :
-		out.write(debilus)
+	# debilus = report_debilus(group_dict)
+	# print(debilus)
+	# with open("report_debilus.txt", "w") as out :
+	# 	out.write(debilus)
 		
 	with open(OutputDirectory + "chips.h", "w") as file :
 		with open('license_header.txt', 'r') as license_header :

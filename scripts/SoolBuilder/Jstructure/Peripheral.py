@@ -81,6 +81,16 @@ class Peripheral:
 		else :
 			raise TypeError()
 
+	@property
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		out = ChipSet()
+		for map in self.mappings :
+			out.add(map.computed_chips)
+		return out
 ########################################################################################################################
 #                                                 INSTANCES MANAGEMENT                                                 #
 ########################################################################################################################
@@ -238,6 +248,32 @@ class PeripheralMapping:
 			raise TypeError()
 		return False
 
+	@property
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		out = ChipSet()
+		for key,reg in self.register_mapping.items() :
+			out.add(reg.computed_chips)
+		return out
+
+	def subset(self,other : "PeripheralMapping") -> bool:
+		"""
+		Check if the current mapping is a subset of the given mapping
+		:param other:
+		"""
+		for pos,reg in self.register_mapping.items() :
+			if pos not in other.register_mapping :
+				return False
+			if reg != other.register_mapping[pos] :
+				return False
+		return True
+
+	def superset(self, other: "PeripheralMapping") -> bool:
+		return other.subset(self)
+
 ########################################################################################################################
 #                                                 PERIPHERAL INSTANCE                                                  #
 ########################################################################################################################
@@ -264,30 +300,9 @@ class PeripheralInstance :
 			raise TypeError()
 		return False
 
-#@deprecated
-def resolve_peripheral_derivation(periph_list : T.List[Peripheral]) :
-	"""
-	This function takes a finished list of peripherals and will resolve all derivation.
-	Therefore, a periph with derivation will receive the same structure as the one it derives from
-	and will be considered as complete.
-	
-	It will, however, not affect the memory base address and the name.
-	:param periph_list: A list containing all peripheral to look at. Both references and derivates.
-	"""
-	logger.info("Starting peripheral derivation resolution")
-	name_ref : T.Dict[str,Peripheral] = dict()
-
-	logger.info("\tBuilding reference dictionary")
-	for p in periph_list :
-		name_ref[p.name] = p
-
-	for p in periph_list :
-		if not p.complete :
-
-			ref = name_ref[p.derivation]
-			logger.info(f"\tResolving {p.name} to {ref.name}")
-			p.brief: str = ref.brief
-			p.group: str = ref.group
-			p.registers = ref.registers
-			
-			p.complete = True
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		return self.chips

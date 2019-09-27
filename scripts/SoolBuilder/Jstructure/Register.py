@@ -157,6 +157,17 @@ class Register :
 #			return self.offset <= other.offset
 #		raise TypeError()
 
+	@property
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		out = ChipSet()
+		for var in self.variants :
+			out.add(var.computed_chips)
+		return out
+
 ########################################################################################################################
 #                                                  FIELDS MANAGEMENT                                                   #
 ########################################################################################################################
@@ -368,6 +379,16 @@ class RegisterVariant :
 				return False
 		return True
 
+	@property
+	def computed_chips(self) -> ChipSet:
+		"""
+		Return chipset based upon content
+		:return:
+		"""
+		out = ChipSet()
+		for field in self.fields :
+			out.add(field.chips)
+		return out
 	def add_field(self, field: Field):
 		"""
 		Add the given field to the current variant. If the field already exist, it is merged.
