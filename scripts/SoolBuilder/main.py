@@ -143,9 +143,6 @@ if __name__ == "__main__" :
 
 	FileListing = glob.glob(svd.file_path + "/*.svd")
 
-	full = ChipSeriesManager()
-	full.from_file_path(FileListing)
-
 	periph_list : T.List[Peripheral] = list()
 	mapping_stm2svd: T.List[PDSCFile] = list()
 	group_dict : T.Dict[str, Group] = dict()
@@ -219,6 +216,7 @@ if __name__ == "__main__" :
 		logger.info(f"Finalizing {name}")
 		periph.finalize()
 
+	print("End of process.")
 	# The output variable of this mess is refs
 
 	# debilus = report_debilus(group_dict)
@@ -226,7 +224,7 @@ if __name__ == "__main__" :
 	# with open("report_debilus.txt", "w") as out :
 	# 	out.write(debilus)
 		
-	with open(OutputDirectory + "chips.h", "w") as file :
-		with open('license_header.txt', 'r') as license_header :
-			file.write(license_header.read() + full.output_series_definition())
+	# with open(OutputDirectory + "chips.h", "w") as file :
+	# 	with open('license_header.txt', 'r') as license_header :
+	# 		file.write(license_header.read() + full.output_series_definition())
 

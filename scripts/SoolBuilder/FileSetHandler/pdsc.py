@@ -18,14 +18,15 @@ class PDSCFile :
 		
 		:param filepath: Path to the .pdsc file
 		"""
+		
 		self.file = filepath
-		root : ET.Element = self.cache_and_remove_ns(filepath)
-		
-		self.define_to_chip_mapping : T.Dict[str, T.List[str]] = dict()
-		self.define_to_svd : T.Dict[str, str] = dict()
-		
-		self.process(root)
-		del root
+		self.define_to_chip_mapping: T.Dict[str, T.List[str]] = dict()
+		self.define_to_svd: T.Dict[str, str] = dict()
+
+		if filepath is not None:
+			root : ET.Element = self.cache_and_remove_ns(filepath)
+			self.process(root)
+			del root
 		
 	def cache_and_remove_ns(self, filepath):
 		"""
