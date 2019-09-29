@@ -49,6 +49,6 @@ class ChipSet :
 
 	def match(self,pattern):
 		for chip in self.chips :
-			if fnmatch(str(chip), pattern) :
+			if fnmatch(str(chip), str(pattern)) :
 				return True
 		return False

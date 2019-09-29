@@ -34,6 +34,7 @@ from structure import *
 
 
 from tools import svd_retriever as svd
+from tools import sanity
 import typing as T
 import xml.etree.ElementTree as ET
 
@@ -152,7 +153,7 @@ if __name__ == "__main__" :
 
 	for svd_file in FileListing:
 		handler = SVDFile(svd_file)
-		handler.process(["GPIO"])
+		handler.process()
 		handler.cleanup()
 		svd_list.append(handler)
 
@@ -176,5 +177,6 @@ if __name__ == "__main__" :
 		logger.info(f"Finalizing {name}")
 		group.finalize()
 
+	sanity.report_sanity(output_groups)
 	print("End of process.")
 
