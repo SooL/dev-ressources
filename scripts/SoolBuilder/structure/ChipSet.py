@@ -21,15 +21,18 @@ class ChipSet :
 	def __init__(self, chips=None):
 		if chips is None:
 			chips = set()
-		self.chips: Set[Chip] = chips
+		self.chips: Set[Chip] = set()
+		self.add(chips)
 
 	def __str__(self):
 		return "\t".join(sorted([str(x) for x in self.chips]))
 	
-	def add(self, other: Union[List[Chip], 'ChipSet', Chip]):
+	def add(self, other: Union[List[Chip],Set[Chip], 'ChipSet', Chip]):
 		if isinstance(other, ChipSet) :
 			self.chips.update(other.chips)
 		elif isinstance(other, list) :
+			self.chips.update(other)
+		elif isinstance(other,set) :
 			self.chips.update(other)
 		elif isinstance(other, Chip) :
 			self.chips.add(other)
