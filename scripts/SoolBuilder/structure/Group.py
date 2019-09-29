@@ -60,6 +60,10 @@ class Group :
 		for per in self.peripherals :
 			out.add(per.computed_chips)
 		return out
+
+	def cleanup(self):
+		for p in self.peripherals :
+			p.cleanup()
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################

@@ -91,6 +91,14 @@ class Peripheral:
 		for map in self.mappings :
 			out.add(map.computed_chips)
 		return out
+	
+	def cleanup(self):
+		for m in self.mappings :
+			m.cleanup()
+		try:
+			del self.xml_data
+		except AttributeError:
+			pass
 ########################################################################################################################
 #                                                 INSTANCES MANAGEMENT                                                 #
 ########################################################################################################################
@@ -287,6 +295,9 @@ class PeripheralMapping:
 	def superset(self, other: "PeripheralMapping") -> bool:
 		return other.subset(self)
 
+	def cleanup(self):
+		for p,m in self.register_mapping.items():
+			m.cleanup()
 ########################################################################################################################
 #                                                 PERIPHERAL INSTANCE                                                  #
 ########################################################################################################################

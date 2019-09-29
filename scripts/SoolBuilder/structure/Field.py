@@ -1,5 +1,8 @@
 import xml.etree.ElementTree as ET
 import typing as T
+import logging
+
+logger = logging.getLogger()
 
 from structure import *
 def get_node_text(root : ET.Element, node : str) -> str :
@@ -53,6 +56,12 @@ class Field:
 			return self.offset < other.offset
 		raise TypeError()
 
+	def cleanup(self):
+		try :
+			del self.xml_data
+		except AttributeError :
+			pass
+		
 	def overlap(self, other: "Field"):
 		"""
 		This function test if two fields are overlapping.

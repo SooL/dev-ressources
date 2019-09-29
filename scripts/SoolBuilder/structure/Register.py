@@ -155,10 +155,13 @@ class Register :
 		else:
 			raise TypeError()
 		
-#	def __le__(self, other):
-#		if isinstance(other,Register) :
-#			return self.offset <= other.offset
-#		raise TypeError()
+	def cleanup(self):
+		for v in self.variants :
+			v.cleanup()
+		try:
+			del self.xml_data
+		except AttributeError:
+			pass
 
 	@property
 	def computed_chips(self) -> ChipSet:
@@ -388,6 +391,10 @@ class RegisterVariant :
 
 	def __hash__(self) :
 		return hash(tuple(self.fields))
+
+	def cleanup(self):
+		for f in self.fields :
+			f.cleanup()
 
 	def has_room_for(self, field: Field):
 		for f in self.fields :
