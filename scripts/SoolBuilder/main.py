@@ -26,26 +26,20 @@
 
 import logging
 import glob
-import time
 
 
 import argparse
 import os
-from structure.peripheral import PeripheralInstance
 from structure import *
 
 
 from tools import svd_retriever as svd
-from tools.utils import ChipSeriesManager
-from FileSetHandler.tsp import *
 import typing as T
 import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
-from generators import StructureMapper
 from cleaners.create_peripheral import create_association_table, TIM_log
-from copy import copy
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -92,6 +86,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 #                                                         MAIN                                                         #
 ########################################################################################################################
 
+
 def report_debilus(group_list : T.Dict[str,Group]) :
 	out =""
 	for group in group_list :
@@ -112,7 +107,8 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 					out += f"\t\tIssue : Chip {chip_name} is found {len(lst)} times. Indexes : {str(lst)}\n"
 	
 	return out
-			
+	
+	
 if __name__ == "__main__" :
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
 	parser.add_argument("--update-all",
@@ -156,7 +152,7 @@ if __name__ == "__main__" :
 
 	for svd_file in FileListing:
 		handler = SVDFile(svd_file)
-		handler.process()
+		handler.process(["GPIO"])
 		handler.cleanup()
 		svd_list.append(handler)
 
@@ -174,38 +170,11 @@ if __name__ == "__main__" :
 				output_groups[name].merge_group(data)
 		i += 1
 	del i
-	
-	# Brutal merging. The first peripheral of each group will be used as reference.
-	# logger.info("Merging peripherals...")
-	# refs: T.Dict[str, Peripheral] = dict()
-	# for group in sorted(group_dict.keys()) :
-	# 	# if group != "GPIO" :
-	# 	# 	continue
-	# 	logger.info(f"\tWorking on group {group}")
-	# 	next_periph_indice = 0
-	# 	while len(group_dict[group].peripherals) > next_periph_indice:
-	# 		current_periph = group_dict[group].peripherals[next_periph_indice]
-	# 		if current_periph.name not in refs :
-	# 			refs[current_periph.name] = current_periph
-	# 			next_periph_indice += 1
-	# 			continue
-	# 		else :
-	# 			refs[current_periph.name].merge_peripheral(current_periph)
-	# 			group_dict[group].peripherals.pop(next_periph_indice)
+
 
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")
 		group.finalize()
 
 	print("End of process.")
-	# The output variable of this mess is refs
-
-	# debilus = report_debilus(group_dict)
-	# print(debilus)
-	# with open("report_debilus.txt", "w") as out :
-	# 	out.write(debilus)
-		
-	# with open(OutputDirectory + "chips.h", "w") as file :
-	# 	with open('license_header.txt', 'r') as license_header :
-	# 		file.write(license_header.read() + full.output_series_definition())
 

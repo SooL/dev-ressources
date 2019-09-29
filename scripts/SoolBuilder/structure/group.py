@@ -46,7 +46,6 @@ class Group :
 		group_dict[group_name] = group
 		return group
 
-	#def __init__(self, name, name_helper: callable = None):
 	def __init__(self, name : str):
 		self.name = Group.fix_name(name)
 		self.peripherals: T.List[Peripheral] = list()
