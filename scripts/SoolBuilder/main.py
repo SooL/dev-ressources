@@ -31,7 +31,7 @@ import time
 
 import argparse
 import os
-from structure.Peripheral import PeripheralInstance
+from structure.peripheral import PeripheralInstance
 from structure import *
 
 
@@ -42,6 +42,7 @@ import typing as T
 import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
+from FileSetHandler.svd import SVDFile
 from generators import StructureMapper
 from cleaners.create_peripheral import create_association_table, TIM_log
 from copy import copy
@@ -146,6 +147,7 @@ if __name__ == "__main__" :
 	periph_list : T.List[Peripheral] = list()
 	mapping_stm2svd: T.List[PDSCFile] = list()
 	group_dict : T.Dict[str, Group] = dict()
+	svd_list : T.List[SVDFile] = list()
 
 	logger.info("Reading .pdsc files to map STM number to svd...")
 	for pdsc_file in glob.glob(pdsc_path_model):
@@ -153,68 +155,47 @@ if __name__ == "__main__" :
 		mapping_stm2svd.append(PDSCFile(pdsc_file))
 
 	for svd_file in FileListing:
-
-		root = ET.parse(svd_file).getroot()
-		chip_name = get_node_text(root, "name")
-		local_chipset = ChipSet({Chip(chip_name,svd_file)})
-		logger.info(f"Working on {svd_file}")
-		periph_instances_dict : T.Dict[str, PeripheralInstance] = dict()
-		
-		for svd_periph in root.findall("peripherals/peripheral") :
-			periph = None
-
-			if "derivedFrom" not in svd_periph.attrib :  # new peripheral
-				# return the group associated with the name, and creates it if necessary
-				if get_node_text(svd_periph, "groupName").upper() != "GPIO" :
-					continue
-
-				group = Group.get_group(group_dict, get_node_text(svd_periph, "groupName"))
-
-				# create the peripheral, add it to the group
-				periph = Peripheral(svd_periph, copy(local_chipset))
-				group.add_peripheral(periph)
-
-			else :  # peripheral already exists
-				if svd_periph.attrib["derivedFrom"] in periph_instances_dict :
-					periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
-				else :
-					continue
-
-			# create instance from its name, address and base peripheral
-			inst_name = svd_periph.find("name").text
-			inst_addr = int(svd_periph.find("baseAddress").text, 0)
-			instance = PeripheralInstance(periph, inst_name, inst_addr, periph.chips)
-
-			# add the instance to its peripheral, and to the instances list
-			periph.add_instance(instance)
-			periph_instances_dict[inst_name] = instance
-
-		for grp_name in group_dict :
-			group_dict[grp_name].merge_peripherals()
+		handler = SVDFile(svd_file)
+		handler.process()
+		handler.cleanup()
+		svd_list.append(handler)
 
 	TIM_log() # DEGUB
 	
+	output_groups : T.Dict[str,Group] = dict()
+	
+	i = 1
+	for svd in svd_list :
+		logger.info(f"Final merge {i:2d}/{len(svd_list)} of SVD {svd.file_name} ")
+		for name, data in svd.groups.items() :
+			if name not in output_groups :
+				output_groups[name] = data
+			else:
+				output_groups[name].merge_group(data)
+		i += 1
+	del i
+	
 	# Brutal merging. The first peripheral of each group will be used as reference.
-	logger.info("Merging peripherals...")
-	refs: T.Dict[str, Peripheral] = dict()
-	for group in sorted(group_dict.keys()) :
-		# if group != "GPIO" :
-		# 	continue
-		logger.info(f"\tWorking on group {group}")
-		next_periph_indice = 0
-		while len(group_dict[group].peripherals) > next_periph_indice:
-			current_periph = group_dict[group].peripherals[next_periph_indice]
-			if current_periph.name not in refs :
-				refs[current_periph.name] = current_periph
-				next_periph_indice += 1
-				continue
-			else :
-				refs[current_periph.name].merge_peripheral(current_periph)
-				group_dict[group].peripherals.pop(next_periph_indice)
+	# logger.info("Merging peripherals...")
+	# refs: T.Dict[str, Peripheral] = dict()
+	# for group in sorted(group_dict.keys()) :
+	# 	# if group != "GPIO" :
+	# 	# 	continue
+	# 	logger.info(f"\tWorking on group {group}")
+	# 	next_periph_indice = 0
+	# 	while len(group_dict[group].peripherals) > next_periph_indice:
+	# 		current_periph = group_dict[group].peripherals[next_periph_indice]
+	# 		if current_periph.name not in refs :
+	# 			refs[current_periph.name] = current_periph
+	# 			next_periph_indice += 1
+	# 			continue
+	# 		else :
+	# 			refs[current_periph.name].merge_peripheral(current_periph)
+	# 			group_dict[group].peripherals.pop(next_periph_indice)
 
-	for name, periph in refs.items() :
+	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")
-		periph.finalize()
+		group.finalize()
 
 	print("End of process.")
 	# The output variable of this mess is refs

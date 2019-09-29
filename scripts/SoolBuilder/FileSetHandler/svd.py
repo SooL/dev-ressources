@@ -2,9 +2,9 @@ import logging
 import os
 import typing as T
 import xml.etree.ElementTree as ET
-from structure.ChipSet import ChipSet, Chip
-from structure.Group import Group
-from structure.Peripheral import Peripheral, PeripheralInstance
+from structure.chipset import ChipSet, Chip
+from structure.group import Group
+from structure.peripheral import Peripheral, PeripheralInstance
 from copy import copy
 logger = logging.getLogger()
 
@@ -48,7 +48,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 # 	periph_instances_dict[inst_name] = instance
 #
 # for grp_name in group_dict:
-# 	group_dict[grp_name].merge_peripherals()
+# 	group_dict[grp_name].merge_svd_peripherals()
 
 
 class SVDFile() :
@@ -73,7 +73,7 @@ class SVDFile() :
 		periph_instances_dict : T.Dict[str,PeripheralInstance] = dict()
 		
 		for svd_periph in self.root.findall("peripherals/peripheral"):
-			periph : Peripheral = None
+			#periph : Peripheral = None
 			group_name : str =  get_node_text(svd_periph, "groupName").upper()
 			if "derivedFrom" not in svd_periph.attrib:  # new peripheral
 				# return the group associated with the name, and creates it if necessary
@@ -102,7 +102,7 @@ class SVDFile() :
 			periph_instances_dict[inst_name] = instance
 		
 		for grp_name in self.groups:
-			self.groups[grp_name].merge_peripherals()
+			self.groups[grp_name].merge_svd_peripherals()
 			
 	def cleanup(self):
 		for n, g in self.groups.items() :

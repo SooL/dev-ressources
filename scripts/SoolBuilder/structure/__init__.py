@@ -1,9 +1,7 @@
-from structure.ChipSet import ChipSet, Chip
-from structure.Peripheral import Peripheral
-from structure.Group import Group
-from structure.Register import Register
-from structure.Field import Field
-#import structure.Register
-#import structure.Peripheral
-#import structure.Field
-#import structure.ChipSet
+from structure.chipset import ChipSet, Chip
+from structure.field import Field
+from structure.register import Register
+from structure.peripheral import Peripheral
+from structure.group import Group
+
+

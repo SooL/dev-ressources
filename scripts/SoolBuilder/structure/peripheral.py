@@ -1,10 +1,10 @@
 import xml.etree.ElementTree as ET
 import typing as T
 import logging
-from structure.Register import Register
-from structure.ChipSet import ChipSet
+from structure.register import Register
+from structure.chipset import ChipSet
 from structure.utils import get_node_text
-from structure.Group import Group
+#from structure.group import Group
 from copy import copy, deepcopy
 # from deprecated import deprecated
 logger = logging.getLogger()
@@ -26,7 +26,7 @@ class Peripheral:
 			.replace("\n", " ")
 		self.brief = " ".join(brief.split())
 
-		self.group: Group = None
+		self.group: "Group" = None
 		self.registers: T.List = list()
 		self.chips = chip
 
@@ -141,12 +141,10 @@ class Peripheral:
 						.compatible(self.mappings[0].register_mapping[pos]):
 					return False
 		return True
-
+	
 	def merge_peripheral(self,other : "Peripheral"):
 		"""
 		Will merge another peripheral to this one. Adding instances and mapping.
-		
-		**The other peripheral is supposed to have one mapping and one or more instance.**
 		
 		:param other: The peripheral to merge into this one.
 		:return:
@@ -161,9 +159,6 @@ class Peripheral:
 		for reg in other :
 			if reg.name in self :
 
-				# leftover = self[reg.name].merge_as_possible(reg)
-				# if len(leftover) > 0 :
-				# 	logger.debug(f"Skipped merge of {self.name}.{reg.name}'s {str(leftover)}")
 				local_register = self[reg.name]
 				for field in reg :
 					local_register.add_field(field)
@@ -177,38 +172,49 @@ class Peripheral:
 		if len(other.mappings) != 1 :
 			logger.error("multiple mappings on new peripheral")
 
-		mapping_index = 0
+		for other_mapping in other.mappings :
+			merge_done: bool = False
+			for m in self.mappings :
+				if m.merge_mapping(other_mapping) :
+					self.chips.add(other_mapping.chips)
+					merge_done = True
+					break
+			
+			if not merge_done :
+				self.mappings.append(other_mapping)
+				self.chips.add(other_mapping.chips)
+				
 
-		while mapping_index < len(self.mappings):
-			mapping = self.mappings[mapping_index]
-			# If we find a mapping that superset the other one, we merge the other into the current.
-			if mapping.superset(other.mappings[0]) :
-				mapping.chips.add(other.chips)
-				self.chips.add(other.chips)
-				break
-			# If we have a subset, we shall use the other as reference and replace the current one.
-			elif mapping.subset(other.mappings[0]) :
-				equivalent_mapping = other.mappings[0]
-				other.mappings[0].chips.add(mapping.chips)
-				self.mappings.pop(mapping_index)
-				self.mappings.insert(mapping_index,other.mappings[0])
-				#self.mappings[mapping_index] = equivalent_mapping
-				self.chips.add(other.chips)
-				break
-			# If its unrelated
-
-			mapping_index += 1
-		#If no suitable mapping found for merge operation
-		if mapping_index == len(self.mappings) :
-			equivalent_mapping = PeripheralMapping(self, copy(other.chips))
-			equivalent_mapping.register_mapping = other.mappings[0].register_mapping
-			# change registers references
-			for pos in equivalent_mapping.register_mapping:
-				reg = equivalent_mapping.register_mapping[pos]
-				equivalent_mapping.register_mapping[pos] = self[reg.name]
-
-			self.mappings.append(equivalent_mapping)
-			self.chips.add(other.chips)
+		# while mapping_index < len(self.mappings):
+		# 	mapping = self.mappings[mapping_index]
+		# 	# If we find a mapping that superset the other one, we merge the other into the current.
+		# 	if mapping.superset(other.mappings[0]) :
+		# 		mapping.chips.add(other.chips)
+		# 		self.chips.add(other.chips)
+		# 		break
+		# 	# If we have a subset, we shall use the other as reference and replace the current one.
+		# 	elif mapping.subset(other.mappings[0]) :
+		# 		equivalent_mapping = other.mappings[0]
+		# 		other.mappings[0].chips.add(mapping.chips)
+		# 		self.mappings.pop(mapping_index)
+		# 		self.mappings.insert(mapping_index,other.mappings[0])
+		# 		#self.mappings[mapping_index] = equivalent_mapping
+		# 		self.chips.add(other.chips)
+		# 		break
+		# 	# If its unrelated
+		#
+		# 	mapping_index += 1
+		# #If no suitable mapping found for merge operation
+		# if mapping_index == len(self.mappings) :
+		# 	equivalent_mapping = PeripheralMapping(self, copy(other.chips))
+		# 	equivalent_mapping.register_mapping = other.mappings[0].register_mapping
+		# 	# change registers references
+		# 	for pos in equivalent_mapping.register_mapping:
+		# 		reg = equivalent_mapping.register_mapping[pos]
+		# 		equivalent_mapping.register_mapping[pos] = self[reg.name]
+		#
+		# 	self.mappings.append(equivalent_mapping)
+		# 	self.chips.add(other.chips)
 
 		# Same principle with instances
 		for other_instance in other.instances :
@@ -280,6 +286,20 @@ class PeripheralMapping:
 			out.add(reg.computed_chips)
 		return out
 
+	@property
+	def memory_bit_space(self) -> T.Set[int]:
+		out = set()
+		for addr, reg in self.register_mapping.items() :
+			out.update(range(addr*8,addr*8 + reg.size))
+		return out
+	
+	@property
+	def memory_byte_space(self) -> T.Set[int]:
+		out = set()
+		for addr, reg in self.register_mapping.items() :
+			out.update(range(addr,addr + reg.size/8))
+		return out
+	
 	def subset(self,other : "PeripheralMapping") -> bool:
 		"""
 		Check if the current mapping is a subset of the given mapping
@@ -298,6 +318,35 @@ class PeripheralMapping:
 	def cleanup(self):
 		for p,m in self.register_mapping.items():
 			m.cleanup()
+			
+	def merge_mapping(self, other : "PeripheralMapping") -> bool:
+		"""
+		This function will merge the other mapping into the current one if
+		the other one can fit within the current one. That is either :
+		
+		 - Same register name at same position
+		 - Hole in the current register to be filled by other.
+		
+		This function will not edit anything unless the merge is possible.
+		
+		:param other: mapping to merge to the current one.
+		:return: True if merged ok, false otherwise
+		"""
+		for addr,reg  in other.register_mapping.items() :
+			if addr in self.register_mapping and reg.name != self.register_mapping[addr].name :
+				return False
+		
+		for a, reg in other.register_mapping.items() :
+			if a in self.register_mapping :
+				self.register_mapping[a].merge_register(reg)
+			else :
+				self.register_mapping[a] = reg
+		self.chips.add(other.chips)
+		
+		return True
+		
+		
+		
 ########################################################################################################################
 #                                                 PERIPHERAL INSTANCE                                                  #
 ########################################################################################################################

@@ -1,6 +1,6 @@
 import typing as T
 
-from structure import Peripheral
+from structure.peripheral import Peripheral
 from structure import ChipSet
 import logging
 
@@ -54,6 +54,31 @@ class Group :
 		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = create_association_table[self.name] if self.name in create_association_table else None
 
+	def __str__(self):
+		return self.name
+
+	def __contains__(self, item):
+		if isinstance(item,Peripheral) :
+			for p in self.peripherals :
+				if item is p or item == p :
+					return True
+			return False
+		if isinstance(item,str) :
+			for p in self.peripherals :
+				if item == str(p.name) :
+					return True
+			return False
+		raise TypeError()
+
+	def __getitem__(self, item: str) -> Peripheral:
+		if isinstance(item,str) :
+			for p in self.peripherals :
+				if str(p.name) == item:
+					return p
+			raise KeyError()
+		raise TypeError()
+
+
 	@property
 	def computed_chips(self) -> ChipSet:
 		"""
@@ -68,6 +93,10 @@ class Group :
 	def cleanup(self):
 		for p in self.peripherals :
 			p.cleanup()
+	
+	def finalize(self):
+		for p in self.peripherals :
+			p.finalize()
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################
@@ -128,8 +157,6 @@ class Group :
 			for p in unnamed:
 				self.name_helper(p)
 			unnamed = [p for p in unnamed if p.name is None]  # update the 'unnamed' list
-			#if len(unnamed) == 0 :
-			#	return
 
 		# if there is only 1 peripheral in the group, the peripheral shall take the name of the group (if no exception)
 		if len(unnamed) == 1:
@@ -162,10 +189,11 @@ class Group :
 					             f"{repr(periph_2.instances)}")
 					periph_2.name = str(periph_2.name) + "_2"
 
-
-
-	def merge_peripherals(self):
-
+	def merge_svd_peripherals(self):
+		"""
+		This function will merge all peripherals detected during one SVD analysis
+		It will also perform the naming step
+		"""
 		# ---------- step 1 : merge identical unnamed peripherals
 		self.__merge_new_peripherals()
 
@@ -191,10 +219,23 @@ class Group :
 						raise IndexError(f"Peripheral {new_p} is not in the group {self}")
 					self.peripherals.pop(i)
 
-
-########################################################################################################################
-#                                                    OTHER METHODS                                                     #
-########################################################################################################################
-
-	def __str__(self):
-		return self.name
+	def merge_new_peripheral(self, periph : Peripheral):
+		"""
+		This function will merge the given periph within the current group.
+		:param periph:
+		"""
+		if str(periph.name) not in self :
+			self.peripherals.append(periph)
+		else:
+			ref = self[str(periph.name)]
+			ref.merge_peripheral(periph)
+	
+	def merge_group(self,other : "Group"):
+		if other.name != self.name :
+			logger.error(f"Merging two groups with different names : {other.name} into {self.name}")
+		for p in other.peripherals :
+			self.merge_new_peripheral(p)
+		
+			
+		
+			

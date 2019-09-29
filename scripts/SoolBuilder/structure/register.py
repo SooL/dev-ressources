@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import logging
 import typing as T
 from structure.utils import get_node_text
-from structure.Field import Field
+from structure.field import Field
 from structure import ChipSet
 from deprecated import deprecated
 logger = logging.getLogger()
@@ -265,53 +265,9 @@ class Register :
 		# Check on position, size and name
 		return list(mapped_fields)[0] == other
 
-	@deprecated(reason="self.fields do not exists anymore. Use add_field instead")
-	def merge_field(self,other : Field) -> bool:
-		"""
-		This function will merge if possible the given field within the current register.
-		:param other: Field to merge
-		:return: True if the field was merged, false otherwise
-		"""
-		# Todo Re-do if required
-
-		# if self.can_integrate(other):
-		# 	local_field = list(self.get_fields_by_memory(other.memory_usage()))
-		# 	if len(local_field) > 0:
-		# 		local_field[0].chips.add(other.chips)
-		# 	else:
-		# 		self.fields.append(other)
-		# 		self.fields.sort(key=lambda x: x.offset)
-		# 	return True
-		# else :
-		# 	return False
-
-	@deprecated(reason="By definition, we always can merge by adding variant. Use add_field.")
-	def can_fully_merge(self, other: "Register") -> bool:
-		"""
-		This function determine if a given register can be fully merged into the current one
-		:param other:
-		:return: True if the full merge is possible
-		"""
-		# Todo Redo if required.
-		pass
-
-		# for f in other.fields :
-		# 	if not self.can_integrate(f):
-		# 		return False
-		# return True
-
-	def merge_as_possible(self, other: "Register") -> T.List[Field]:
-		"""
-		This function will merge as much fields as possible and return the non-merged fields.
-		:param other:
-		:return:
-		"""
-		out = list()
-		for f in other:
-			if not self.merge_field(f):
-				out.append(f)
-		return out
-
+	def merge_register(self,other : "Register"):
+		for f in other :
+			self.add_field(f)
 ########################################################################################################################
 #                                                 MEMORY USAGE STATUS                                                  #
 ########################################################################################################################
@@ -337,15 +293,6 @@ class Register :
 ########################################################################################################################
 #                                                     FINALISATION                                                     #
 ########################################################################################################################
-	@deprecated
-	def rebuild_chip_list(self) :
-		pass
-		# TODO To be re-done if required
-
-		# self.chips.clear()
-		# for field in self :
-		# 	self.chips.merge(field.chips)
-
 	def finalize(self):
 		"""
 		Function grouping all final cleanup steps for registers.

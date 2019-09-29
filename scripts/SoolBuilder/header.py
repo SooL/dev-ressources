@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*
 
 import re
-from structure.Peripheral import *
+from structure.peripheral import *
 from tools.msglog import *
 
 REGEX_HRTIM_BDTxUPR = re.compile("BDT[A-Z]UPR")
