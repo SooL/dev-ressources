@@ -290,14 +290,14 @@ class PeripheralMapping:
 	def memory_bit_space(self) -> T.Set[int]:
 		out = set()
 		for addr, reg in self.register_mapping.items() :
-			out.update(range(addr*8,addr*8 + reg.size))
+			out.update(range(addr*8,(addr*8) + reg.size))
 		return out
 	
 	@property
 	def memory_byte_space(self) -> T.Set[int]:
 		out = set()
 		for addr, reg in self.register_mapping.items() :
-			out.update(range(addr,addr + reg.size/8))
+			out.update(range(addr,addr + int(reg.size/8)))
 		return out
 	
 	def subset(self,other : "PeripheralMapping") -> bool:

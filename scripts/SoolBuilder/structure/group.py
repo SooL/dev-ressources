@@ -8,23 +8,21 @@ from cleaners.create_peripheral import create_association_table
 
 logger = logging.getLogger()
 
+name_correction: T.Dict[str, str] = {
+	"TIM1"      : "TIM",
+	"TIMS"      : "TIM",
+	"TIMER"     : "TIM",
+	"USB_OTG"   : "USB",
+	"USB_OTG_FS": "USB",
+	"USB_OTG_HS": "USB"
+}
 
 class Group :
 ########################################################################################################################
 #                                                    GROUP CREATION                                                    #
 ########################################################################################################################
-
 	@staticmethod
 	def fix_name(name : str) -> str:
-		name_correction: T.Dict[str, str] = {
-			"TIM1" : "TIM",
-			"TIMS" : "TIM",
-			"TIMER": "TIM",
-			"USB_OTG": "USB",
-			"USB_OTG_FS": "USB",
-			"USB_OTG_HS": "USB"
-		}
-		
 		if name in name_correction :
 			return name_correction[name]
 		else :
