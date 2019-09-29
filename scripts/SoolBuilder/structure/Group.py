@@ -14,14 +14,21 @@ class Group :
 #                                                    GROUP CREATION                                                    #
 ########################################################################################################################
 
-	name_correction: T.Dict[str, str] = {
-		"TIM1" : "TIM",
-		"TIMS" : "TIM",
-		"TIMER": "TIM",
-		"USB_OTG": "USB",
-		"USB_OTG_FS": "USB",
-		"USB_OTG_HS": "USB"
-	}
+	@staticmethod
+	def fix_name(name : str) -> str:
+		name_correction: T.Dict[str, str] = {
+			"TIM1" : "TIM",
+			"TIMS" : "TIM",
+			"TIMER": "TIM",
+			"USB_OTG": "USB",
+			"USB_OTG_FS": "USB",
+			"USB_OTG_HS": "USB"
+		}
+		
+		if name in name_correction :
+			return name_correction[name]
+		else :
+			return name.upper()
 
 	@staticmethod
 	def get_group(group_dict : T.Dict[str,"Group"], group_name : str) -> "Group":
@@ -32,9 +39,7 @@ class Group :
 		:param group_name: Group to find
 		:return:
 		"""
-		group_name = group_name.upper()
-		if group_name in Group.name_correction :
-			group_name = Group.name_correction[group_name]
+		group_name = Group.fix_name(group_name)
 
 		if group_name in group_dict :
 			return group_dict[group_name]
@@ -45,8 +50,7 @@ class Group :
 
 	#def __init__(self, name, name_helper: callable = None):
 	def __init__(self, name : str):
-		name = name.upper()
-		self.name = name if (name not in Group.name_correction) else Group.name_correction[name]
+		self.name = Group.fix_name(name)
 		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = create_association_table[self.name] if self.name in create_association_table else None
 
