@@ -339,7 +339,7 @@ class PeripheralMapping:
 					if reg.mapping_equivalent_to(local_reg) :
 						local_name = local_reg.name
 						other_name = reg.name
-						new_name = local_name if len(local_name) < len(other_name) else other_name
+						new_name = local_name if len(local_name) <= len(other_name) else other_name
 						logger.warning(f"Fixing register name : same mapping for various names in "
 									   f"{self.reference.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
 						local_reg.name = new_name

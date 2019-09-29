@@ -142,7 +142,7 @@ if __name__ == "__main__" :
 		for chip in args.update_svd :
 			svd.download_and_handle_keil(chip)
 
-	FileListing = glob.glob(svd.file_path + "/*.svd")
+	FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
 
 	periph_list : T.List[Peripheral] = list()
 	mapping_stm2svd: T.List[PDSCFile] = list()
