@@ -2,9 +2,9 @@
 import xml.etree.ElementTree as ET
 import logging
 import typing as T
-from Jstructure.utils import get_node_text
-from Jstructure.Field import Field
-from Jstructure import ChipSet
+from structure.utils import get_node_text
+from structure.Field import Field
+from structure import ChipSet
 from deprecated import deprecated
 logger = logging.getLogger()
 

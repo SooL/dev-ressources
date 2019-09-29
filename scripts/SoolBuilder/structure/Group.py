@@ -1,7 +1,7 @@
 import typing as T
 
-from Jstructure import Peripheral
-from Jstructure import ChipSet
+from structure import Peripheral
+from structure import ChipSet
 import logging
 
 from cleaners.create_peripheral import create_association_table

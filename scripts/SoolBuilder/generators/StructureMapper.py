@@ -1,5 +1,5 @@
 import logging
-from Jstructure import *
+from structure import *
 #import structure as S
 from FileSetHandler.pdsc import PDSCFile as PDSC
 import typing as T

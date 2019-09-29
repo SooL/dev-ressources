@@ -1,10 +1,10 @@
 import xml.etree.ElementTree as ET
 import typing as T
 import logging
-from Jstructure.Register import Register
-from Jstructure.ChipSet import ChipSet
-from Jstructure.utils import get_node_text
-from Jstructure.Group import Group
+from structure.Register import Register
+from structure.ChipSet import ChipSet
+from structure.utils import get_node_text
+from structure.Group import Group
 from copy import copy, deepcopy
 # from deprecated import deprecated
 logger = logging.getLogger()

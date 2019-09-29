@@ -31,8 +31,8 @@ import time
 
 import argparse
 import os
-from Jstructure.Peripheral import PeripheralInstance
-from Jstructure import *
+from structure.Peripheral import PeripheralInstance
+from structure import *
 
 
 from tools import svd_retriever as svd

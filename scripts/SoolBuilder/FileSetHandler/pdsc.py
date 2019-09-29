@@ -1,7 +1,7 @@
 import logging
 import typing as T
 import xml.etree.ElementTree as ET
-#from Jstructure.utils import encoding
+#from structure.utils import encoding
 
 logger = logging.getLogger()
 
