@@ -209,12 +209,9 @@ class Register :
 		:param other:
 		:return:
 		"""
-		if self == other :
-			for field in self :
-				if field not in other or field != other[field] :
-					return False
-		else :
-			return False
+		for field in self :
+			if field not in other or field != other[field] :
+				return False
 		return True
 
 	def compatible(self, other: "Register") -> bool :

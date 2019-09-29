@@ -333,8 +333,19 @@ class PeripheralMapping:
 		:return: True if merged ok, false otherwise
 		"""
 		for addr,reg  in other.register_mapping.items() :
-			if addr in self.register_mapping and reg.name != self.register_mapping[addr].name :
-				return False
+			if addr in self.register_mapping:
+				local_reg = self.register_mapping[addr]
+				if reg.name != local_reg.name :
+					if reg.mapping_equivalent_to(local_reg) :
+						local_name = local_reg.name
+						other_name = reg.name
+						new_name = local_name if len(local_name) < len(other_name) else other_name
+						logger.warning(f"Fixing register name : same mapping for various names in "
+									   f"{self.reference.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
+						local_reg.name = new_name
+						reg.name = new_name
+					else :
+						return False
 		
 		for a, reg in other.register_mapping.items() :
 			if a in self.register_mapping :
