@@ -235,9 +235,8 @@ class Group :
 			self.merge_new_peripheral(p)
 		
 	def cpp_output(self):
-		out = (f"/* File for group {self.name} of SooL library.\n"
-			   f"*  Add some schmexy copyright in here\n"
-			   u"*  Julien FAUCHER and Loic FRANCE (c) 2019 */\n\n")
+		with open("license_header.txt","r") as license_file :
+			out = license_file.read() + "\n\n"
 
 		for peripheral in self.peripherals :
 			out += peripheral.cpp_output()
