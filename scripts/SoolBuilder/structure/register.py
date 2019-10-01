@@ -5,6 +5,7 @@ import typing as T
 from structure.utils import get_node_text
 from structure.field import Field
 from structure import ChipSet
+from structure import default_tabmanager
 from deprecated import deprecated
 logger = logging.getLogger()
 
@@ -305,6 +306,26 @@ class Register :
 		for var in self.variants:
 			var.sort()
 
+	def cpp_output(self) :
+		out = ""
+		default_tabmanager.increment()
+		out += (f"{default_tabmanager}class {self.name}_t : Reg{self.size}_t\n"
+				f"{default_tabmanager}{{\n")
+		if len(self.variants) > 1 :
+			default_tabmanager.increment()
+			out += (f"{default_tabmanager}union\n"
+					f"{default_tabmanager}{{\n")
+			for var in self.variants :
+				out += var.cpp_output() + "\n"
+			out += f"{default_tabmanager}}};\n"
+			default_tabmanager.decrement()
+		else:
+			out +=  self.variants[0].cpp_output(self.name)
+		out += f"{default_tabmanager}}};\n"
+		default_tabmanager.decrement()
+		return out
+
+
 
 ########################################################################################################################
 #                                                   REGISTER VARIANT                                                   #
@@ -356,6 +377,7 @@ class RegisterVariant :
 		for field in self.fields :
 			out.add(field.chips)
 		return out
+
 	def add_field(self, field: Field):
 		"""
 		Add the given field to the current variant. If the field already exist, it is merged.
@@ -369,6 +391,18 @@ class RegisterVariant :
 
 	def sort(self):
 		self.fields = sorted(self.fields)
+
+	def cpp_output(self, register_name : str = str()):
+		default_tabmanager.increment()
+		out = (f"{default_tabmanager}struct {register_name}\n"
+			   f"{default_tabmanager}{{\n")
+		for field in sorted(self.fields,key=lambda x : x.offset, reverse=True):
+			out += field.cpp_output()
+		out += f"{default_tabmanager}}};\n"
+		default_tabmanager.decrement()
+
+		return out
+
 
 
 

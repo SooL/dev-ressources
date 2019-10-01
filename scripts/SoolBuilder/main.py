@@ -153,7 +153,7 @@ if __name__ == "__main__" :
 
 	for svd_file in FileListing:
 		handler = SVDFile(svd_file)
-		handler.process()
+		handler.process(["GPIO"])
 		handler.cleanup()
 		svd_list.append(handler)
 
@@ -178,5 +178,13 @@ if __name__ == "__main__" :
 		group.finalize()
 
 	sanity.report_sanity(output_groups)
+	print("\n"*3)
+	# print(output_groups['GPIO'].peripherals[0].registers[2].cpp_output())
+	# print(output_groups['GPIO'].peripherals[0].mappings[0].cpp_output())
+	print(output_groups['GPIO'].peripherals[0].cpp_output())
+
+	for name, group in output_groups.items():
+		with open(f"out/{name}.h","w") as header :
+			header.write(group.cpp_output())
 	print("End of process.")
 

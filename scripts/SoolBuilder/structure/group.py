@@ -2,6 +2,7 @@ import typing as T
 
 from structure.peripheral import Peripheral
 from structure import ChipSet
+from structure import default_tabmanager
 import logging
 
 from cleaners.create_peripheral import create_association_table
@@ -233,6 +234,15 @@ class Group :
 		for p in other.peripherals :
 			self.merge_new_peripheral(p)
 		
-			
+	def cpp_output(self):
+		out = (f"/* File for group {self.name} of SooL library.\n"
+			   f"*  Add some schmexy copyright in here\n"
+			   u"*  Julien FAUCHER and Loic FRANCE (c) 2019 */\n\n")
+
+		for peripheral in self.peripherals :
+			out += peripheral.cpp_output()
+
+		return out
+
 		
 			

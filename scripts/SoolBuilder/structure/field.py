@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import typing as T
 import logging
-from structure import *
+from structure import ChipSet, default_tabmanager
 
 logger = logging.getLogger()
 
@@ -77,3 +77,9 @@ class Field:
 
 	def memory_usage(self):
 		return set(range(self.offset,self.offset+self.width))
+
+	def cpp_output(self) -> str:
+		default_tabmanager.increment()
+		out =  f"{default_tabmanager}{str(self.name):15s} :{self.width:>3d};\n"
+		default_tabmanager.decrement()
+		return out

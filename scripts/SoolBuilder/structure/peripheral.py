@@ -3,7 +3,7 @@ import typing as T
 import logging
 from structure.register import Register
 from structure.chipset import ChipSet
-from structure.utils import get_node_text
+from structure.utils import get_node_text, default_tabmanager
 
 # Must not be imported (cyclic import issues)
 # from structure.group import Group
@@ -30,7 +30,7 @@ class Peripheral:
 		self.brief = " ".join(brief.split())
 
 		self.group: "Group" = None
-		self.registers: T.List = list()
+		self.registers: T.List[Register] = list()
 		self.chips = chip
 
 		self.variance_id: str = None
@@ -210,6 +210,25 @@ class Peripheral:
 		for register in self :
 			register.finalize()
 
+	def cpp_output(self):
+
+		# default_tabmanager.increment()
+		out =""
+		out += (f"{default_tabmanager}class {self.name}\n"
+				f"{default_tabmanager}{{")
+		out += f"{default_tabmanager + 1}//Registers definition\n\n"
+		for reg in self.registers:
+			out += reg.cpp_output()
+
+		out += f"\n\n{default_tabmanager + 1}//Mappings needs conditions\n\n"
+		for mapping in self.mappings:
+			out += mapping.cpp_output() + "\n"
+
+		out += f"{default_tabmanager}}}"
+		return out
+
+
+
 ########################################################################################################################
 #                                                 PERIPHERAL MAPPING                                                 #
 ########################################################################################################################
@@ -324,7 +343,16 @@ class PeripheralMapping:
 		self.chips.add(other.chips)
 		
 		return True
-		
+
+	def cpp_output(self):
+		out = ""
+		default_tabmanager.increment()
+		for addr in sorted(self.register_mapping.keys()) :
+			reg = self.register_mapping[addr]
+			out += f"{default_tabmanager}{f'{reg.name}_t':20s}\t{reg.name};\n"
+
+		default_tabmanager.decrement()
+		return out
 		
 ########################################################################################################################
 #                                                 PERIPHERAL INSTANCE                                                  #
