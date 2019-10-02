@@ -21,6 +21,14 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class Field:
+	XML_Template : str = 	"""
+							<field>
+							<name>{name}</name>
+							<description>{description}</description>
+							<bitOffset>{offset}</bitOffset>
+							<bitWidth>{width}</bitWidth>
+							</field>
+							"""
 	def __init__(self,xml_base : ET.Element, chip : ChipSet = None):
 		"""
 		Build a field representation based upon XML node.
@@ -80,6 +88,6 @@ class Field:
 
 	def cpp_output(self) -> str:
 		default_tabmanager.increment()
-		out =  f"{default_tabmanager}{str(self.name):15s} :{self.width:>3d};\n"
+		out =  f"{default_tabmanager}{str(self.name if self.name is not None else ''):15s} :{self.width:>3d};\n"
 		default_tabmanager.decrement()
 		return out

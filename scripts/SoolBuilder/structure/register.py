@@ -22,6 +22,8 @@ logger = logging.getLogger()
 """
 
 
+
+
 class Register :
 	def __init__(self,xml_base : ET.Element, chip: ChipSet, default_size : int = 32):
 		"""
@@ -297,6 +299,8 @@ class Register :
 		"""
 		# This functions should not contains anything else aside simple functions calls, in order to keep it simple
 
+		logger.debug(f"Finalizing register {self.name}")
+		self.fill_memory()
 		self.sort_fields()
 
 	def sort_fields(self):
@@ -305,6 +309,10 @@ class Register :
 		"""
 		for var in self.variants:
 			var.sort()
+
+	def fill_memory(self):
+		for var in self.variants:
+			var.fill_memory()
 
 	def cpp_output(self) :
 		out = ""
@@ -324,7 +332,6 @@ class Register :
 		out += f"{default_tabmanager}}};\n"
 		default_tabmanager.decrement()
 		return out
-
 
 
 ########################################################################################################################
@@ -378,6 +385,13 @@ class RegisterVariant :
 			out.add(field.chips)
 		return out
 
+	@property
+	def memory_usage(self) -> T.Set[int] :
+		output = set()
+		for field in self.fields :
+			output |= field.memory_usage()
+		return output
+
 	def add_field(self, field: Field):
 		"""
 		Add the given field to the current variant. If the field already exist, it is merged.
@@ -392,11 +406,44 @@ class RegisterVariant :
 	def sort(self):
 		self.fields = sorted(self.fields)
 
+	def finalize(self):
+		self.fill_memory()
+
+	def add_filler(self, offset : int, length : int):
+		if offset + length > self.register.size :
+			raise ValueError("Adding filler outside register size")
+		xml_equivalent = Field.XML_Template.format(name="",
+												   description="Filler field",
+												   offset=str(offset),
+												   width=str(length))
+		self.add_field(Field(ET.fromstring(xml_equivalent), self.computed_chips))
+
+	def fill_memory(self):
+		memory_holes = sorted(list(set(range(0,self.register.size)) - self.memory_usage))
+		offset = None
+		length = 0
+
+		for hole in memory_holes :
+			if offset is None :
+				offset = hole
+				length = 1
+				continue
+			if hole > offset + length :
+				self.add_filler(offset,length)
+				offset = hole
+				length = 1
+			else :
+				length += 1
+
+		# Required for last element.
+		if offset is not None :
+			self.add_filler(offset, length)
+
 	def cpp_output(self, register_name : str = str()):
 		default_tabmanager.increment()
 		out = (f"{default_tabmanager}struct {register_name}\n"
 			   f"{default_tabmanager}{{\n")
-		for field in sorted(self.fields,key=lambda x : x.offset, reverse=True):
+		for field in sorted(self.fields,key=lambda x : x.offset, reverse=False):
 			out += field.cpp_output()
 		out += f"{default_tabmanager}}};\n"
 		default_tabmanager.decrement()
