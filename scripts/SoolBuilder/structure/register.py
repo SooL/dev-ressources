@@ -35,7 +35,7 @@ class Register :
 		"""
 
 		self.xml_data = xml_base
-		self.name = get_node_text(xml_base, "name").strip(None)
+		self._name = get_node_text(xml_base, "name").strip(None)
 
 		# check if displayName is different from name
 		disp_name = get_node_text(xml_base, "displayName").strip(None)
@@ -55,7 +55,7 @@ class Register :
 		#self.rst = int(get_node_text(xml_base,"resetValue"),0) #Is a mask
 
 		self.chips : ChipSet = chip
-
+		self.name_edited = False;
 		self.variants : T.List["RegisterVariant"] = list()
 		self.variants.append(RegisterVariant(self, self.chips))
 		
@@ -157,7 +157,27 @@ class Register :
 			return self.name == other
 		else:
 			raise TypeError()
-		
+
+	@property
+	def name(self) -> str:
+		return self._name
+
+	@name.setter
+	def name(self,new_name) :
+		if self._name != new_name :
+			self.name_edited = True
+			self._name = new_name
+
+	@property
+	def have_been_edited(self):
+		if self.name_edited :
+			return True
+		for field in self :
+			if field.name_edited :
+				return True
+		return False
+
+
 	def cleanup(self):
 		for v in self.variants :
 			v.cleanup()
@@ -343,7 +363,8 @@ class RegisterVariant :
 	def __init__(self, register: Register, chips: ChipSet):
 		self.register = register
 		self.fields: T.List[Field] = list()
-		self.name = None
+		self._name = None
+		self.name_edited = False
 		self.chips = chips
 
 	def __repr__(self):
@@ -391,6 +412,16 @@ class RegisterVariant :
 		for field in self.fields :
 			output |= field.memory_usage()
 		return output
+
+	@property
+	def name(self) -> str :
+		return self._name
+
+	@name.setter
+	def name(self, new_name) -> str:
+		if new_name != self._name :
+			self.name_edited = True
+			self._name = new_name
 
 	def add_field(self, field: Field):
 		"""

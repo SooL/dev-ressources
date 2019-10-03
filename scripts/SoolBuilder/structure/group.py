@@ -88,6 +88,13 @@ class Group :
 			out.add(per.computed_chips)
 		return out
 
+	@property
+	def have_been_edited(self):
+		for peripheral in self.peripherals :
+			if peripheral.have_been_edited :
+				return True
+		return False
+
 	def cleanup(self):
 		for p in self.peripherals :
 			p.cleanup()

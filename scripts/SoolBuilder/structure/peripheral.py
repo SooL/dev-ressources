@@ -4,7 +4,7 @@ import logging
 from structure.register import Register
 from structure.chipset import ChipSet
 from structure.utils import get_node_text, default_tabmanager
-
+from cleaners.field_name_cleaner import field_association_table
 # Must not be imported (cyclic import issues)
 # from structure.group import Group
 
@@ -94,7 +94,23 @@ class Peripheral:
 		for map in self.mappings :
 			out.add(map.computed_chips)
 		return out
-	
+
+	@property
+	def have_been_edited(self):
+		for reg in self.registers :
+			if reg.have_been_edited :
+				return True
+		return False
+
+	def clean_register_list(self):
+		self.registers.clear()
+		for mapping in self.mappings :
+			for addr, reg in mapping.register_mapping.items() :
+				if reg in self.registers :
+					logger.warning(f"Duplicate register {reg} in peripheral mapping")
+					continue
+				self.registers.append(reg)
+
 	def cleanup(self):
 		for m in self.mappings :
 			m.cleanup()
@@ -161,7 +177,6 @@ class Peripheral:
 		# Merge registers
 		for reg in other:
 			if reg.name in self:
-
 				local_register = self[reg.name]
 				for field in reg:
 					local_register.add_field(field)
@@ -204,6 +219,34 @@ class Peripheral:
 			else:
 				equivalent_instance.chips.add(other.chips)
 				self.chips.add(other_instance.chips)
+
+	def self_merge(self):
+		# Todo merge interne aux mappings REGISTRES AVANT merge mappings entre eux.
+		mapping_index = 0
+		while mapping_index < len(self.mappings):
+			mapping_offset = 1
+
+			while mapping_index + mapping_offset < len(self.mappings):
+				if self.mappings[mapping_index].merge_mapping(self.mappings[mapping_index + mapping_offset]) :
+					self.mappings.pop(mapping_index + mapping_offset)
+					continue
+				else :
+					mapping_offset += 1
+			mapping_index += 1
+
+	def perform_name_rework(self):
+		"""
+		Clean all name_edited flags and perform all name fixing tasks
+		"""
+		for reg in self.registers :
+			reg.name_edited = False
+
+			for variant in reg.variants :
+				variant.name_edited = False
+				for field in variant.fields :
+					field.name_edited = False
+					if reg.name in field_association_table :
+						field_association_table[reg.name](field,reg)
 
 	def finalize(self):
 		self.instances = sorted(self.instances,key=lambda x : (x.name,len(x.chips.chips),x.address))

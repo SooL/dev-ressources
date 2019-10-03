@@ -173,6 +173,19 @@ if __name__ == "__main__" :
 	del i
 
 
+	logger.info("Iterative merging...")
+	for name, group in output_groups.items() :
+		if group.have_been_edited :
+			for periph in group.peripherals :
+				while periph.have_been_edited :
+					logger.info(f"Re-merging {periph.name}")
+					periph.self_merge()
+					periph.clean_register_list()
+					periph.perform_name_rework()
+
+
+
+
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")
 		group.finalize()

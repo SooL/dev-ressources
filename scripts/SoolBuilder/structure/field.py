@@ -35,7 +35,8 @@ class Field:
 		:param xml_base: xml <field> node, extracted from SVD file
 		"""
 		
-		self.name 	= get_node_text(xml_base,"name")
+		self._name 	= get_node_text(xml_base,"name")
+		self.name_edited = False
 		self.descr 	= get_node_text(xml_base,"description")
 		self.offset = int(get_node_text(xml_base,"bitOffset"),0)
 
@@ -64,6 +65,16 @@ class Field:
 		if isinstance(other,Field) :
 			return self.offset < other.offset
 		raise TypeError()
+
+	@property
+	def name(self) -> str:
+		return self._name
+
+	@name.setter
+	def name(self, new_name) -> str:
+		if new_name != self._name:
+			self.name_edited = True
+			self._name = new_name
 
 	def cleanup(self):
 		try :
