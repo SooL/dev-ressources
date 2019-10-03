@@ -313,6 +313,19 @@ class Register :
 ########################################################################################################################
 #                                                     FINALISATION                                                     #
 ########################################################################################################################
+	def self_merge(self):
+		mapping_index = 0
+		while mapping_index < len(self.variants):
+			mapping_offset = 1
+
+			while mapping_index + mapping_offset < len(self.variants):
+				if self.variants[mapping_index] == self.variants[mapping_index + mapping_offset] :
+					self.variants.pop(mapping_index + mapping_offset)
+					continue
+				else :
+					mapping_offset += 1
+			mapping_index += 1
+
 	def finalize(self):
 		"""
 		Function grouping all final cleanup steps for registers.
@@ -384,6 +397,13 @@ class RegisterVariant :
 
 	def __hash__(self) :
 		return hash(tuple(self.fields))
+
+	def __eq__(self, other):
+		if isinstance(other,RegisterVariant) :
+			for field in other.fields :
+				if field not in self :
+					return False
+			return True
 
 	def cleanup(self):
 		for f in self.fields :

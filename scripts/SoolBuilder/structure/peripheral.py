@@ -223,6 +223,9 @@ class Peripheral:
 	def self_merge(self):
 		# Todo merge interne aux mappings REGISTRES AVANT merge mappings entre eux.
 		mapping_index = 0
+		for var in self.mappings :
+			var.simplify_registers()
+
 		while mapping_index < len(self.mappings):
 			mapping_offset = 1
 
@@ -349,7 +352,11 @@ class PeripheralMapping:
 	def cleanup(self):
 		for p,m in self.register_mapping.items():
 			m.cleanup()
-			
+
+	def simplify_registers(self):
+		for addr, reg in self.register_mapping.items() :
+			reg.self_merge()
+
 	def merge_mapping(self, other : "PeripheralMapping") -> bool:
 		"""
 		This function will merge the other mapping into the current one if
