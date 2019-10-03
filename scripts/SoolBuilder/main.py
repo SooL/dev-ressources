@@ -153,7 +153,8 @@ if __name__ == "__main__" :
 
 	for svd_file in FileListing:
 		handler = SVDFile(svd_file)
-		handler.process(["GPIO"])
+		#handler.process(["GPIO"])
+		handler.process()
 		handler.cleanup()
 		svd_list.append(handler)
 
@@ -182,9 +183,6 @@ if __name__ == "__main__" :
 					periph.self_merge()
 					periph.clean_register_list()
 					periph.perform_name_rework()
-
-
-
 
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")

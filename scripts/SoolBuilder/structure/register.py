@@ -25,7 +25,16 @@ logger = logging.getLogger()
 
 
 class Register :
-	def __init__(self,xml_base : ET.Element, chip: ChipSet, default_size : int = 32):
+	XML_Template : str = """<register><name>{name}</name>
+<displayName>{name}</displayName>
+<description>{descr}</description>
+<addressOffset>{offset}</addressOffset>
+<size>{size}</size>
+<access>{access}</access>
+<resetValue>{rst_val}</resetValue></register>
+"""
+	
+	def __init__(self,xml_base : ET.Element, chip: ChipSet, default_size : int = 32, filler : bool = False):
 		"""
 		Build a register representation based upon XML node.
 		extract the name, size and description from the xml node.
@@ -59,8 +68,12 @@ class Register :
 		self.variants : T.List["RegisterVariant"] = list()
 		self.variants.append(RegisterVariant(self, self.chips))
 		
-		for xml_field in xml_base.findall("fields/field") :
-			self.add_field(Field(xml_field, self.chips))
+		self.filler = filler
+		
+		xml_fields = xml_base.findall("fields/field")
+		if xml_fields is not None :
+			for xml_field in xml_fields :
+				self.add_field(Field(xml_field, self.chips))
 
 ########################################################################################################################
 #                                                      OPERATORS                                                       #
@@ -349,6 +362,8 @@ class Register :
 
 	def cpp_output(self) :
 		out = ""
+		if self.filler :
+			return ""
 		default_tabmanager.increment()
 		out += (f"{default_tabmanager}class {self.name}_t : Reg{self.size}_t\n"
 				f"{default_tabmanager}{{\n")

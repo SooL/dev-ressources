@@ -250,11 +250,16 @@ class Peripheral:
 					field.name_edited = False
 					if reg.name in field_association_table :
 						field_association_table[reg.name](field,reg)
-
+	
 	def finalize(self):
 		self.instances = sorted(self.instances,key=lambda x : (x.name,len(x.chips.chips),x.address))
 		for register in self :
 			register.finalize()
+		
+		max_size = max([sorted(list(x.register_mapping.keys()))[-1] for x in self.mappings])
+		
+		for mapping in self.mappings :
+			mapping.fill_to(max_size)
 
 	def cpp_output(self):
 
@@ -270,7 +275,7 @@ class Peripheral:
 		for mapping in self.mappings:
 			out += mapping.cpp_output() + "\n"
 
-		out += f"{default_tabmanager}}}"
+		out += f"{default_tabmanager}}}\n\n"
 		return out
 
 
@@ -399,10 +404,67 @@ class PeripheralMapping:
 		default_tabmanager.increment()
 		for addr in sorted(self.register_mapping.keys()) :
 			reg = self.register_mapping[addr]
-			out += f"{default_tabmanager}{f'{reg.name}_t':20s}\t{reg.name};\n"
+			if reg.filler :
+				out += f"{default_tabmanager}{' ':20s}\t{reg.name};\n"
+			else :
+				out += f"{default_tabmanager}{f'{reg.name}_t':20s}\t{reg.name};\n"
 
 		default_tabmanager.decrement()
 		return out
+	
+	def fill_to(self, address : int):
+		"""
+		Will fill the current mapping with empty registers up to the given address (included) in bytes.
+		:param address:
+		"""
+		holes = sorted(list(set(range(0,address+1)) - self.memory_byte_space))
+		if len(holes) == 0 :
+			return
+		
+		hole_size = 1
+		hole_start = holes[0]
+		
+		for hole in holes[1:] :
+			if hole == hole_start + hole_size :
+				hole_size += 1
+			else :
+				self.add_filler(hole_start,hole_size)
+				hole_start = hole
+				hole_size = 1
+		
+		self.add_filler(hole_start, hole_size)
+		
+		
+		
+	def add_filler(self,offset : int, size : int):
+		computed_sizes :T.List[int] = list()
+		i = 0
+		while size != 0 :
+			if size & 1 :
+				computed_sizes.append(2**i)
+			size >>= 1
+			i += 1
+		computed_sizes.sort(reverse=True)
+		
+		position = offset
+		"""< name > {name} < / name >
+		< displayName > {name} < / displayName >
+		< description > {descr} < / description >
+		< addressOffset > {offset} < / addressOffset >
+		< size > {size} < / size >
+		< access > {access} < / access >
+		< resetValue > {rst_val} < / resetValue >
+		"""
+		for s in computed_sizes :
+			XML = Register.XML_Template.format(name=f"__SOOL_FILLER_{s}",
+											   descr=" ",
+											   offset=position,
+											   size=s,
+											   access="reserved",
+											   rst_val=0)
+			self.register_mapping[position] = Register(ET.fromstring(XML), self.computed_chips,filler=True)
+			position += s
+	
 		
 ########################################################################################################################
 #                                                 PERIPHERAL INSTANCE                                                  #
