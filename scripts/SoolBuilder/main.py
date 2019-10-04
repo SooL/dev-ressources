@@ -121,6 +121,10 @@ if __name__ == "__main__" :
 						dest="update_svd",
 						help="Add a family to the files to be updated.",
 						choices=svd.defined_archives_keil.keys())
+	parser.add_argument("--limit-groups",
+						dest="group_filter",
+						help="groups to regenerate",
+						default=None)
 
 	args = parser.parse_args()
 
@@ -154,7 +158,7 @@ if __name__ == "__main__" :
 	for svd_file in FileListing:
 		handler = SVDFile(svd_file)
 		#handler.process(["GPIO"])
-		handler.process()
+		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
 		handler.cleanup()
 		svd_list.append(handler)
 
