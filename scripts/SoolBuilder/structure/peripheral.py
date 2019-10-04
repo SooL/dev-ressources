@@ -257,7 +257,7 @@ class Peripheral:
 		for register in self :
 			register.finalize()
 		
-		max_size = max([sorted(list(x.register_mapping.keys()))[-1] for x in self.mappings])
+		max_size = max([x.last_byte for x in self.mappings])
 		
 		for mapping in self.mappings :
 			mapping.fill_to(max_size)
@@ -269,13 +269,14 @@ class Peripheral:
 		# Register definition section
 		out =""
 		out += (f"{default_tabmanager}class {self.name}\n"
-				f"{default_tabmanager}{{")
-		default_tabmanager.increment()
-		out += f"{default_tabmanager}//Registers definition\n\n"
+				f"{default_tabmanager}{{\n")
+
+		out += f"{default_tabmanager+1}//Registers definition\n\n"
 		for reg in self.registers:
 			out += reg.cpp_output()
 
 		# Mappings definition section
+		default_tabmanager.increment()
 		out += f"\n\n{default_tabmanager}//Mappings needs conditions\n\n"
 		if len(self.mappings) > 1 :
 			out += (f"{default_tabmanager}union\n"
@@ -373,7 +374,11 @@ class PeripheralMapping:
 		for addr, reg in self.register_mapping.items() :
 			out.update(range(addr,addr + int(reg.size/8)))
 		return out
-	
+
+	@property
+	def last_byte(self) -> int :
+		return sorted(list(self.memory_byte_space))[-1]
+
 	def subset(self,other : "PeripheralMapping") -> bool:
 		"""
 		Check if the current mapping is a subset of the given mapping
@@ -466,7 +471,8 @@ class PeripheralMapping:
 				self.add_filler(hole_start,hole_size)
 				hole_start = hole
 				hole_size = 1
-		
+
+		# If we wish to remove all filling at the end of the peripheral, just comment the following line.
 		self.add_filler(hole_start, hole_size)
 		
 		
