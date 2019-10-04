@@ -128,6 +128,7 @@ class Peripheral:
 			if instance == inst :
 				inst.chips.add(instance.chips)
 				return
+		instance.reference = self
 		self.instances.append(instance)
 
 	# Todo merge into add_instance, cf chips.
