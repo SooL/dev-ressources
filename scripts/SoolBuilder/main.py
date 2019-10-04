@@ -188,11 +188,11 @@ if __name__ == "__main__" :
 		logger.info(f"Finalizing {name}")
 		group.finalize()
 
-	sanity.report_sanity(output_groups)
-	print("\n"*3)
+	# sanity.report_sanity(output_groups)
+	# print("\n"*3)
 	# print(output_groups['GPIO'].peripherals[0].registers[2].cpp_output())
 	# print(output_groups['GPIO'].peripherals[0].mappings[0].cpp_output())
-	print(output_groups['GPIO'].peripherals[0].cpp_output())
+	# print(output_groups['GPIO'].peripherals[0].cpp_output())
 
 	for name, group in output_groups.items():
 		with open(f"out/{name}.h","w") as header :

@@ -136,6 +136,7 @@ class Peripheral:
 		for inst in instances :
 			self.add_instance(inst)
 
+
 ########################################################################################################################
 #                                                  PERIPHERAL MERGING                                                  #
 ########################################################################################################################
@@ -222,7 +223,6 @@ class Peripheral:
 				self.chips.add(other_instance.chips)
 
 	def self_merge(self):
-		# Todo merge interne aux mappings REGISTRES AVANT merge mappings entre eux.
 		mapping_index = 0
 		for var in self.mappings :
 			var.simplify_registers()
@@ -265,21 +265,55 @@ class Peripheral:
 	def cpp_output(self):
 
 		# default_tabmanager.increment()
+
+		# Register definition section
 		out =""
 		out += (f"{default_tabmanager}class {self.name}\n"
 				f"{default_tabmanager}{{")
-		out += f"{default_tabmanager + 1}//Registers definition\n\n"
+		default_tabmanager.increment()
+		out += f"{default_tabmanager}//Registers definition\n\n"
 		for reg in self.registers:
 			out += reg.cpp_output()
 
-		out += f"\n\n{default_tabmanager + 1}//Mappings needs conditions\n\n"
+		# Mappings definition section
+		out += f"\n\n{default_tabmanager}//Mappings needs conditions\n\n"
+		if len(self.mappings) > 1 :
+			out += (f"{default_tabmanager}union\n"
+					f"{default_tabmanager}{{\n")
+			default_tabmanager.increment()
+
 		for mapping in self.mappings:
+			if len(self.mappings) > 1:
+				out += (f"{default_tabmanager}struct\n"
+						f"{default_tabmanager}{{\n")
+				default_tabmanager.increment()
+
 			out += mapping.cpp_output() + "\n"
 
-		out += f"{default_tabmanager}}}\n\n"
+			if len(self.mappings) > 1:
+				default_tabmanager.decrement()
+				out += f"{default_tabmanager}}};\n\n"
+
+		if len(self.mappings) > 1:
+			default_tabmanager.decrement()
+			out += f"{default_tabmanager}}};\n\n"
+
+		default_tabmanager.decrement()
+		out += f"{default_tabmanager}}};\n\n"
+
+		# Instances address declaration
+		for instance in self.instances :
+			out += instance.cpp_output_address()
+
+
+		out += "\n"
+		instance_done : T.Set[str] = set()
+		for instance in self.instances :
+			# The instance declaration is based upon the address macro. Therefore there is no need to output it more than once.
+			if instance.name not in instance_done :
+				out += instance.cpp_output_declaration()
+				instance_done.add(instance.name)
 		return out
-
-
 
 ########################################################################################################################
 #                                                 PERIPHERAL MAPPING                                                 #
@@ -498,3 +532,14 @@ class PeripheralInstance :
 		:return:
 		"""
 		return self.chips
+
+	@property
+	def addr_name(self):
+		return f"{self.name}_BASE_ADDR"
+
+	def cpp_output_address(self):
+		return f"{default_tabmanager}#define {self.addr_name} ((uint32_t)0x{self.address:8X})\n"
+
+	def cpp_output_declaration(self):
+		return (f"{default_tabmanager}volatile class {self.reference.name} * const {self.name} = " 
+				f"reinterpret_cast<class {self.reference.name}* const>({self.addr_name});\n")
