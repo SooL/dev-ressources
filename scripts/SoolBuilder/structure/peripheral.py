@@ -262,7 +262,7 @@ class Peripheral:
 		for mapping in self.mappings :
 			mapping.fill_to(max_size)
 
-	def cpp_output(self):
+	def cpp_output_structure(self):
 
 		# default_tabmanager.increment()
 
@@ -301,8 +301,12 @@ class Peripheral:
 
 		default_tabmanager.decrement()
 		out += f"{default_tabmanager}}};\n\n"
+		
+		return out
 
+	def cpp_output_instances(self):
 		# Instances address declaration
+		out = "\n"
 		for instance in self.instances :
 			out += instance.cpp_output_address()
 
@@ -315,7 +319,7 @@ class Peripheral:
 				out += instance.cpp_output_declaration()
 				instance_done.add(instance.name)
 		return out
-
+		
 ########################################################################################################################
 #                                                 PERIPHERAL MAPPING                                                 #
 ########################################################################################################################

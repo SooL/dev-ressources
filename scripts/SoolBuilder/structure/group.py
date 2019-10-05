@@ -246,7 +246,10 @@ class Group :
 			out = license_file.read() + "\n\n"
 
 		for peripheral in self.peripherals :
-			out += peripheral.cpp_output()
+			out += peripheral.cpp_output_structure()
+
+		for peripheral in self.peripherals :
+			out += peripheral.cpp_output_instances()
 
 		return out
 
