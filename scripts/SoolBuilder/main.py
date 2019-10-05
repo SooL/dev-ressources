@@ -30,6 +30,7 @@ import glob
 
 import argparse
 import os
+import shutil
 from structure import *
 
 
@@ -197,8 +198,11 @@ if __name__ == "__main__" :
 	# print(output_groups['GPIO'].peripherals[0].registers[2].cpp_output())
 	# print(output_groups['GPIO'].peripherals[0].mappings[0].cpp_output())
 	# print(output_groups['GPIO'].peripherals[0].cpp_output())
-
+	if os.path.exists("out/") :
+		shutil.rmtree("out")
+	os.mkdir("out")
 	for name, group in output_groups.items():
+		
 		with open(f"out/{name}.h","w") as header :
 			header.write(group.cpp_output())
 	print("End of process.")
