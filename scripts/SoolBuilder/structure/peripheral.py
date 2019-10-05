@@ -107,7 +107,7 @@ class Peripheral:
 		for mapping in self.mappings :
 			for addr, reg in mapping.register_mapping.items() :
 				if reg in self.registers :
-					logger.warning(f"Duplicate register {reg} in peripheral mapping")
+					#logger.warning(f"Duplicate register {reg} in peripheral mapping")
 					continue
 				self.registers.append(reg)
 

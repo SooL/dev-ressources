@@ -344,8 +344,6 @@ class Register :
 		Function grouping all final cleanup steps for registers.
 		"""
 		# This functions should not contains anything else aside simple functions calls, in order to keep it simple
-
-		logger.debug(f"Finalizing register {self.name}")
 		self.fill_memory()
 		self.sort_fields()
 
