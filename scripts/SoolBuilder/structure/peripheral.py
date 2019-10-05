@@ -204,7 +204,7 @@ class Peripheral:
 				
 		# Same principle with instances
 		for other_instance in other.instances :
-
+			equivalent_instance = None
 			for instance in self.instances:
 				if instance == other_instance:
 					equivalent_instance = instance
