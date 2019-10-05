@@ -126,6 +126,10 @@ if __name__ == "__main__" :
 						dest="group_filter",
 						help="groups to regenerate",
 						default=None)
+	parser.add_argument("-k","--keep-generated",
+						action="store_false",
+						dest="refresh_output",
+						help="Keeps all non-refreshed output files")
 
 	args = parser.parse_args()
 
@@ -194,13 +198,11 @@ if __name__ == "__main__" :
 		group.finalize()
 
 	# sanity.report_sanity(output_groups)
-	# print("\n"*3)
-	# print(output_groups['GPIO'].peripherals[0].registers[2].cpp_output())
-	# print(output_groups['GPIO'].peripherals[0].mappings[0].cpp_output())
-	# print(output_groups['GPIO'].peripherals[0].cpp_output())
-	if os.path.exists("out/") :
-		shutil.rmtree("out")
-	os.mkdir("out")
+	
+	if args.refresh_output :
+		if os.path.exists("out/") :
+			shutil.rmtree("out")
+		os.mkdir("out")
 	for name, group in output_groups.items():
 		
 		with open(f"out/{name}.h","w") as header :
