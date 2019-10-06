@@ -19,6 +19,7 @@ class Chip :
 		return fnmatch(self.name, pattern)
 
 class ChipSet :
+	reference_chips_name_list : Set[str] = set()
 	def __init__(self, chips=None):
 		if chips is None:
 			chips = set()

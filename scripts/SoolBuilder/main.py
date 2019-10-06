@@ -161,8 +161,14 @@ if __name__ == "__main__" :
 		mapping_stm2svd.append(PDSCFile(pdsc_file))
 
 	for svd_file in FileListing:
-		handler = SVDFile(svd_file)
-		#handler.process(["GPIO"])
+		handler = None
+		for pdsc in mapping_stm2svd :
+			if os.path.basename(svd_file) in pdsc.svd_to_define :
+				handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
+				break
+		if handler is None :
+			handler = SVDFile(svd_file)
+			
 		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
 		handler.cleanup()
 		svd_list.append(handler)

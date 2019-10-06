@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from typing import List, Union
 
-from structure import ChipSet
+#from structure import ChipSet
 
 
 def get_node_text(root : ET.Element, node : str) -> str :
@@ -56,7 +56,7 @@ default_tabmanager = TabManager()
 
 
 class DefinesHandler :
-	def __init__(self, chipSet: ChipSet):
+	def __init__(self, chipSet: "ChipSet"):
 		self.chipSet = chipSet
 
 		self.defines: List[str] = list()

@@ -1,6 +1,8 @@
 import logging
 import typing as T
 import xml.etree.ElementTree as ET
+import os
+from structure import ChipSet
 #from structure.utils import encoding
 
 logger = logging.getLogger()
@@ -22,6 +24,7 @@ class PDSCFile :
 		self.file = filepath
 		self.define_to_chip_mapping: T.Dict[str, T.List[str]] = dict()
 		self.define_to_svd: T.Dict[str, str] = dict()
+		self.svd_to_define: T.Dict[str,T.Set[str]] = dict()
 
 		if filepath is not None:
 			root : ET.Element = self.cache_and_remove_ns(filepath)
@@ -72,6 +75,7 @@ class PDSCFile :
 				else :
 					svd_name = svd.attrib["svd"]
 				
+				svd_name = os.path.basename(svd_name)
 				# If the chip define wasn't found, we will try to have it from the chip
 				if define is None :
 					# If nowhere to be found, skip the whole definition
@@ -83,7 +87,7 @@ class PDSCFile :
 					define_name = define.attrib["define"]
 					
 				chip_name = chip.attrib["Dname"]
-				
+				ChipSet.reference_chips_name_list.add(define_name)
 				# Compute the mapping
 				# First : add the chip to the list of defines. Therefore define -> list[chip]
 				if define_name not in self.define_to_chip_mapping :
@@ -96,4 +100,14 @@ class PDSCFile :
 								 f"Replacing {self.define_to_svd[define_name]} by {svd_name}.")
 				self.define_to_svd[define_name] = svd_name
 				
+				if define_name is not None :
+					if svd_name in self.svd_to_define :
+						self.svd_to_define[svd_name].add(define_name)
+					else :
+						self.svd_to_define[svd_name] = {define_name}
+				
 				logger.info(f'\tFound association {define_name:12s} -> {svd_name}')
+
+	def svd_to_chip(self,svd : str):
+		return self.define_to_chip_mapping[self.svd_to_define[svd]]
+		

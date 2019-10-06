@@ -51,17 +51,22 @@ def get_node_text(root : ET.Element, node : str) -> str :
 # 	group_dict[grp_name].merge_svd_peripherals()
 
 
-class SVDFile() :
-	def __init__(self,path : str):
+class SVDFile :
+	def __init__(self,path : str, chips: T.Set[str] = None):
 		path = os.path.abspath(path)
 		self.base_path = os.path.dirname(path)
 		self.file_name = os.path.basename(path)
 		
 		self.root = ET.parse(path).getroot()
 		
-		self.chip : Chip = Chip(get_node_text(self.root, "name"),self.file_name)
-		self.chipset : ChipSet = ChipSet(self.chip)
-		
+		if chips is None :
+			chip : Chip = Chip(get_node_text(self.root, "name"),self.file_name)
+			self.chipset : ChipSet = ChipSet(chip)
+		else :
+			self.chipset = ChipSet()
+			for chip in chips :
+				self.chipset.add(Chip(chip,self.file_name))
+				
 		self.groups : T.Dict[str,Group] = dict()
 		
 	def __repr__(self):
