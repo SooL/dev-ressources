@@ -6,6 +6,7 @@ from structure import default_tabmanager
 import logging
 
 from cleaners.create_peripheral import create_association_table
+from structure.utils import DefinesHandler
 
 logger = logging.getLogger()
 
@@ -17,6 +18,7 @@ name_correction: T.Dict[str, str] = {
 	"USB_OTG_FS": "USB",
 	"USB_OTG_HS": "USB"
 }
+
 
 class Group :
 ########################################################################################################################
@@ -242,16 +244,50 @@ class Group :
 			self.merge_new_peripheral(p)
 		
 	def cpp_output(self):
-		with open("license_header.txt","r") as license_file :
+
+		defines: T.Dict[ChipSet, DefinesHandler] = dict()
+
+		with open("license_header.txt", "r") as license_file :
 			out = license_file.read() + "\n\n"
-
+		tmp = ""
 		for peripheral in self.peripherals :
-			out += peripheral.cpp_output_structure()
+			tmp += peripheral.cpp_output_structure(defines)
 
+		self_chips = self.computed_chips
+
+		if self_chips not in defines :
+			defines[self_chips] = DefinesHandler()
+
+		# add all defines to the group handler
+		for chips in defines :
+			if chips == self_chips : continue
+			defines[self_chips].add_raw(
+				defined=defines[chips].output_defines(chips),
+				undefine=defines[chips].output_undef())
+
+		# add structure definition to the group DefinesHandler
+		defines[self_chips].add_raw(defined=tmp)
+
+		# clear defines dictionary
+		tmp_define_handler = defines[self_chips]
+		defines = dict()
+		defines[self_chips] = tmp_define_handler
+
+		# get instances addresses and declarations
+		tmp = ""
 		for peripheral in self.peripherals :
-			out += peripheral.cpp_output_instances()
+			tmp += peripheral.cpp_output_instances(defines)
 
-		return out
+		# add all defines to the group handler
+		for chips in defines :
+			if chips == self_chips : continue
+			defines[self_chips].add_raw(
+				defined=defines[chips].output_defines(chips),
+				undefine=defines[chips].output_undef())
 
-		
-			
+		# add instances declaration to the group DefinesHandler
+		defines[self_chips].add_raw(defined=tmp)
+
+		return out + defines[self_chips].output_defines(self_chips, use_else=False)
+
+

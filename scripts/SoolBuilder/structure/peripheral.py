@@ -3,7 +3,7 @@ import typing as T
 import logging
 from structure.register import Register
 from structure.chipset import ChipSet
-from structure.utils import get_node_text, default_tabmanager
+from structure.utils import get_node_text, default_tabmanager, DefinesHandler
 from cleaners.field_name_cleaner import field_association_table
 # Must not be imported (cyclic import issues)
 # from structure.group import Group
@@ -262,7 +262,7 @@ class Peripheral:
 		for mapping in self.mappings :
 			mapping.fill_to(max_size)
 
-	def cpp_output_structure(self):
+	def cpp_output_structure(self, defines_dict: T.Dict[ChipSet, DefinesHandler]):
 
 		# default_tabmanager.increment()
 
@@ -304,7 +304,7 @@ class Peripheral:
 		
 		return out
 
-	def cpp_output_instances(self):
+	def cpp_output_instances(self, defines_dict: T.Dict[ChipSet, DefinesHandler]):
 		# Instances address declaration
 		out = "\n"
 		for instance in self.instances :
