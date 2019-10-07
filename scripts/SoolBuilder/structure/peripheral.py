@@ -472,6 +472,7 @@ class PeripheralMapping:
 			else:
 				self.register_mapping[a] = reg
 				self.chips.add(reg.chips)
+				deleted_addr.append(a)
 
 		for addr in deleted_addr :
 			other.register_mapping.pop(addr)

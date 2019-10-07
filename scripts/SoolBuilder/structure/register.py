@@ -463,6 +463,7 @@ class RegisterVariant :
 		"""
 		if field not in self :
 			self.fields.append(field)
+			self.name_edited = True
 		else :
 			self[field].chips.add(field.chips)
 		self.chips.add(field.chips)
