@@ -482,9 +482,9 @@ class PeripheralMapping:
 		for addr in sorted(self.register_mapping.keys()) :
 			reg = self.register_mapping[addr]
 			if reg.filler :
-				out += f"{default_tabmanager}{' ':20s}\t{reg.name};\n"
+				out += f"{default_tabmanager}{' ':20s}\t{f'{reg.name};':25s} // @{addr}\n"
 			else :
-				out += f"{default_tabmanager}{f'{reg.name}_t':20s}\t{reg.name};\n"
+				out += f"{default_tabmanager}{f'{reg.name}_t':20s}\t{f'{reg.name};':25s} // @{addr}\n"
 
 		default_tabmanager.decrement()
 		return out
