@@ -223,22 +223,28 @@ class Peripheral:
 				self.chips.add(other_instance.chips)
 
 	def self_merge(self):
+		"""
+		This function will try to merge all mappings of the current peripheral together in order to clean up and
+		factorize.
+		Mappings and registers will be merged as much as possible.
+		"""
 		mapping_index = 0
-		for var in self.mappings :
+		for var in self.mappings:
 			var.simplify_registers()
 
-		registers_done : T.Dict[str,Register] = dict()
+		# Merge mappings which each others, simplifying them on the fly.
 		while mapping_index < len(self.mappings):
 			mapping_offset = 1
 
 			while mapping_index + mapping_offset < len(self.mappings):
-				if self.mappings[mapping_index].merge_reduce_mapping(self.mappings[mapping_index + mapping_offset]) :
-					if len(self.mappings[mapping_index + mapping_offset].register_mapping.keys()) == 0:
-						self.mappings.pop(mapping_index + mapping_offset)
-						continue
-					else :
-						mapping_offset += 1
-				else :
+				self.mappings[mapping_index].merge_reduce_mapping(self.mappings[mapping_index + mapping_offset])
+
+				# If the two mappings had the same registers (name and address equals) the "other"
+				# mapping might be empty and therefore have to be removed.
+				if len(self.mappings[mapping_index + mapping_offset].register_mapping.keys()) == 0:
+					self.mappings.pop(mapping_index + mapping_offset)
+					continue
+				else:
 					mapping_offset += 1
 			mapping_index += 1
 
@@ -447,30 +453,15 @@ class PeripheralMapping:
 		
 		return True
 
-	def merge_reduce_mapping(self, other: "PeripheralMapping") -> bool:
+	def merge_reduce_mapping(self, other: "PeripheralMapping"):
 		"""
-		This function will merge the other mapping into the current one if
-		the other one can fit within the current one. That is either :
+		This function will merge parts of the other mapping into the current one, exploiting register variants.
+		To be merged, two register have to got the same name and address.
 
+		The merged registers will be removed from the other mapping.
 
 		:param other: mapping to merge to the current one.
-		:return: True if merged ok, false otherwise
 		"""
-		# for addr, reg in other.register_mapping.items():
-		# 	if addr in self.register_mapping:
-		# 		local_reg = self.register_mapping[addr]
-		# 		if reg.name != local_reg.name:
-		# 			if reg.mapping_equivalent_to(local_reg):
-		# 				local_name = local_reg.name
-		# 				other_name = reg.name
-		# 				new_name = local_name if len(local_name) <= len(other_name) else other_name
-		# 				logger.warning(f"Fixing register name : same mapping for various names in "
-		# 							   f"{self.reference.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
-		# 				local_reg.name = new_name
-		# 				reg.name = new_name
-		# 			else:
-		# 				return False
-
 		deleted_addr: T.List[int] = list()
 		for a, reg in other.register_mapping.items():
 			if a in self.register_mapping:
@@ -484,7 +475,6 @@ class PeripheralMapping:
 
 		for addr in deleted_addr :
 			other.register_mapping.pop(addr)
-		return True
 
 	def cpp_output(self):
 		out = ""
