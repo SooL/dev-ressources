@@ -31,7 +31,7 @@ class Peripheral:
 
 		self.group: "Group" = None
 		self.registers: T.List[Register] = list()
-		self.chips = ChipSet(chip.chips)
+		self.chips = chip
 
 		self.variance_id: str = None
 		self.instances: T.List[PeripheralInstance] = list()
@@ -203,7 +203,7 @@ class Peripheral:
 		# If a mapping, equivalent to the one of the other peripheral, is found, we will use it
 		# In this case, we only have to append the chip(s) of the other peripheral.
 		if len(other.mappings) != 1:
-			logger.error("multiple mappings on new peripheral")
+			logger.warning("multiple mappings on new peripheral")
 
 		for other_mapping in other.mappings:
 			merge_done: bool = False
@@ -351,6 +351,17 @@ class Peripheral:
 
 
 class PeripheralMapping:
+	forbidden_fixs : T.Dict[str,T.List[str]] = dict()
+	fixs_done: T.List[T.Tuple[str,str,str]] = list()
+	@staticmethod
+	def forbid_fix(source : str, other : str, bidir = False):
+		if source not in PeripheralMapping.forbidden_fixs :
+			PeripheralMapping.forbidden_fixs[source] = []
+		PeripheralMapping.forbidden_fixs[source].append(other)
+		
+		if bidir :
+			PeripheralMapping.forbid_fix(other,source,False)
+	
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
 		self.name: str = None # the name will be determined when the whole structure is built
@@ -458,6 +469,12 @@ class PeripheralMapping:
 					if reg.mapping_equivalent_to(local_reg) :
 						local_name = local_reg.name
 						other_name = reg.name
+						
+						if local_name in PeripheralMapping.forbidden_fixs :
+							if reg.name in PeripheralMapping.forbidden_fixs[local_name] :
+								return False
+						
+						PeripheralMapping.fixs_done.append((self.reference.name,local_name,other_name))
 						new_name = local_name if len(local_name) <= len(other_name) else other_name
 						logger.warning(f"Fixing register name : same mapping for various names in "
 									   f"{self.reference.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")

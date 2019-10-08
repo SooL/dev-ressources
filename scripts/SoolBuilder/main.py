@@ -203,14 +203,14 @@ if __name__ == "__main__" :
 		logger.info(f"Finalizing {name}")
 		group.finalize()
 
-	# sanity.report_sanity(output_groups)
+	sanity.report_sanity(output_groups)
 	
 	if args.refresh_output :
 		if os.path.exists("out/") :
 			shutil.rmtree("out")
 		os.mkdir("out")
-	for name, group in output_groups.items():
 		
+	for name, group in output_groups.items():
 		with open(f"out/{name}.h","w") as header :
 			header.write(group.cpp_output())
 	print("End of process.")
