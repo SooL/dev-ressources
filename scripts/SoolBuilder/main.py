@@ -42,6 +42,7 @@ import xml.etree.ElementTree as ET
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
 from cleaners.create_peripheral import create_association_table, TIM_log
+from  cleaners import register_forbid_autonamefix
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -154,6 +155,8 @@ if __name__ == "__main__" :
 	mapping_stm2svd: T.List[PDSCFile] = list()
 	group_dict : T.Dict[str, Group] = dict()
 	svd_list : T.List[SVDFile] = list()
+
+	register_forbid_autonamefix.setup()
 
 	logger.info("Reading .pdsc files to map STM number to svd...")
 	for pdsc_file in glob.glob(pdsc_path_model):
