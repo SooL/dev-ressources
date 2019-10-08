@@ -31,7 +31,7 @@ class Peripheral:
 
 		self.group: "Group" = None
 		self.registers: T.List[Register] = list()
-		self.chips = chip
+		self.chips = ChipSet(chip.chips)
 
 		self.variance_id: str = None
 		self.instances: T.List[PeripheralInstance] = list()
@@ -42,13 +42,24 @@ class Peripheral:
 		# self.address = int(self.xml_data.find("baseAddress").text,0)
 
 	def fill_from_xml(self):
-		new_mapping = PeripheralMapping(self, self.chips)
+		new_mappings = [PeripheralMapping(self, self.chips)]
 
 		for xml_reg in self.xml_data.findall("registers/register"):
 			new_register = Register(xml_reg, self.chips)
 			self.registers.append(new_register)
-			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = new_register
-		self.mappings.append(new_mapping)
+			pos = int(get_node_text(xml_reg, "addressOffset"), 0)
+
+			mapping = None
+			for m in new_mappings :
+				if pos in m.register_mapping : continue # this mapping has no room for this register
+				mapping = m
+				break
+			if mapping is None :
+				mapping = PeripheralMapping(self, self.chips)
+				new_mappings.append(mapping)
+
+			mapping.register_mapping[pos] = new_register
+		self.mappings.extend(new_mappings)
 
 ########################################################################################################################
 #                                                      OPERATORS                                                       #
@@ -155,12 +166,15 @@ class Peripheral:
 	def compatible(self, other: "Peripheral") -> bool :
 		if self.mapping_equivalent_to(other) :
 			return True
+		for other_mapping in other.mappings :
+			compatible = False
+			for self_mapping in self.mappings :
+				if other_mapping.compatible(self_mapping) :
+					compatible = True
+					break
+			if not compatible :
+				return False
 
-		for pos in other.mappings[0].register_mapping :
-			if pos in self.mappings[0].register_mapping :
-				if not other.mappings[0].register_mapping[pos]\
-						.compatible(self.mappings[0].register_mapping[pos]):
-					return False
 		return True
 	
 	def merge_peripheral(self,other : "Peripheral"):
@@ -179,6 +193,7 @@ class Peripheral:
 		# Merge registers
 		for reg in other:
 			if reg.name in self:
+				# TODO test for size (and error if size is different)
 				local_register = self[reg.name]
 				for field in reg:
 					local_register.add_field(field)
@@ -363,6 +378,13 @@ class PeripheralMapping:
 		else:
 			raise TypeError()
 		return False
+
+	def compatible(self, other: "PeripheralMapping"):
+		for pos in other.register_mapping :
+			if pos in self.register_mapping :
+				if not other.register_mapping[pos].compatible(self.register_mapping[pos]) :
+					return False
+		return True
 
 	@property
 	def computed_chips(self) -> ChipSet:
