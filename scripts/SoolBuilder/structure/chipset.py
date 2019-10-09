@@ -1,11 +1,16 @@
 from fnmatch import fnmatch
 from functools import reduce
 from typing import List, Set, Union, Dict
+import logging
 
+logger = logging.getLogger()
 
 class Chip :
 	def __init__(self, name: str, svd: str, families: List[str] = list()):
 		self.name = name
+		if self.name == "STM32g484xx" :
+			self.name = "STM32G484xx"
+			logger.warning("Manual fix of STM32G484xx name")
 		self.svd = svd
 		self.families : List[str] = families
 
@@ -74,6 +79,7 @@ class ChipSet :
 			self.chips.add(other)
 		else:
 			raise TypeError
+
 		self._families_up_to_date = False
 
 	def update_families(self):
