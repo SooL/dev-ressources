@@ -42,6 +42,7 @@ import xml.etree.ElementTree as ET
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
 from cleaners.create_peripheral import create_association_table, TIM_log
+from generators.sool_chip_setup import generate_sool_chip_setup
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -213,5 +214,9 @@ if __name__ == "__main__" :
 		
 		with open(f"out/{name}.h","w") as header :
 			header.write(group.cpp_output())
+
+	with open(f"out/sool_chip_setup.h", "w") as header:
+		header.write(generate_sool_chip_setup())
+
 	print("End of process.")
 
