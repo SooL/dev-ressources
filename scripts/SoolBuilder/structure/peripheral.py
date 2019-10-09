@@ -593,7 +593,7 @@ class PeripheralInstance :
 		self.reference : Peripheral = reference
 		self.name = name
 		self.address = address
-		self.chips = chips
+		self.chips = ChipSet(chips)
 	
 	def __repr__(self):
 		return f"{self.name:20s} @ 0x{self.address:08X} {self.chips}"
@@ -621,7 +621,10 @@ class PeripheralInstance :
 		return f"{self.name}_BASE_ADDR"
 
 	def cpp_output_address(self):
-		return f"{default_tabmanager}#define {self.addr_name} ((uint32_t)0x{self.address:8X})\n"
+		out = "#if " + self.chips.defined_list(5,self.reference.group.computed_chips) + "\n"
+		out += f"{default_tabmanager}#define {self.addr_name} ((uint32_t)0x{self.address:8X})\n"
+		out += "#endif\n\n"
+		return out
 
 	def cpp_output_declaration(self):
 		return (f"{default_tabmanager}volatile class {self.reference.name} * const {self.name} = " 

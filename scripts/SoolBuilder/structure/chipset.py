@@ -34,7 +34,7 @@ class ChipSet :
 	def get_family(chip_name : str):
 		if not fnmatch(chip_name,"STM32*") :
 			raise ValueError("Incompatible name")
-		if fnmatch(chip_name,"STM32MP*") or fnmatch(chip_name,"STM32WB*"):
+		if fnmatch(chip_name,"STM32MP*"):
 			return chip_name[:8]
 		return chip_name[:7]
 
@@ -103,7 +103,7 @@ class ChipSet :
 			if len(chips - self.chips) == 0 :
 				matched_family[family] = True
 		if matched_family.keys() == reference_chipset.families.keys() :
-			return "1 // Match all reference chipset\n"
+			return "1"
 
 		for chip in sorted(self.chips, key=lambda x: x.name) :
 			family = ChipSet.get_family(chip.name)
