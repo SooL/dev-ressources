@@ -31,7 +31,7 @@ class Peripheral:
 
 		self.group: "Group" = None
 		self.registers: T.List[Register] = list()
-		self.chips = chip
+		self.chips = ChipSet(chip)
 
 		self.variance_id: str = None
 		self.instances: T.List[PeripheralInstance] = list()
@@ -365,7 +365,7 @@ class PeripheralMapping:
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
 		self.name: str = None # the name will be determined when the whole structure is built
-		self.chips: ChipSet = chips
+		self.chips: ChipSet = ChipSet(chips)
 		
 		self.register_mapping: T.Dict[int, Register] = dict()
 	

@@ -63,7 +63,7 @@ class Register :
 		self.access = get_node_text(xml_base,"access")
 		#self.rst = int(get_node_text(xml_base,"resetValue"),0) #Is a mask
 
-		self.chips : ChipSet = chip
+		self.chips : ChipSet = ChipSet(chip)
 		self.name_edited = False;
 		self.variants : T.List["RegisterVariant"] = list()
 		self.variants.append(RegisterVariant(self, self.chips))
@@ -391,7 +391,7 @@ class RegisterVariant :
 		self.fields: T.List[Field] = list()
 		self._name = None
 		self.name_edited = False
-		self.chips = chips
+		self.chips = ChipSet(chips)
 
 	def __repr__(self):
 		return f"{self.register.name} : {str(self.fields)}"

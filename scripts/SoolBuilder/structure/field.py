@@ -44,7 +44,7 @@ class Field:
 		
 		self.xml_data = xml_base
 		
-		self.chips: ChipSet = chip
+		self.chips: ChipSet = ChipSet(chip)
 		
 	def __repr__(self):
 		return self.name
