@@ -1,6 +1,6 @@
 from fnmatch import fnmatch
 from functools import reduce
-from typing import List, Set, Union
+from typing import List, Set, Union, Dict
 
 
 class Chip :
@@ -18,13 +18,39 @@ class Chip :
 	def match(self, pattern):
 		return fnmatch(self.name, pattern)
 
+
 class ChipSet :
 	reference_chips_name_list : Set[str] = set()
+	reference_chipset : "ChipSet" = None
+	ref_lock = False
+	#reference_families : Dict[str,Set[str]] = dict()
+
+	@staticmethod
+	def get_family(chip_name : str):
+		if not fnmatch(chip_name,"STM32*") :
+			raise ValueError("Incompatible name")
+		if fnmatch(chip_name,"STM32MP*") or fnmatch(chip_name,"STM32WB*"):
+			return chip_name[:8]
+		return chip_name[:7]
+
 	def __init__(self, chips=None):
 		if chips is None:
 			chips = set()
 		self.chips: Set[Chip] = set()
+		self._families : Dict[str,Set[Chip]] = dict()
+		self._families_up_to_date : bool = False
 		self.add(chips)
+		if ChipSet.reference_chipset is None and not ChipSet.ref_lock :
+			ChipSet.ref_lock = True
+			ChipSet.reference_chipset = ChipSet()
+		if ChipSet.reference_chipset is not None :
+			ChipSet.reference_chipset.add(chips)
+
+	@property
+	def families(self) -> Dict[str,Set[Chip]]:
+		if not self._families_up_to_date :
+			self.update_families()
+		return self._families
 
 	def __str__(self):
 		return "\t".join(sorted([str(x) for x in self.chips]))
@@ -48,23 +74,43 @@ class ChipSet :
 			self.chips.add(other)
 		else:
 			raise TypeError
+		self._families_up_to_date = False
 
-	def simplify(self):
-		"""
-		TODO simplify chips list for output
-		:return:
-		"""
-		""
+	def update_families(self):
+		self._families.clear()
+		for chip in self.chips :
+			family = ChipSet.get_family(str(chip))
+			if family not in self._families :
+				self._families[family] = set()
+			self._families[family].add(chip)
+		self._families_up_to_date = True
 
-	def defined_list(self, chips_per_line = 6):
+	def defined_list(self, chips_per_line = 5,reference_chipset = None):
+		if reference_chipset is None :
+			reference_chipset = ChipSet.reference_chipset
+
 		output: str = ""
 		line_size: int = 0
-		for chip in self.chips :
-			line_size += 1
-			if line_size == chips_per_line :
-				output += "\\\n"
-				line_size = 0
-			output += f"defined({chip.name:12s}) || "
+		matched_family : Dict[str,bool] = dict()
+
+		for family, chips in reference_chipset.families.items():
+			if len(chips - self.chips) == 0 :
+				matched_family[family] = True
+		if matched_family.keys() == reference_chipset.families.keys() :
+			return "1 // Match all reference chipset\n"
+
+		for chip in sorted(self.chips, key=lambda x: x.name) :
+			family = ChipSet.get_family(chip.name)
+			if family not in matched_family or matched_family[family] :
+				if line_size == chips_per_line :
+					output += "\\\n"
+					line_size = 0
+				if family in matched_family :
+					output += f"defined({family:13s}) || "
+					matched_family[family] = False
+				else :
+					output += f"defined({chip.name:13s}) || "
+				line_size += 1
 
 		return output[:-4]
 
