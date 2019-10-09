@@ -42,13 +42,24 @@ class Peripheral:
 		# self.address = int(self.xml_data.find("baseAddress").text,0)
 
 	def fill_from_xml(self):
-		new_mapping = PeripheralMapping(self, self.chips)
+		new_mappings = [PeripheralMapping(self, self.chips)]
 
 		for xml_reg in self.xml_data.findall("registers/register"):
 			new_register = Register(xml_reg, self.chips)
 			self.registers.append(new_register)
-			new_mapping.register_mapping[int(get_node_text(xml_reg, "addressOffset"), 0)] = new_register
-		self.mappings.append(new_mapping)
+			pos = int(get_node_text(xml_reg, "addressOffset"), 0)
+
+			mapping = None
+			for m in new_mappings :
+				if pos in m.register_mapping : continue # this mapping has no room for this register
+				mapping = m
+				break
+			if mapping is None :
+				mapping = PeripheralMapping(self, self.chips)
+				new_mappings.append(mapping)
+
+			mapping.register_mapping[pos] = new_register
+		self.mappings.extend(new_mappings)
 
 ########################################################################################################################
 #                                                      OPERATORS                                                       #
@@ -155,12 +166,15 @@ class Peripheral:
 	def compatible(self, other: "Peripheral") -> bool :
 		if self.mapping_equivalent_to(other) :
 			return True
+		for other_mapping in other.mappings :
+			compatible = False
+			for self_mapping in self.mappings :
+				if other_mapping.compatible(self_mapping) :
+					compatible = True
+					break
+			if not compatible :
+				return False
 
-		for pos in other.mappings[0].register_mapping :
-			if pos in self.mappings[0].register_mapping :
-				if not other.mappings[0].register_mapping[pos]\
-						.compatible(self.mappings[0].register_mapping[pos]):
-					return False
 		return True
 	
 	def merge_peripheral(self,other : "Peripheral"):
@@ -179,6 +193,7 @@ class Peripheral:
 		# Merge registers
 		for reg in other:
 			if reg.name in self:
+				# TODO test for size (and error if size is different)
 				local_register = self[reg.name]
 				for field in reg:
 					local_register.add_field(field)
@@ -188,7 +203,7 @@ class Peripheral:
 		# If a mapping, equivalent to the one of the other peripheral, is found, we will use it
 		# In this case, we only have to append the chip(s) of the other peripheral.
 		if len(other.mappings) != 1:
-			logger.error("multiple mappings on new peripheral")
+			logger.warning("multiple mappings on new peripheral")
 
 		for other_mapping in other.mappings:
 			merge_done: bool = False
@@ -336,6 +351,17 @@ class Peripheral:
 
 
 class PeripheralMapping:
+	forbidden_fixs : T.Dict[str,T.List[str]] = dict()
+	fixs_done: T.List[T.Tuple[str,str,str]] = list()
+	@staticmethod
+	def forbid_fix(source : str, other : str, bidir = False):
+		if source not in PeripheralMapping.forbidden_fixs :
+			PeripheralMapping.forbidden_fixs[source] = []
+		PeripheralMapping.forbidden_fixs[source].append(other)
+		
+		if bidir :
+			PeripheralMapping.forbid_fix(other,source,False)
+	
 	def __init__(self, reference: Peripheral, chips: ChipSet):
 		self.reference = reference
 		self.name: str = None # the name will be determined when the whole structure is built
@@ -363,6 +389,13 @@ class PeripheralMapping:
 		else:
 			raise TypeError()
 		return False
+
+	def compatible(self, other: "PeripheralMapping"):
+		for pos in other.register_mapping :
+			if pos in self.register_mapping :
+				if not other.register_mapping[pos].compatible(self.register_mapping[pos]) :
+					return False
+		return True
 
 	@property
 	def computed_chips(self) -> ChipSet:
@@ -436,6 +469,12 @@ class PeripheralMapping:
 					if reg.mapping_equivalent_to(local_reg) :
 						local_name = local_reg.name
 						other_name = reg.name
+						
+						if local_name in PeripheralMapping.forbidden_fixs :
+							if reg.name in PeripheralMapping.forbidden_fixs[local_name] :
+								return False
+						
+						PeripheralMapping.fixs_done.append((self.reference.name,local_name,other_name))
 						new_name = local_name if len(local_name) <= len(other_name) else other_name
 						logger.warning(f"Fixing register name : same mapping for various names in "
 									   f"{self.reference.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
