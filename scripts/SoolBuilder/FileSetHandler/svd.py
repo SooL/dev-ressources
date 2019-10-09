@@ -63,9 +63,10 @@ class SVDFile :
 			chip : Chip = Chip(get_node_text(self.root, "name"),self.file_name)
 			self.chipset : ChipSet = ChipSet(chip)
 		else :
-			self.chipset = ChipSet()
-			for chip in chips :
-				self.chipset.add(Chip(chip,self.file_name))
+			self.chipset = ChipSet([Chip(x,self.file_name) for x in chips])
+			# for chip in chips :
+			# 	self.chipset.add(Chip(chip,self.file_name))
+
 				
 		self.groups : T.Dict[str,Group] = dict()
 		
