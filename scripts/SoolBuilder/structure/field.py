@@ -76,6 +76,14 @@ class Field:
 			self.name_edited = True
 			self._name = new_name
 
+	def alias(self, parent_alias: T.Union[None, str] = None):
+		if parent_alias is None :
+			return self.name
+		elif self.name is None :
+			return parent_alias
+		else :
+			return parent_alias + "_" + self.name
+
 	def cleanup(self):
 		try :
 			del self.xml_data

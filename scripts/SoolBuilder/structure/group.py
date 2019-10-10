@@ -16,7 +16,8 @@ name_correction: T.Dict[str, str] = {
 	"TIMER"     : "TIM",
 	"USB_OTG"   : "USB",
 	"USB_OTG_FS": "USB",
-	"USB_OTG_HS": "USB"
+	"USB_OTG_HS": "USB",
+	"USB_FS"    : "USB"
 }
 
 
@@ -93,7 +94,7 @@ class Group :
 	@property
 	def have_been_edited(self):
 		for peripheral in self.peripherals :
-			if peripheral.have_been_edited :
+			if peripheral.has_been_edited :
 				return True
 		return False
 
@@ -145,7 +146,7 @@ class Group :
 					self.peripherals.pop(j)
 					length -= 1
 
-				# If only one mapping each and mapping compatibles
+				# If only one mapping per peripheral and mappings are compatibles
 				elif len(periph_1.mappings) == 1 and len(periph_2.mappings) == 1 and periph_1.compatible(periph_2) :
 					periph_1.merge_peripheral(periph_2)
 					self.peripherals.pop(j)

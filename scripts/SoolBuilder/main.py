@@ -197,7 +197,7 @@ if __name__ == "__main__" :
 	for name, group in output_groups.items() :
 		if group.have_been_edited :
 			for periph in group.peripherals :
-				while periph.have_been_edited :
+				while periph.has_been_edited :
 					logger.info(f"Re-merging {periph.name}")
 					periph.self_merge()
 					periph.clean_register_list()

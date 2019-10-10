@@ -210,6 +210,15 @@ class Register :
 			out.add(var.computed_chips)
 		return out
 
+	def alias(self, parent_alias: T.Union[None, str] = None):
+		if parent_alias is None :
+			return self.name
+		elif self.name is None :
+			return parent_alias
+		else :
+			return parent_alias + "_" + self.name
+
+
 ########################################################################################################################
 #                                                  FIELDS MANAGEMENT                                                   #
 ########################################################################################################################
@@ -455,6 +464,14 @@ class RegisterVariant :
 		if new_name != self._name :
 			self.name_edited = True
 			self._name = new_name
+
+	def alias(self, parent_alias : T.Union[None, str] = None):
+		if parent_alias is None :
+			return self.name
+		elif self.name is None :
+			return parent_alias
+		else :
+			return parent_alias + "_" + self.name
 
 	def add_field(self, field: Field):
 		"""

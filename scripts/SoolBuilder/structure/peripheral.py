@@ -107,11 +107,19 @@ class Peripheral:
 		return out
 
 	@property
-	def have_been_edited(self):
+	def has_been_edited(self):
 		for reg in self.registers :
 			if reg.have_been_edited :
 				return True
 		return False
+
+	def alias(self, parent_alias: T.Union[None, str] = None):
+		if parent_alias is None :
+			return self.name
+		elif self.name is None :
+			return parent_alias
+		else :
+			return parent_alias + "_" + self.name
 
 	def clean_register_list(self):
 		self.registers.clear()
@@ -440,6 +448,14 @@ class PeripheralMapping:
 
 	def superset(self, other: "PeripheralMapping") -> bool:
 		return other.subset(self)
+
+	def alias(self, parent_alias: T.Union[None, str] = None):
+		if parent_alias is None :
+			return self.name
+		elif self.name is None :
+			return parent_alias
+		else :
+			return parent_alias + "_" + self.name
 
 	def cleanup(self):
 		for p,m in self.register_mapping.items():
