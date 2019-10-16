@@ -51,6 +51,13 @@ class ChipSet :
 		if ChipSet.reference_chipset is not None :
 			ChipSet.reference_chipset.add(chips)
 
+	def __eq__(self, other):
+		if isinstance(other,Chip) :
+			return other.name == self.name
+
+	def __hash__(self):
+		return hash(tuple(sorted([x.name for x in self.chips])))
+
 	@property
 	def families(self) ->T.Dict[str, T.Set[Chip]]:
 		if not self._families_up_to_date :
@@ -109,7 +116,7 @@ class ChipSet :
 			family = ChipSet.get_family(chip.name)
 			if family not in matched_family or matched_family[family] :
 				if line_size == chips_per_line :
-					output += "\\\n"
+					output += "\\\n    "
 					line_size = 0
 				if family in matched_family :
 					output += f"defined({family:13s}) || "
