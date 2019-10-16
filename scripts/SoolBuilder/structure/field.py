@@ -1,112 +1,83 @@
-import xml.etree.ElementTree as ET
 import typing as T
-import logging
-from structure import ChipSet, default_tabmanager
-
-logger = logging.getLogger()
-
-
-def get_node_text(root : ET.Element, node : str) -> str :
-	return str() if root.find(node) is None else root.find(node).text
+import xml.etree.ElementTree as ET
+from structure.chipset import ChipSet
+from structure.Component import Component
+from structure.utils import get_node_text, TabManager
 
 
-"""
-<field>
-<name>EN1</name>
-<description>DAC channel1 enable</description>
-<bitOffset>0</bitOffset>
-<bitWidth>1</bitWidth>
-</field>
-"""
+class Field(Component) :
 
+################################################################################
+#                                 CONSTRUCTORS                                 #
+################################################################################
 
-class Field:
-	XML_Template : str = 	"""
-							<field>
-							<name>{name}</name>
-							<description>{description}</description>
-							<bitOffset>{offset}</bitOffset>
-							<bitWidth>{width}</bitWidth>
-							</field>
-							"""
-	def __init__(self,xml_base : ET.Element, chip : ChipSet = None):
-		"""
-		Build a field representation based upon XML node.
-		:param xml_base: xml <field> node, extracted from SVD file
-		"""
-		
-		self._name 	= get_node_text(xml_base,"name")
-		self.name_edited = False
-		self.descr 	= get_node_text(xml_base,"description")
-		self.offset = int(get_node_text(xml_base,"bitOffset"),0)
+	@staticmethod
+	def create_from_xml(chips: ChipSet, xml_data: ET.Element) -> "Field":
+		name = get_node_text(xml_data, "name")
+		descr = get_node_text(xml_data, "description")
+		offset = int(get_node_text(xml_data, "bitOffset"), 0)
+		width = int(get_node_text(xml_data, "bitWidth"), 0)
+		field = Field(chips=chips, name=name, brief=descr,
+		              position=offset, size=width)
+		return field
 
-		self.width 	= int(get_node_text(xml_base,"bitWidth"),0)
-		
-		self.xml_data = xml_base
-		
-		self.chips: ChipSet = ChipSet(chip)
-		
-	def __repr__(self):
-		return self.name
-	
-	def __eq__(self, other):
-		if isinstance(other,Field) :
-			return (self.name == other.name and
-					self.offset == other.offset and
-					self.width == other.width)
-		elif isinstance(other,str) :
-			return other == self.name
-		raise TypeError()
-		
-	def __hash__(self):
-		return hash((self.name,self.offset,self.width,self.width))
-	
-	def __lt__(self, other):
-		if isinstance(other,Field) :
-			return self.offset < other.offset
-		raise TypeError()
+	def __init__(self,
+	             chips: T.Union[None, ChipSet] = None,
+	             name: T.Union[None, str] = None,
+	             brief: T.Union[None, str] = None,
+	             position: int = 0,
+	             size: int = 1
+	             ) :
+		super().__init__(chips=chips, name=name, brief=brief)
+		self.position = position
+		self.size = size
 
-	@property
-	def name(self) -> str:
-		return self._name
+################################################################################
+#                                  OPERATORS                                   #
+################################################################################
+	def __str__(self) :
+		return super().__str__() + f" @{self.position}-{self.position + self.size - 1}"
 
-	@name.setter
-	def name(self, new_name) -> str:
-		if new_name != self._name:
-			self.name_edited = True
-			self._name = new_name
-
-	def alias(self, parent_alias: T.Union[None, str] = None):
-		if parent_alias is None :
-			return self.name
-		elif self.name is None :
-			return parent_alias
+	def __cmp__(self, other) -> int :
+		if isinstance(other, Field) :
+			return self.position - other.position
 		else :
-			return parent_alias + "_" + self.name
+			raise TypeError()
 
-	def cleanup(self):
-		try :
-			del self.xml_data
-		except AttributeError :
-			pass
-		
-	def overlap(self, other: "Field"):
-		"""
-		This function test if two fields are overlapping.
+################################################################################
+#                                DEFINE AND USE                                #
+################################################################################
 
-		:param other: The field to test again
-		:return: True if there is an overlapping.
-		"""
-		if other.offset > self.offset :
-			return (self.offset + self.width) > other.offset
+	def define(self) -> T.Union[str,None]:
+		if self.needs_define() :
+			return f"#define {self.alias} {self.name}"
 		else :
-			return (other.offset + other.width) > self.offset
+			return None
 
-	def memory_usage(self):
-		return set(range(self.offset,self.offset+self.width))
+	def define_not(self) -> T.Union[str, None]:
+		if self.needs_define() :
+			return f"#define {self.alias}"
+		else :
+			return None
 
-	def cpp_output(self) -> str:
-		default_tabmanager.increment()
-		out =  f"{default_tabmanager}{str(self.name if self.name is not None else ''):15s} :{self.width:>3d};\n"
-		default_tabmanager.decrement()
-		return out
+	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
+		name = self.alias if self.needs_define() else self.name
+		if name is None :
+			name = ""
+		return f"{indent}{name} : {self.size};"
+
+################################################################################
+#                            BITWISE VERIFICATIONS                             #
+################################################################################
+
+	def overlap(self, other: "Field") :
+		if other.position < self.position :
+			return other.position + other.size > self.position
+		elif self.position < other.position :
+			return self.position + self.size > other.position
+		else : # same position
+			return True
+
+	def fill_bit_mask(self, bit_mask: T.List[bool]):
+		for i in range(self.position, self.position + self.size - 1) :
+			bit_mask[i] = True
