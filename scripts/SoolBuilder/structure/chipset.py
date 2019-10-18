@@ -1,18 +1,18 @@
 from fnmatch import fnmatch
-from functools import reduce
-from typing import List, Set, Union, Dict
+import typing as T
 import logging
 
 logger = logging.getLogger()
 
+
 class Chip :
-	def __init__(self, name: str, svd: str, families: List[str] = list()):
+	def __init__(self, name: str, svd: str, families: T.List[str] = list()):
 		self.name = name
 		if self.name == "STM32g484xx" :
 			self.name = "STM32G484xx"
 			logger.warning("Manual fix of STM32G484xx name")
 		self.svd = svd
-		self.families : List[str] = families
+		self.families : T.List[str] = families
 
 	def __str__(self):
 		return self.name
@@ -25,7 +25,7 @@ class Chip :
 
 
 class ChipSet :
-	reference_chips_name_list : Set[str] = set()
+	reference_chips_name_list : T.Set[str] = set()
 	reference_chipset : "ChipSet" = None
 	ref_lock = False
 	#reference_families : Dict[str,Set[str]] = dict()
@@ -41,8 +41,8 @@ class ChipSet :
 	def __init__(self, chips=None):
 		if chips is None:
 			chips = set()
-		self.chips: Set[Chip] = set()
-		self._families : Dict[str,Set[Chip]] = dict()
+		self.chips: T.Set[Chip] = set()
+		self._families : T.Dict[str,T.Set[Chip]] = dict()
 		self._families_up_to_date : bool = False
 		self.add(chips)
 		if ChipSet.reference_chipset is None and not ChipSet.ref_lock :
@@ -52,7 +52,7 @@ class ChipSet :
 			ChipSet.reference_chipset.add(chips)
 
 	@property
-	def families(self) -> Dict[str,Set[Chip]]:
+	def families(self) ->T.Dict[str, T.Set[Chip]]:
 		if not self._families_up_to_date :
 			self.update_families()
 		return self._families
@@ -60,15 +60,15 @@ class ChipSet :
 	def __str__(self):
 		return "\t".join(sorted([str(x) for x in self.chips]))
 
-	def __iadd__(self, other: Union[List[Chip], 'ChipSet', Chip]):
+	def __iadd__(self, other: T.Union[T.List[Chip], 'ChipSet', Chip]):
 		self.add(other)
 
-	def __add__(self, other: Union[List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
+	def __add__(self, other: T.Union[T.List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
 		ret: ChipSet = ChipSet(self.chips)
 		ret.add(other)
 		return ret
 
-	def add(self, other: Union[List[Chip],Set[Chip], 'ChipSet', Chip]):
+	def add(self, other: T.Union[T.List[Chip], T.Set[Chip], 'ChipSet', Chip]):
 		if isinstance(other, ChipSet) :
 			self.chips.update(other.chips)
 		elif isinstance(other, list) :
@@ -97,7 +97,7 @@ class ChipSet :
 
 		output: str = ""
 		line_size: int = 0
-		matched_family : Dict[str,bool] = dict()
+		matched_family : T.Dict[str,bool] = dict()
 
 		for family, chips in reference_chipset.families.items():
 			if len(chips - self.chips) == 0 :
