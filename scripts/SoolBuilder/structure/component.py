@@ -1,11 +1,10 @@
 import typing as T
 
-from structure.utils import TabManager
-from structure.chipset import ChipSet
+from structure import TabManager
+from structure import ChipSet
 
 
-class Component :
-
+class Component:
 ################################################################################
 #                                   BUILDERS                                   #
 ################################################################################

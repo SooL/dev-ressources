@@ -3,11 +3,11 @@ import xml.etree.ElementTree as ET
 
 import logging
 
-from structure.Field import Field
-from structure.RegisterVariant import RegisterVariant
-from structure.utils import get_node_text, TabManager
-from structure.chipset import ChipSet
-from structure.Component import Component
+from structure import Field
+from structure import RegisterVariant
+from structure import get_node_text, TabManager
+from structure import ChipSet
+from structure import Component
 
 logger = logging.getLogger()
 
@@ -104,8 +104,9 @@ class Register(Component) :
 		return out
 
 ################################################################################
-############################## REGISTER PLACEMENT ##############################
+#                              REGISTER PLACEMENT                              #
 ################################################################################
+
 
 class RegisterPlacement(Component) :
 

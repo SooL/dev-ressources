@@ -1,8 +1,8 @@
 import typing as T
 import xml.etree.ElementTree as ET
-from structure.chipset import ChipSet
-from structure.Component import Component
-from structure.utils import get_node_text, TabManager
+from structure import ChipSet
+from structure import Component
+from structure import get_node_text, TabManager
 
 
 class Field(Component) :

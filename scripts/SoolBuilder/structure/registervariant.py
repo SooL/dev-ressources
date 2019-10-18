@@ -1,9 +1,9 @@
 import typing as T
 
-from structure.utils import TabManager
-from structure.Field import Field
-from structure.chipset import ChipSet
-from structure.Component import Component
+from structure import TabManager
+from structure import Field
+from structure import ChipSet
+from structure import Component
 
 REG_VAR_DECLARATION : str = """{indent}struct
 {indent}{{
