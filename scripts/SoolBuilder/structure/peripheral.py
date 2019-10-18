@@ -1,12 +1,12 @@
 import typing as T
 import xml.etree.ElementTree as ET
 
-from structure.Group import Group
+from structure import Group
 
-from structure.Register import Register, RegisterPlacement
-from structure.utils import get_node_text, TabManager
-from structure.chipset import ChipSet
-from structure.Component import Component
+from structure import Register, RegisterPlacement
+from structure import get_node_text, TabManager
+from structure import ChipSet
+from structure import Component
 
 
 class Peripheral(Component) :
