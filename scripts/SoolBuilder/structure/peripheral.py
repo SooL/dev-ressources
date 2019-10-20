@@ -1,7 +1,7 @@
 import typing as T
 import xml.etree.ElementTree as ET
 
-from structure import Group
+#from structure import Group
 
 from structure import Register, RegisterPlacement
 from structure import get_node_text, TabManager
@@ -30,7 +30,7 @@ class Peripheral(Component) :
 	             name: T.Union[str, None] = None,
 	             brief: T.Union[str, None] = None) :
 		super().__init__(chips=chips, name=name, brief=brief)
-		self.group: Group = None
+		self.group: "Group" = None
 		self.registers: T.List[Register] = list()
 		self.mappings: T.List[PeripheralMapping] = list()
 		self.instances: T.List[PeripheralInstance] = list()

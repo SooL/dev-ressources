@@ -1,6 +1,6 @@
 import typing as T
 
-from structure.peripheral import Peripheral
+from structure import Peripheral
 from structure import ChipSet
 from structure import default_tabmanager
 import logging
