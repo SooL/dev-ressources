@@ -1,6 +1,6 @@
 import typing as T
 
-from structure import Peripheral
+from structure import Peripheral, Component
 from structure import ChipSet
 from structure import default_tabmanager
 import logging
@@ -21,7 +21,7 @@ name_correction: T.Dict[str, str] = {
 }
 
 
-class Group :
+class Group(Component) :
 ########################################################################################################################
 #                                                    GROUP CREATION                                                    #
 ########################################################################################################################
@@ -50,13 +50,10 @@ class Group :
 		group_dict[group_name] = group
 		return group
 
-	def __init__(self, name : str):
-		self.name = Group.fix_name(name)
+	def __init__(self, name: str) :
+		super().__init__(name=name)
 		self.peripherals: T.List[Peripheral] = list()
 		self.name_helper = create_association_table[self.name] if self.name in create_association_table else None
-
-	def __str__(self):
-		return self.name
 
 	def __contains__(self, item):
 		if isinstance(item,Peripheral) :
@@ -101,10 +98,7 @@ class Group :
 	def cleanup(self):
 		for p in self.peripherals :
 			p.cleanup()
-	
-	def finalize(self):
-		for p in self.peripherals :
-			p.finalize()
+
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################

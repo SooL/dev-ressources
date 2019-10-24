@@ -22,7 +22,13 @@ class Peripheral(Component) :
 
 		periph =  Peripheral(chips=chips, name=None, brief=brief)
 
-		# TODO fill peripheral with registers
+		for xml_reg in xml_data.findall("registers/register") :
+			new_register = Register.create_from_xml(chips, xml_reg)
+			periph.add_register(new_register)
+
+			pos = int(get_node_text(xml_reg, "addressOffset"), 0)
+			reg_placement = RegisterPlacement(chips=chips, name=new_register.name, register=new_register, address=pos)
+			periph.place_register(reg_placement)
 
 		return periph
 
@@ -30,17 +36,20 @@ class Peripheral(Component) :
 	             name: T.Union[str, None] = None,
 	             brief: T.Union[str, None] = None) :
 		super().__init__(chips=chips, name=name, brief=brief)
-		self.group: "Group" = None
+
 		self.registers: T.List[Register] = list()
 		self.mappings: T.List[PeripheralMapping] = list()
 		self.instances: T.List[PeripheralInstance] = list()
 		self.max_size = 0
 
+	def __iter__(self):
+		return [r for r in self.registers]
+
 	def __getitem__(self, item: str) -> T.Union[Register, None] :
 		for r in self.registers :
 			if r.name == item :
 				return r
-		raise None
+		return None
 
 	def __contains__(self, item: str) -> bool :
 		for r in self.registers :
@@ -49,7 +58,7 @@ class Peripheral(Component) :
 		raise False
 
 	def add_register(self, reg: Register):
-		self.chips.add(reg)
+		self.chips.add(reg.chips)
 		self_reg = self[reg.name]
 		if self_reg is not None :
 			self_reg.merge(reg)
@@ -58,18 +67,42 @@ class Peripheral(Component) :
 
 	def add_instance(self, instance: "PeripheralInstance") :
 		self.chips.add(instance.chips)
+		for i in self.instances :
+			if i == instance :
+				i.merge(instance)
+				return
 		self.instances.append(instance)
 
 	def place_register(self, reg_placement: RegisterPlacement) :
 		mapping: T.Union[PeripheralMapping, None] = None
 		for m in self.mappings :
-			if m.has_room_for(reg_placement) :
+			if reg_placement in m :
+				m[reg_placement.name].merge(reg_placement)
+				return
+			elif m.has_room_for(reg_placement) :
 				mapping = m
 		if mapping is None :
 			mapping = PeripheralMapping()
 			self.mappings.append(mapping)
-
 		mapping.place_register(reg_placement)
+
+	def merge(self, other: "Peripheral"):
+		for r in other.registers :
+			self.add_register(r)
+		for i in other.instances :
+			self.add_instance(i)
+		for m in other.mappings :
+			for r_p in m :
+				self.place_register(r_p)
+
+		super().merge(other)
+
+	def finalize(self):
+		super().finalize()
+		for i in self.instances :
+			i.finalize()
+		for m in self.mappings :
+			m.finalize()
 
 class PeripheralMapping(Component) :
 	def __init__(self, chips: T.Union[ChipSet, None] = None,
@@ -78,25 +111,59 @@ class PeripheralMapping(Component) :
 
 		self.register_placements: T.List[RegisterPlacement] = list()
 
+	def __iter__(self):
+		return [reg_p for reg_p in self.register_placements]
+
+	def merge(self, other: "PeripheralMapping"):
+		raise AssertionError("the merge method should not be called on PeripheralMapping")
+
 	def has_room_for(self, reg_placement: RegisterPlacement) -> bool :
 		for p in self.register_placements :
 			if p.overlap(reg_placement) :
 				return False
 		return True
-
-	def fill_holes(self):
-		pos: int = 0
-		for p in self.register_placements :
-			if p.address > pos :
-				size = p.address - pos
-
+	def place_register(self, reg_placement: RegisterPlacement) :
+		self.register_placements.append(reg_placement)
 
 	def finalize(self):
-		for p in self.register_placements :
-			p.set_parent(self)
-			p.finalize()
 		self.register_placements.sort(key= lambda p: p.address)
-		pass
+		super().finalize()
+
+	def declare(self, indent: TabManager = TabManager()) -> str:
+		out: str = ""
+		pos: int = 0
+		# add struct and indent if multiple mappings
+		only_mapping: bool = len(self.parent.mappings) == 1
+		if not only_mapping :
+			out += f"{indent}struct\n{indent}{{"
+			indent.increment()
+		for reg_p in self.register_placements :
+			if reg_p.address > pos :
+				# add filler
+				size: int = 1
+				while pos < reg_p.address :
+					if (reg_p.address - pos) % (size+1) != 0 :
+						out += f"\n{indent}__SOOL_PERIPH_PADDING_{size};"
+						pos += size
+					size *= 2
+			out += reg_p.declare(indent)
+			pos += reg_p.computed_size
+		if not only_mapping :
+			parent_size = self.parent.computed_size
+			if parent_size > pos :
+				size: int = 1
+				while pos < parent_size :
+					if (parent_size - pos) % (size+1) != 0 :
+						out += f"\n{indent}__SOOL_PERIPH_PADDING_{size};"
+						pos += size
+					size *= 2
+			indent.decrement()
+			out += f"\n{indent}}}"
+
+		return out
+
+
+
 
 
 class PeripheralInstance(Component):

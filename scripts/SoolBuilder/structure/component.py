@@ -20,6 +20,13 @@ class Component:
 		self.parent = None
 
 	def finalize(self):
+		try :
+			# noinspection PyTypeChecker
+			for child in self :
+				child.set_parent(self)
+				child.finalize()
+		except AttributeError :
+			pass
 		self.chips.update_families()
 
 	def set_parent(self, parent: "Component"):
@@ -27,6 +34,20 @@ class Component:
 
 	def merge(self, other: "Component"):
 		self.chips.add(other.chips)
+
+	def __contains__(self, item):
+		# noinspection PyTypeChecker
+		for child in self :
+			if child == item :
+				return True
+		return False
+
+	def __getitem__(self, item):
+		# noinspection PyTypeChecker
+		for child in self :
+			if child == item :
+				return child
+		return None
 
 ################################################################################
 #                            STRING REPRESENTATIONS                            #

@@ -15,6 +15,8 @@ class RegisterVariant(Component) :
 		super().__init__(chips=chips)
 		self.fields : T.List[Field] = list()
 
+	def __iter__(self):
+		return [f for f in self.fields]
 
 	def __contains__(self, item) :
 		if isinstance(item, Field) :
@@ -74,6 +76,8 @@ class RegisterVariant(Component) :
 	def sort_fields(self):
 		self.fields.sort(key=(lambda f: f.position))
 
+	def merge(self, other: "RegisterVariant") :
+		raise AssertionError("the merge method should not be called on RegisterVariant")
 
 	def fill_holes(self):
 		"""
@@ -92,10 +96,8 @@ class RegisterVariant(Component) :
 		self.sort_fields()
 
 	def finalize(self):
-		for f in self.fields :
-			f.set_parent(self)
 		self.sort_fields()
 		self.fill_holes()
 		if len(self.parent.variants) > 1 :
 			self.name = str(self.parent.variants.index(self))
-		pass
+		super().finalize()

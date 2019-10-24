@@ -259,14 +259,14 @@ def setup():
 	# PeripheralMapping.forbid_fix("MEMRMP", "MEMRM")
 	
 	# Peripheral : TIM_ADVANCED
-	PeripheralMapping.forbid_fix("CCMR1_Input", "CCMR1_Output")
-	PeripheralMapping.forbid_fix("CCMR1_Output", "CCMR1_Input")
-	PeripheralMapping.forbid_fix("CCMR2_Input", "CCMR2_Output")
-	PeripheralMapping.forbid_fix("CCMR2_Output", "CCMR2_Input")
+	# PeripheralMapping.forbid_fix("CCMR1_Input", "CCMR1_Output")
+	# PeripheralMapping.forbid_fix("CCMR1_Output", "CCMR1_Input")
+	# PeripheralMapping.forbid_fix("CCMR2_Input", "CCMR2_Output")
+	# PeripheralMapping.forbid_fix("CCMR2_Output", "CCMR2_Input")
 	# PeripheralMapping.forbid_fix("CCR6", "CRR6")
 	
 	# Peripheral : TIM_GENERAL_15
-	PeripheralMapping.forbid_fix("AF1", "OR2")
+	#PeripheralMapping.forbid_fix("AF1", "OR2")
 	
 	# Peripheral : USB
 	# PeripheralMapping.forbid_fix("CNTR", "USB_CNTR")

@@ -64,9 +64,17 @@ class Register(Component) :
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
 
+	def __iter__(self):
+		return [v for v in self.variants]
+
 	def add_field(self, field: Field) :
+		self.chips.add(field.chips)
+
 		var: T.Union[RegisterVariant, None] = None
 		for v in self.variants :
+			if field.name in v :
+				v[field.name].merge(field)
+				return
 			if v.has_room_for(field) :
 				var = v
 
@@ -74,11 +82,11 @@ class Register(Component) :
 			var = RegisterVariant()
 		var.add_field(field)
 
-	def finalize(self) :
-		for v in self.variants :
-			v.set_parent(self)
-			v.finalize()
-		pass
+	def merge(self, other: "Register"):
+		for v in other :
+			for f in v:
+				self.add_field(f)
+		super().merge(other)
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		out: str = ""
@@ -118,13 +126,26 @@ class RegisterPlacement(Component) :
 		return RegisterPlacement(chips=chips, name=name, register=register,
 		                         address=offset)
 
-
 	def __init__(self, chips: ChipSet, name: T.Union[str, None],
 	             register: Register, address: int, array_size: int = 0) :
 		super().__init__(chips=chips, name=name)
 		self.register = register
 		self.address = address
 		self.array_size = array_size
+
+	def __eq__(self, other) -> bool:
+		if isinstance(other, RegisterPlacement) :
+			return self.name == other.name and\
+			       self.address == other.address and\
+			       self.array_size == other.array_size and\
+			       self.register.name == other.register.name and\
+			       self.register.size == other.register.size
+		else :
+			return False
+
+	@property
+	def computed_size(self) -> int:
+		return self.register.size * (1 if self.array_size == 0 else self.array_size)
 
 	def overlap(self, other: "RegisterPlacement"):
 		if other.address < self.address :

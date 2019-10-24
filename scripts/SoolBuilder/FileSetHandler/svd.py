@@ -89,7 +89,7 @@ class SVDFile :
 				group = Group.get_group(self.groups, group_name)
 		
 				# create the peripheral, add it to the group
-				periph = Peripheral(svd_periph, copy(self.chipset))
+				periph = Peripheral.create_from_xml(self.chipset, svd_periph)
 				group.add_peripheral(periph)
 		
 			else:  # peripheral already exists
