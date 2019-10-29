@@ -64,15 +64,28 @@ class Peripheral(Component) :
 		else :
 			self.registers.append(reg)
 
-	def add_instance(self, instance: "PeripheralInstance") :
-		self.chips.add(instance.chips)
+	def add_instance(self, other: "PeripheralInstance") :
+		if isinstance(other, PeripheralInstance) :
+			self.chips.add(other.chips)
 
-		for i in self.instances :
-			if i == instance :
-				i.merge(instance)
-				return
-		instance.parent = self
-		self.instances.append(instance)
+			for i in self.instances :
+				if i == other :
+					i.merge(other)
+					return
+			other.parent = self
+			self.instances.append(other)
+		else:
+			raise TypeError(f"Expected a peripheral instance. Got {type(other)}.")
+
+	def add_instances(self, other :  T.Union[T.List["PeripheralInstance"], "Peripheral"]):
+		if isinstance(other, Peripheral) :
+			for inst in other.instances :
+				self.add_instance(inst)
+		elif isinstance(other,list) :
+			for inst in other :
+				self.add_instance(inst)
+		else :
+			raise TypeError(f"Expected a peripheral instances list or peripheral. Got {type(other)}.")
 
 	def place_register(self, reg_placement: RegisterPlacement) :
 		mapping: T.Union[PeripheralMapping, None] = None

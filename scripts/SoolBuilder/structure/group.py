@@ -136,7 +136,7 @@ class Group(Component) :
 						logger.warning(f"peripherals {repr(periph_1.instances)} and {repr(periph_2.instances)}"
 						               f" don't have the same description, despite being identical :"
 						               f" {periph_1.brief}, {periph_2.brief}")
-					periph_1.add_instances(periph_2.instances)
+					periph_1.add_instances(periph_2)
 					self.peripherals.pop(j)
 					length -= 1
 
