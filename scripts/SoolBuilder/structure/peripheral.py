@@ -43,7 +43,7 @@ class Peripheral(Component) :
 		self.max_size = 0
 
 	def __iter__(self):
-		return [r for r in self.registers]
+		return iter(self.registers)
 
 	def __eq__(self, other):
 		if isinstance(other, Peripheral) :
@@ -111,7 +111,7 @@ class PeripheralMapping(Component) :
 		self.register_placements: T.List[RegisterPlacement] = list()
 
 	def __iter__(self):
-		return [reg_p for reg_p in self.register_placements]
+		return iter(self.register_placements)
 
 	def __eq__(self, other):
 		if not(isinstance(other, PeripheralMapping)):
