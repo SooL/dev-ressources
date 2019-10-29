@@ -66,10 +66,12 @@ class Peripheral(Component) :
 
 	def add_instance(self, instance: "PeripheralInstance") :
 		self.chips.add(instance.chips)
+
 		for i in self.instances :
 			if i == instance :
 				i.merge(instance)
 				return
+		instance.parent = self
 		self.instances.append(instance)
 
 	def place_register(self, reg_placement: RegisterPlacement) :
@@ -102,6 +104,7 @@ class Peripheral(Component) :
 			i.finalize()
 		for m in self.mappings :
 			m.finalize()
+
 
 class PeripheralMapping(Component) :
 	def __init__(self, chips: T.Union[ChipSet, None] = None,

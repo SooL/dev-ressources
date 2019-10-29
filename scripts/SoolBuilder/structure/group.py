@@ -105,9 +105,9 @@ class Group(Component) :
 
 	def add_peripheral(self, peripheral):
 		self.peripherals.append(peripheral)
-		if peripheral.group is None:
-			peripheral.group = self
-		elif peripheral.group != self:
+		if peripheral.parent is None:
+			peripheral.parent = self
+		elif peripheral.parent != self:
 			raise AssertionError()
 
 ########################################################################################################################

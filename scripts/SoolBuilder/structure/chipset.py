@@ -85,7 +85,7 @@ class ChipSet :
 		elif isinstance(other, Chip) :
 			self.chips.add(other)
 		else:
-			raise TypeError
+			raise TypeError(f"{type(other)} provided")
 
 		self._families_up_to_date = False
 
