@@ -101,8 +101,9 @@ class SVDFile :
 			# create instance from its name, address and base peripheral
 			inst_name = svd_periph.find("name").text
 			inst_addr = int(svd_periph.find("baseAddress").text, 0)
-			instance = PeripheralInstance(periph, inst_name, inst_addr, periph.chips)
-		
+
+			instance = PeripheralInstance(periph.chips,inst_name,"Dummy Brief",inst_addr)
+
 			# add the instance to its peripheral, and to the instances list
 			periph.add_instance(instance)
 			periph_instances_dict[inst_name] = instance
