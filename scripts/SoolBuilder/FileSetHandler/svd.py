@@ -94,7 +94,7 @@ class SVDFile :
 		
 			else:  # peripheral already exists
 				if svd_periph.attrib["derivedFrom"] in periph_instances_dict:
-					periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].reference
+					periph = periph_instances_dict[svd_periph.attrib["derivedFrom"]].parent
 				else:
 					continue
 		
