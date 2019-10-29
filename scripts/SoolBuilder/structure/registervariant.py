@@ -16,7 +16,7 @@ class RegisterVariant(Component) :
 		self.fields : T.List[Field] = list()
 
 	def __iter__(self):
-		return [f for f in self.fields]
+		return iter(self.fields)
 
 	def __eq__(self, other):
 		if not(isinstance(other, RegisterVariant)) : return False

@@ -65,7 +65,7 @@ class Register(Component) :
 		self.variants: T.List[RegisterVariant] = list()
 
 	def __iter__(self) :
-		return [v for v in self.variants]
+		return iter(self.variants)
 
 	def __contains__(self, item) :
 		if isinstance(item, RegisterVariant) :
