@@ -45,17 +45,16 @@ class Peripheral(Component) :
 	def __iter__(self):
 		return [r for r in self.registers]
 
-	def __getitem__(self, item: str) -> T.Union[Register, None] :
-		for r in self.registers :
-			if r.name == item :
-				return r
-		return None
+	def __eq__(self, other):
+		if isinstance(other, Peripheral) :
+			return (self.name == other.name and
+					self.brief == other.brief and
+					self.mapping_equivalent_to(other))
 
-	def __contains__(self, item: str) -> bool :
-		for r in self.registers :
-			if r.name == item :
-				return True
-		raise False
+		elif isinstance(other, str) :
+			return other == self.name
+		else :
+			raise TypeError()
 
 	def add_register(self, reg: Register):
 		self.chips.add(reg.chips)
@@ -113,6 +112,16 @@ class PeripheralMapping(Component) :
 
 	def __iter__(self):
 		return [reg_p for reg_p in self.register_placements]
+
+	def __eq__(self, other):
+		if not(isinstance(other, PeripheralMapping)):
+			return False
+		if len(self.register_placements) != len(other.register_placements) :
+			return False
+		for reg_p in self :
+			if reg_p not in other :
+				return False
+		return True
 
 	def merge(self, other: "PeripheralMapping"):
 		raise AssertionError("the merge method should not be called on PeripheralMapping")

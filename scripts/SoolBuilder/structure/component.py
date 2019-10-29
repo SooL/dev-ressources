@@ -19,6 +19,23 @@ class Component:
 		self.brief = brief
 		self.parent = None
 
+	def __contains__(self, item):
+		# noinspection PyTypeChecker
+		for child in self :
+			if child == item :
+				return True
+		return False
+
+	def __getitem__(self, item):
+		# noinspection PyTypeChecker
+		for child in self :
+			if child == item :
+				return child
+		return None
+
+	def __eq__(self, other):
+		return self.name == other.name
+
 	def finalize(self):
 		try :
 			# noinspection PyTypeChecker
@@ -34,20 +51,6 @@ class Component:
 
 	def merge(self, other: "Component"):
 		self.chips.add(other.chips)
-
-	def __contains__(self, item):
-		# noinspection PyTypeChecker
-		for child in self :
-			if child == item :
-				return True
-		return False
-
-	def __getitem__(self, item):
-		# noinspection PyTypeChecker
-		for child in self :
-			if child == item :
-				return child
-		return None
 
 ################################################################################
 #                            STRING REPRESENTATIONS                            #

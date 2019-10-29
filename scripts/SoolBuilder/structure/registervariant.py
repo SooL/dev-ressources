@@ -18,19 +18,20 @@ class RegisterVariant(Component) :
 	def __iter__(self):
 		return [f for f in self.fields]
 
-	def __contains__(self, item) :
-		if isinstance(item, Field) :
-			if item in self.fields :
-				return True
-		return False
+	def __eq__(self, other):
+		if not(isinstance(other, RegisterVariant)) : return False
 
-	def __getitem__(self, item):
-		if isinstance(item, str):
-			for field in self.fields :
-				if field.name == item :
-					return field
-		else :
-			raise TypeError()
+		s_len = len(self.fields)
+		o_len = len(other.fields)
+		if s_len != o_len : return False
+
+		self.sort_fields()
+		other.sort_fields()
+		for i in range(0, s_len-1) :
+			if self.fields[i] != other.fields[i] : return False
+
+		return True
+
 ################################################################################
 #                                DEFINE AND USE                                #
 ################################################################################

@@ -64,8 +64,32 @@ class Register(Component) :
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
 
-	def __iter__(self):
+	def __iter__(self) :
 		return [v for v in self.variants]
+
+	def __contains__(self, item) :
+		if isinstance(item, RegisterVariant) :
+			return super().__contains__(item)
+		else :
+			for var in self :
+				if var.contains(item)  :
+					return True
+			return False
+
+	def __getitem__(self, item: str) -> Field:
+		result: T.Union[Field, None] = None
+		for var in self :
+			result = var[item]
+			if result is not None :
+				return result
+		return None
+
+	def __eq__(self, other):
+		if not(isinstance(other, Register)) : return False
+		for field in other :
+			if field not in self :
+				return False
+		return True
 
 	def add_field(self, field: Field) :
 		self.chips.add(field.chips)

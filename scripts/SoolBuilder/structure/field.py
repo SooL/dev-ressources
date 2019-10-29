@@ -44,6 +44,11 @@ class Field(Component) :
 		else :
 			raise TypeError()
 
+	def __eq__(self, other):
+		return isinstance(other, Field) and \
+		       self.name == other.name and \
+		       self.position == other.position
+
 ################################################################################
 #                                DEFINE AND USE                                #
 ################################################################################
