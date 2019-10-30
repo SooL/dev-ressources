@@ -82,20 +82,9 @@ class Group(Component) :
 		return iter(self.peripherals)
 
 	@property
-	def computed_chips(self) -> ChipSet:
-		"""
-		Return chipset based upon content
-		:return:
-		"""
-		out = ChipSet()
-		for per in self.peripherals :
-			out.add(per.computed_chips)
-		return out
-
-	@property
 	def have_been_edited(self):
 		for peripheral in self.peripherals :
-			if peripheral.has_been_edited :
+			if peripheral.have_been_edited :
 				return True
 		return False
 
@@ -275,8 +264,9 @@ class Group(Component) :
 
 		# get instances addresses and declarations
 		tmp = ""
-		for peripheral in self.peripherals :
-			tmp += peripheral.cpp_output_instances(defines)
+		# TODO To be Re-done
+		# for peripheral in self.peripherals :
+		# 	tmp += peripheral.cpp_output_instances(defines)
 
 		# add all defines to the group handler
 		for chips in defines :

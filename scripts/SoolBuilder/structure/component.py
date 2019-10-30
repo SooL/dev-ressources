@@ -12,12 +12,14 @@ class Component:
 	def __init__(self,
 	             chips: T.Union[None, ChipSet] = None,
 	             name: T.Union[None, str] = None,
-	             brief: T.Union[None, str] = None
+	             brief: T.Union[None, str] = None,
+				 parent: "Component" = None
 	             ):
-		self.name = name
+		self._name = name
+		self.edited = True
 		self.chips = ChipSet(chips)
 		self.brief = brief
-		self.parent = None
+		self.parent = parent
 
 	# def __contains__(self, item):
 	# 	# noinspection PyTypeChecker
@@ -36,15 +38,43 @@ class Component:
 	def __eq__(self, other):
 		return self.name == other.name
 
+	@property
+	def name(self):
+		return self._name
+
+	@name.setter
+	def name(self,new):
+		if new != self._name :
+			self._name = new
+			self.edited = True
+
+	@property
+	def have_been_edited(self):
+		if self.edited :
+			return True
+		if hasattr(self,'__iter__') :
+			for child in self :
+				if child.edited :
+					return True
+		return False
+
 	def finalize(self):
 		if hasattr(self,'__iter__') :
 			# noinspection PyTypeChecker
 			for child in self :
 				child.set_parent(self)
 				child.finalize()
-		except AttributeError :
-			pass
 		self.chips.update_families()
+
+	@property
+	def computed_chips(self):
+		out = ChipSet(self.chips)
+		if hasattr(self,'__iter__'):
+			child : Component
+			for child in self :
+				out.add(child.computed_chips)
+		return out
+
 
 	def set_parent(self, parent: "Component"):
 		self.parent = parent

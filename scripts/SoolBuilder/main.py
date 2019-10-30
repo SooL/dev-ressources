@@ -174,7 +174,7 @@ if __name__ == "__main__" :
 			handler = SVDFile(svd_file)
 			
 		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
-		handler.cleanup()
+		#handler.cleanup()
 		svd_list.append(handler)
 
 	TIM_log() # DEGUB
@@ -197,17 +197,17 @@ if __name__ == "__main__" :
 	for name, group in output_groups.items() :
 		if group.have_been_edited :
 			for periph in group.peripherals :
-				while periph.has_been_edited :
+				while periph.have_been_edited :
 					logger.info(f"Re-merging {periph.name}")
 					periph.self_merge()
-					periph.clean_register_list()
+					#periph.clean_register_list()
 					periph.perform_name_rework()
 
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")
 		group.finalize()
 
-	sanity.report_sanity(output_groups)
+	#sanity.report_sanity(output_groups)
 	
 	if args.refresh_output :
 		if os.path.exists("out/") :
