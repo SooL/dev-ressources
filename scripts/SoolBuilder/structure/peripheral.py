@@ -56,6 +56,11 @@ class Peripheral(Component) :
 		else :
 			raise TypeError()
 
+	def __contains__(self, item) -> bool:
+		if isinstance(item,PeripheralMapping) :
+			return item in self.mappings
+		raise ValueError()
+
 	def add_register(self, reg: Register):
 		self.chips.add(reg.chips)
 		self_reg = self[reg.name]
@@ -91,7 +96,7 @@ class Peripheral(Component) :
 		mapping: T.Union[PeripheralMapping, None] = None
 		for m in self.mappings :
 			if reg_placement in m :
-				m[reg_placement.name].merge(reg_placement)
+				m[reg_placement].merge(reg_placement)
 				return
 			elif m.has_room_for(reg_placement) :
 				mapping = m
@@ -117,6 +122,20 @@ class Peripheral(Component) :
 			i.finalize()
 		for m in self.mappings :
 			m.finalize()
+
+	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
+		"""
+		This function will check if the current peripheral have a mapping equivalent to the other one.
+		As of right now it does not check if mappings are compatible but if an equal mapping is present in other.
+
+		:param other: The other peripheral
+		:return:
+		"""
+		for map in self.mappings :
+			if map not in other :
+				return False
+		return True
+
 
 
 class PeripheralMapping(Component) :

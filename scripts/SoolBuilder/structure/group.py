@@ -7,6 +7,8 @@ import logging
 
 from cleaners.create_peripheral import create_association_table
 from structure.utils import DefinesHandler
+import deprecated
+
 
 logger = logging.getLogger()
 
@@ -153,7 +155,8 @@ class Group(Component) :
 
 	def __identify_unnamed(self):
 
-		new_peripherals = [p for p in self.peripherals if p.name is None]
+		#new_peripherals = [p for p in self.peripherals if p.name is None]
+		new_peripherals = self.peripherals
 		unnamed = [p for p in new_peripherals]
 
 		# special cases, that require a particular function to determine the name
@@ -232,7 +235,7 @@ class Group(Component) :
 			self.peripherals.append(periph)
 		else:
 			ref = self[str(periph.name)]
-			ref.merge_peripheral(periph)
+			ref.merge(periph)
 	
 	def merge_group(self,other : "Group"):
 		if other.name != self.name :
