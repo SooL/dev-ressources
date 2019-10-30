@@ -76,6 +76,8 @@ class Group(Component) :
 			raise KeyError()
 		raise TypeError()
 
+	def __iter__(self):
+		return iter(self.peripherals)
 
 	@property
 	def computed_chips(self) -> ChipSet:
