@@ -1,0 +1,3 @@
+from cleaners.register_name_cleaner import  register_association_table
+from cleaners.field_name_cleaner import field_association_table
+#from cleaners import register_forbid_autonamefix
