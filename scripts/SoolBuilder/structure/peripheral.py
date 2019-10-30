@@ -1,6 +1,6 @@
 import typing as T
 import xml.etree.ElementTree as ET
-
+import logging
 #from structure import Group
 
 from structure import Register, RegisterPlacement
@@ -8,6 +8,9 @@ from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
 
+from cleaners import field_association_table, register_association_table
+
+logger = logging.getLogger()
 
 class Peripheral(Component) :
 
@@ -61,12 +64,25 @@ class Peripheral(Component) :
 			return item in self.mappings
 		raise ValueError()
 
+	def __getitem__(self, item) -> Register:
+		if isinstance(item,Register) :
+			for reg in self :
+				if reg == item :
+					return reg
+			raise KeyError()
+		if isinstance(item,str):
+			for reg in self :
+				if reg.name == item:
+					return reg
+			raise KeyError()
+		raise TypeError()
+
 	def add_register(self, reg: Register):
 		self.chips.add(reg.chips)
-		self_reg = self[reg.name]
-		if self_reg is not None :
+		try :
+			self_reg = self[reg.name]
 			self_reg.merge(reg)
-		else :
+		except KeyError :
 			self.registers.append(reg)
 
 	def add_instance(self, other: "PeripheralInstance") :
@@ -102,6 +118,7 @@ class Peripheral(Component) :
 				mapping = m
 		if mapping is None :
 			mapping = PeripheralMapping()
+			mapping.parent = self
 			self.mappings.append(mapping)
 		mapping.place_register(reg_placement)
 
@@ -116,12 +133,51 @@ class Peripheral(Component) :
 
 		super().merge(other)
 
+	def self_merge(self):
+		mapping_index = 0
+		for var in self.mappings:
+			var.simplify_registers()
+
+		while mapping_index < len(self.mappings):
+			mapping_offset = 1
+
+			while mapping_index + mapping_offset < len(self.mappings):
+				if self.mappings[mapping_index].merge_mapping(self.mappings[mapping_index + mapping_offset]):
+					self.mappings.pop(mapping_index + mapping_offset)
+					continue
+				else:
+					mapping_offset += 1
+			mapping_index += 1
+
+	def perform_name_rework(self):
+		"""
+		Clean all name_edited flags and perform all name fixing tasks
+		"""
+		self.edited = False
+		for reg in self.registers :
+			reg.edited = False
+
+			for variant in reg.variants :
+				variant.edited = False
+				for field in variant.fields :
+					field.edited = False
+					if reg.name in field_association_table :
+						field_association_table[reg.name](field,reg)
+
 	def finalize(self):
 		super().finalize()
 		for i in self.instances :
 			i.finalize()
 		for m in self.mappings :
 			m.finalize()
+
+
+	def declare(self, indent: TabManager = TabManager()) -> str:
+		out =""
+		for map in self.mappings :
+			out += map.declare(indent)
+		return out
+
 
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
@@ -158,14 +214,84 @@ class PeripheralMapping(Component) :
 				return False
 		return True
 
+	def __getitem__(self, item):
+		if isinstance(item,int):
+			for x in self.register_placements :
+				if x.address == item :
+					return x
+			raise KeyError()
+		if isinstance(item,RegisterPlacement):
+			for x in self.register_placements :
+				if x == item :
+					return x
+			raise KeyError()
+		raise TypeError()
+
+	def __contains__(self, item):
+		if isinstance(item,int):
+			try :
+				a = self[item]
+				return True
+			except KeyError :
+				return False
+		if isinstance(item,RegisterPlacement) :
+			return item in self.register_placements
+		raise TypeError()
+
 	def merge(self, other: "PeripheralMapping"):
 		raise AssertionError("the merge method should not be called on PeripheralMapping")
+
+	def merge_mapping(self, other: "PeripheralMapping") -> bool:
+		# TODO Use as merge ?
+		"""
+		This function will merge the other mapping into the current one if
+		the other one can fit within the current one. That is either :
+
+		 - Same register name at same position
+		 - Hole in the current register to be filled by other.
+
+		This function will not edit anything unless the merge is possible.
+
+		:param other: mapping to merge to the current one.
+		:return: True if merged ok, false otherwise
+		"""
+		other_mapping = [(x.address, x.register) for x in other.register_placements]
+		addr: int
+		reg : Register
+		for (addr, reg) in other_mapping:
+			if addr in self:
+				local_reg : Register = self[addr].register
+				if reg.name != local_reg.name:
+					if reg == local_reg:
+						local_name = local_reg.name
+						other_name = reg.name
+						new_name = local_name if len(local_name) <= len(other_name) else other_name
+						logger.warning(f"Fixing register name : same mapping for various names in "
+									   f"{self.parent.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
+						local_reg.name = new_name
+						reg.name = new_name
+					else:
+						return False
+
+		for placement in other:
+			if placement.address in self:
+				self[placement.address].register.merge(placement.register)
+			else:
+				self.place_register(placement)
+		self.chips.add(other.chips)
+
+		return True
 
 	def has_room_for(self, reg_placement: RegisterPlacement) -> bool :
 		for p in self.register_placements :
 			if p.overlap(reg_placement) :
 				return False
 		return True
+
+	def simplify_registers(self):
+		for register in [x.register for x in self.register_placements] :
+			register.self_merge()
+
 	def place_register(self, reg_placement: RegisterPlacement) :
 		self.register_placements.append(reg_placement)
 
@@ -207,9 +333,6 @@ class PeripheralMapping(Component) :
 		return out
 
 
-
-
-
 class PeripheralInstance(Component):
 	def __init__(self, chips: T.Union[ChipSet, None] = None,
 	             name: T.Union[str, None] = None,
@@ -219,6 +342,9 @@ class PeripheralInstance(Component):
 
 		self.address = address
 
+	# def finalize(self):
+	# 	pass
+
 	def define(self) -> T.Union[str,None]:
 		return f"#define {self.alias}_BASE_ADDR ({self.address:#08x})"
 
@@ -227,4 +353,6 @@ class PeripheralInstance(Component):
 			.format(self.parent.name, self.name, self.address)
 		if self.needs_define() :
 			out = "#ifdef {self.alias}_BASE_ADDR\n" + out + "\n#endif"
+
+		return out
 

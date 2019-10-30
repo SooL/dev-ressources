@@ -240,7 +240,7 @@ class Group(Component) :
 			out = license_file.read() + "\n\n"
 		tmp = ""
 		for peripheral in self.peripherals :
-			tmp += peripheral.cpp_output_structure(defines)
+			tmp += peripheral.declare(default_tabmanager) # cpp_output_structure(defines)
 
 		self_chips = self.computed_chips
 

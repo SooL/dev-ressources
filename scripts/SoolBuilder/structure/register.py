@@ -70,11 +70,12 @@ class Register(Component) :
 	def __contains__(self, item) :
 		if isinstance(item, RegisterVariant) :
 			return super().__contains__(item)
-		else :
+		elif isinstance(item,Field) :
 			for var in self :
-				if var.contains(item)  :
+				if item in var  :
 					return True
 			return False
+		raise TypeError()
 
 	def __getitem__(self, item: str) -> Field:
 		result: T.Union[Field, None] = None
@@ -82,14 +83,20 @@ class Register(Component) :
 			result = var[item]
 			if result is not None :
 				return result
-		return None
+		raise KeyError()
 
 	def __eq__(self, other):
-		if not(isinstance(other, Register)) : return False
-		for field in other :
-			if field not in self :
-				return False
-		return True
+		if isinstance(other, Register) :
+			for var in self :
+				for field in var :
+					if field not in other :
+						return False
+			for var in other :
+				for field in var :
+					if field not in self :
+						return False
+			return True
+		raise TypeError(f"Provided type {type(other)}")
 
 	def add_field(self, field: Field) :
 		self.chips.add(field.chips)
@@ -111,6 +118,19 @@ class Register(Component) :
 			for f in v:
 				self.add_field(f)
 		super().merge(other)
+
+	def self_merge(self):
+		mapping_index = 0
+		while mapping_index < len(self.variants):
+			mapping_offset = 1
+
+			while mapping_index + mapping_offset < len(self.variants):
+				if self.variants[mapping_index] == self.variants[mapping_index + mapping_offset] :
+					self.variants.pop(mapping_index + mapping_offset)
+					continue
+				else :
+					mapping_offset += 1
+			mapping_index += 1
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		out: str = ""
@@ -153,9 +173,9 @@ class RegisterPlacement(Component) :
 	def __init__(self, chips: ChipSet, name: T.Union[str, None],
 	             register: Register, address: int, array_size: int = 0) :
 		super().__init__(chips=chips, name=name)
-		self.register = register
-		self.address = address
-		self.array_size = array_size
+		self.register : Register = register
+		self.address: int  = address
+		self.array_size : int = array_size
 
 	def __eq__(self, other) -> bool:
 		if isinstance(other, RegisterPlacement) :
@@ -166,6 +186,9 @@ class RegisterPlacement(Component) :
 			       self.register.size == other.register.size
 		else :
 			return False
+
+	# def finalize(self):
+	# 	pass
 
 	@property
 	def computed_size(self) -> int:

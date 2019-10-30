@@ -49,6 +49,8 @@ class Field(Component) :
 		       self.name == other.name and \
 		       self.position == other.position
 
+	# def finalize(self):
+	# 	pass
 ################################################################################
 #                                DEFINE AND USE                                #
 ################################################################################
