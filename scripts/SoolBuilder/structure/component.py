@@ -19,25 +19,25 @@ class Component:
 		self.brief = brief
 		self.parent = None
 
-	def __contains__(self, item):
-		# noinspection PyTypeChecker
-		for child in self :
-			if child == item :
-				return True
-		return False
-
-	def __getitem__(self, item):
-		# noinspection PyTypeChecker
-		for child in self :
-			if child == item :
-				return child
-		return None
+	# def __contains__(self, item):
+	# 	# noinspection PyTypeChecker
+	# 	for child in self :
+	# 		if child == item :
+	# 			return True
+	# 	return False
+	#
+	# def __getitem__(self, item):
+	# 	# noinspection PyTypeChecker
+	# 	for child in self :
+	# 		if child == item :
+	# 			return child
+	# 	raise KeyError()
 
 	def __eq__(self, other):
 		return self.name == other.name
 
 	def finalize(self):
-		try :
+		if hasattr(self,'__iter__') :
 			# noinspection PyTypeChecker
 			for child in self :
 				child.set_parent(self)
@@ -108,7 +108,7 @@ class Component:
 #                                    USAGE                                     #
 ################################################################################
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		return None
+		return "None"
 
 
 
