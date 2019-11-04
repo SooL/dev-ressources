@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import List, Union, Dict
+import typing as T
 
 
 #from structure import ChipSet
@@ -8,6 +8,20 @@ from typing import List, Union, Dict
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
+def fill_periph_hole(size: int, prefix: str = "", sep: str = "", suffix: str = "") -> str :
+	s: int = 1
+	pos: int = 0
+	out = ""
+	while pos < size :
+		s = 1
+		while (size - pos) % s == 0 :
+			s *= 2
+		s /= 2
+		out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{int(s)}"
+		pos += s
+	if size > 0 :
+		out += suffix
+	return out
 
 class TabManager :
 	def __init__(self):
@@ -58,18 +72,28 @@ default_tabmanager = TabManager()
 
 class DefinesHandler :
 	def __init__(self):
-		self.defines_dict: Dict["ChipSet", List[str], List[str], List[str]]
-		self.defines: List[str] = list()
-		self.not_defines: List[str] = list()
-		self.undefines: List[str] = list()
+		self.defines: T.List[str] = list()
+		self.not_defines: T.List[str] = list()
+		self.undefines: T.List[str] = list()
 
-	def add(self, alias, defined_value: Union[str, None] =None, define_not=True, undefine=True):
+	def add(self, alias, defined_value: T.Union[str, None] =None, define_not: T.Union[bool, str] = True, undefine=True):
+		"""
+
+		:param alias: the name of the preprocessor constant
+		:param defined_value: the value defined if one of the chips is selected
+		:param define_not: <b>False</b> if nothing should be defined if none of the chips is selected; <br>
+						<b>True</b> if the constant must be defined empty; <br/>
+						An <b>str</b> value if the constant must have the specified value.
+		:param undefine: whether or not the preprocessor constant should be undefined at the end of the file
+		"""
 		if defined_value is not None :
 			self.defines.append(f"#define {alias} {defined_value}")
 		else :
 			self.defines.append(f"#define {alias}")
 
-		if define_not :
+		if isinstance(define_not, str) :
+			self.not_defines.append(f"#define {alias} {define_not}")
+		elif define_not :
 			self.not_defines.append(f"#define {alias}")
 
 		if undefine :

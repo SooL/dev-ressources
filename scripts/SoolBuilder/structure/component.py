@@ -2,6 +2,7 @@ import typing as T
 
 from structure import TabManager
 from structure import ChipSet
+from structure.utils import DefinesHandler
 
 
 class Component:
@@ -54,7 +55,7 @@ class Component:
 			return True
 		if hasattr(self,'__iter__') :
 			for child in self :
-				if child.edited :
+				if child.have_been_edited :
 					return True
 		return False
 
@@ -64,6 +65,7 @@ class Component:
 			for child in self :
 				child.set_parent(self)
 				child.finalize()
+				self.chips.add(child.chips)
 		self.chips.update_families()
 
 	@property
@@ -110,6 +112,7 @@ class Component:
 #                              DEFINE / UNDEFINE                               #
 ################################################################################
 
+	@property
 	def needs_define(self) -> bool :
 		"""
 		Checks whether or not the Component needs to have its alias defined.
@@ -119,26 +122,42 @@ class Component:
 		       (self.parent is not None) and\
 		       (self.chips != self.parent.chips)
 
-	def define(self) -> T.Union[str,None] :
-		if self.needs_define() :
-			return f"#define {self.alias}"
-		else :
-			return None
+	@property
+	def undefine(self) -> True:
+		return True
 
-	def define_not(self) -> T.Union[str, None] :
+	@property
+	def defined_value(self) -> T.Union[str, None]:
 		return None
 
-	def undefine(self) -> T.Union[None, str] :
-		if self.needs_define() :
-			return f"#undef {self.alias}"
-		else :
-			return None
+	@property
+	def define_not(self) -> T.Union[bool, str] :
+		return self.defined_value is not None
+
+	@property
+	def defined_name(self) -> str :
+		return self.alias
+
+	def define(self, defines: T.Dict[ChipSet, DefinesHandler]) :
+		if self.needs_define :
+			if self.chips not in defines :
+				defines[self.chips] = DefinesHandler()
+			defines[self.chips].add(
+				alias=self.defined_name,
+				defined_value= self.defined_value,
+				define_not= self.define_not,
+				undefine=self.undefine)
+
+		if hasattr(self,'__iter__'):
+			child : Component
+			for child in self :
+				child.define(defines)
 
 ################################################################################
 #                                    USAGE                                     #
 ################################################################################
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		return "None"
+		return None
 
 
 

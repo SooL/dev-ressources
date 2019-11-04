@@ -52,8 +52,10 @@ class ChipSet :
 			ChipSet.reference_chipset.add(chips)
 
 	def __eq__(self, other):
-		if isinstance(other,Chip) :
-			return other.name == self.name
+		if isinstance(other,ChipSet) :
+			return len(self.chips.symmetric_difference(other.chips)) == 0
+		else :
+			raise TypeError()
 
 	def __hash__(self):
 		return hash(tuple(sorted([x.name for x in self.chips])))

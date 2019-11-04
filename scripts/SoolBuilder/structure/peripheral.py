@@ -9,6 +9,7 @@ from structure import ChipSet
 from structure import Component
 
 from cleaners import field_association_table, register_association_table
+from structure.utils import DefinesHandler, fill_periph_hole
 
 logger = logging.getLogger()
 
@@ -130,6 +131,8 @@ class Peripheral(Component) :
 
 	def place_register(self, reg_placement: RegisterPlacement) :
 		mapping: T.Union[PeripheralMapping, None] = None
+
+		reg_placement.register = self[reg_placement.register.name]
 		for m in self.mappings :
 			if reg_placement in m :
 				m[reg_placement].merge(reg_placement)
@@ -142,7 +145,7 @@ class Peripheral(Component) :
 			self.mappings.append(mapping)
 		mapping.place_register(reg_placement)
 
-	def merge(self, other: "Peripheral"):
+	def merge(self, other: "Peripheral") :
 		for r in other.registers :
 			self.add_register(r)
 		for i in other.instances :
@@ -153,23 +156,24 @@ class Peripheral(Component) :
 
 		super().merge(other)
 
-	def self_merge(self):
+	def self_merge(self) :
 		mapping_index = 0
-		for var in self.mappings:
-			var.simplify_registers()
+		for r in self.registers :
+			r.self_merge()
 
-		while mapping_index < len(self.mappings):
+		while mapping_index < len(self.mappings) :
 			mapping_offset = 1
 
-			while mapping_index + mapping_offset < len(self.mappings):
-				if self.mappings[mapping_index].merge_mapping(self.mappings[mapping_index + mapping_offset]):
+			while mapping_index + mapping_offset < len(self.mappings) :
+				if self.mappings[mapping_index].compatible(self.mappings[mapping_index + mapping_offset]) :
+					self.mappings[mapping_index].merge(self.mappings[mapping_index + mapping_offset])
 					self.mappings.pop(mapping_index + mapping_offset)
 					continue
-				else:
+				else :
 					mapping_offset += 1
 			mapping_index += 1
 
-	def perform_name_rework(self):
+	def perform_name_rework(self) :
 		"""
 		Clean all name_edited flags and perform all name fixing tasks
 		"""
@@ -196,10 +200,38 @@ class Peripheral(Component) :
 
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		out =""
-		for map in self.mappings :
-			out += map.declare(indent)
+		if self.needs_define :
+			out += f"#if {self.defined_name}\n"
+		out += f"{indent}class {self.name}\n" \
+		       f"{indent}{{\n"
+		indent.increment()
+		for reg in self.registers :
+			out += reg.declare(indent)
+
+		out += f"{indent}struct\n" \
+		       f"{indent}{{\n"
+		indent.increment()
+		if len(self.mappings) > 1 :
+			out += f"{indent}union\n" \
+			       f"{indent}{{\n"
+			indent.increment()
+		for m in self.mappings :
+			out += m.declare(indent)
+		if len(self.mappings) > 1 :
+			out += f"{indent}}}\n"
+			indent.decrement()
+		indent.decrement()
+		out += f"\n{indent}}};"
+		indent.decrement()
+		out += f"\n{indent}}};"
+
+		# Instances are declared after all classes of the group.
+		# Instances declaration is handled in the 'cpp_output' method fo the class Group
 		return out
 
+	@property
+	def defined_name(self) -> str :
+		return self.alias if self.parent.alias is not None else f"PERIPH_{self.alias}"
 
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
@@ -267,7 +299,8 @@ class PeripheralMapping(Component) :
 		return last.address + last.computed_size
 
 	def merge(self, other: "PeripheralMapping"):
-		raise AssertionError("the merge method should not be called on PeripheralMapping")
+		for reg_p in other :
+			self.place_register(reg_p)
 
 	def compatible(self, other: "PeripheralMapping"):
 		for reg_p in other :
@@ -276,46 +309,6 @@ class PeripheralMapping(Component) :
 					return False
 			elif not(self.has_room_for(reg_p)) :
 				return False
-
-	def merge_mapping(self, other: "PeripheralMapping") -> bool:
-		# TODO Use as merge ?
-		"""
-		This function will merge the other mapping into the current one if
-		the other one can fit within the current one. That is either :
-
-		 - Same register name at same position
-		 - Hole in the current register to be filled by other.
-
-		This function will not edit anything unless the merge is possible.
-
-		:param other: mapping to merge to the current one.
-		:return: True if merged ok, false otherwise
-		"""
-		other_mapping = [(x.address, x.register) for x in other.register_placements]
-		addr: int
-		reg : Register
-		for (addr, reg) in other_mapping:
-			if addr in self:
-				local_reg : Register = self[addr].register
-				if reg.name != local_reg.name:
-					if reg == local_reg:
-						local_name = local_reg.name
-						other_name = reg.name
-						new_name = local_name if len(local_name) <= len(other_name) else other_name
-						logger.warning(f"Fixing register name : same mapping for various names in "
-									   f"{self.parent.name:10s}. Local : {local_name:15s} - Other : {other_name:15s}")
-						local_reg.name = new_name
-						reg.name = new_name
-					else:
-						return False
-
-		for placement in other:
-			if placement.address in self:
-				self[placement.address].register.merge(placement.register)
-			else:
-				self.place_register(placement)
-		self.chips.add(other.chips)
-
 		return True
 
 	def has_room_for(self, reg_placement: RegisterPlacement) -> bool :
@@ -324,50 +317,42 @@ class PeripheralMapping(Component) :
 				return False
 		return True
 
-	def simplify_registers(self):
-		for register in [x.register for x in self.register_placements] :
-			register.self_merge()
-
 	def place_register(self, reg_placement: RegisterPlacement) :
+		for reg_p in self :
+			if reg_p == reg_placement :
+				reg_p.merge(reg_placement)
+				return
 		self.register_placements.append(reg_placement)
 
 	def finalize(self):
 		self.register_placements.sort()
+		for reg_p in self.register_placements :
+			reg_p.finalize()
 		super().finalize()
 
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		out: str = ""
 		pos: int = 0
-		# add struct and indent if multiple mappings
+		# add struct and indent only if multiple mappings
 		only_mapping: bool = len(self.parent.mappings) == 1
 		if not only_mapping :
-			out += f"{indent}struct\n{indent}{{"
+			out += f"{indent}struct\n{indent}{{\n"
 			indent.increment()
 		for reg_p in self.register_placements :
 			if reg_p.address > pos :
 				# add filler
-				size: int = 1
-				while pos < reg_p.address :
-					if (reg_p.address - pos) % (size+1) != 0 :
-						out += f"\n{indent}__SOOL_PERIPH_PADDING_{size};"
-						pos += size
-					size *= 2
+				out += fill_periph_hole(size=reg_p.address - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			out += reg_p.declare(indent)
 			pos += reg_p.computed_size
 		if not only_mapping :
 			parent_size = self.parent.computed_size
 			if parent_size > pos :
-				size: int = 1
-				while pos < parent_size :
-					if (parent_size - pos) % (size+1) != 0 :
-						out += f"\n{indent}__SOOL_PERIPH_PADDING_{size};"
-						pos += size
-					size *= 2
+				# add filler
+				out += fill_periph_hole(size=parent_size - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			indent.decrement()
-			out += f"\n{indent}}}"
+			out += f"\n{indent}}}\n"
 
 		return out
-
 
 class PeripheralInstance(Component):
 	def __init__(self, chips: T.Union[ChipSet, None] = None,
@@ -378,17 +363,28 @@ class PeripheralInstance(Component):
 
 		self.address = address
 
-	# def finalize(self):
-	# 	pass
+	def __eq__(self, other):
+		return isinstance(other, PeripheralInstance) and \
+		       self.name == other.name and \
+		       self.address == other.address
 
-	def define(self) -> T.Union[str,None]:
-		return f"#define {self.alias}_BASE_ADDR ({self.address:#08x})"
+	@property
+	def defined_value(self) -> T.Union[str, None]:
+		return f"{self.address:#08x}"
+
+	@property
+	def define_not(self) -> T.Union[bool, str] :
+		return False
+
+	@property
+	def defined_name(self) -> str :
+		return f"{self.alias}_BASE_ADDR"
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		out = "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2:#08x});"\
 			.format(self.parent.name, self.name, self.address)
-		if self.needs_define() :
-			out = "#ifdef {self.alias}_BASE_ADDR\n" + out + "\n#endif"
+		if self.needs_define :
+			out = f"#ifdef {self.defined_name}\n{out}#endif"
 
 		return out
 

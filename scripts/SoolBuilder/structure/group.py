@@ -241,6 +241,7 @@ class Group(Component) :
 		tmp = ""
 		for peripheral in self.peripherals :
 			tmp += peripheral.declare(default_tabmanager) # cpp_output_structure(defines)
+			peripheral.define(defines)
 
 		self_chips = self.computed_chips
 

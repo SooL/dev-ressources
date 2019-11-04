@@ -8,6 +8,7 @@ from structure import RegisterVariant
 from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
+from structure.utils import DefinesHandler, fill_periph_hole
 
 logger = logging.getLogger()
 
@@ -17,8 +18,8 @@ logger = logging.getLogger()
 REGISTER_DEFAULT_SIZE: int = 32
 REGISTER_DECLARATION: str = """{indent}struct {name}_t: Reg{size}_t
 {indent}{{
-{variants}
-{indent}}};"""
+{variants}{indent}}};
+"""
 
 class Register(Component) :
 
@@ -100,11 +101,12 @@ class Register(Component) :
 
 	def add_field(self, field: Field) :
 		self.chips.add(field.chips)
+		field.parent = self
 
 		var: T.Union[RegisterVariant, None] = None
 		for v in self.variants :
-			if field.name in v :
-				v[field.name].merge(field)
+			if field in v :
+				v[field].merge(field)
 				return
 			if v.has_room_for(field) :
 				var = v
@@ -121,45 +123,57 @@ class Register(Component) :
 		super().merge(other)
 
 	def self_merge(self):
-		mapping_index = 0
-		while mapping_index < len(self.variants):
-			mapping_offset = 1
+		for var in self.variants :
+			var.sort_fields()
 
-			while mapping_index + mapping_offset < len(self.variants):
-				if self.variants[mapping_index] == self.variants[mapping_index + mapping_offset] :
-					self.variants.pop(mapping_index + mapping_offset)
+		var_index = 0
+		while var_index < len(self.variants):
+			var_offset = 1
+
+			while var_index + var_offset < len(self.variants):
+				if self.variants[var_index] == self.variants[var_index + var_offset] :
+					for f in self.variants[var_index + var_offset] :
+						self.variants[var_index][f].merge(f)
+					self.variants.pop(var_index + var_offset)
 					continue
 				else :
-					mapping_offset += 1
-			mapping_index += 1
+					var_offset += 1
+			var_index += 1
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		out: str = ""
 		is_union = len(self.variants) > 1
 		if is_union :
 			indent.increment()
-			out = f"{indent}union\n{indent}{{\n"
+			out += f"{indent}union\n{indent}{{\n"
 
 		indent.increment()
-		var_declaration = "\n".join(
+		out += "".join(
 			map(lambda v : v.declare(indent), self.variants))
 		indent.decrement()
 
 		if is_union :
-			out += var_declaration + f"\n{indent}}}"
+			out += f"\n{indent}}}\n"
 			indent.decrement()
 
 		out = REGISTER_DECLARATION.format(
 			indent=indent, name=self.name, size=self.size,
 			variants=out)
-		if self.needs_define() :
-			out = f"#ifdef {self.alias}\n{out}\n#endif"
+		if self.needs_define :
+			out = f"#ifdef {self.defined_name}\n{out}#endif\n"
 		return out
 
-################################################################################
-#                              REGISTER PLACEMENT                              #
-################################################################################
+	@property
+	def undefine(self) -> True:
+		return False
 
+	@property
+	def defined_value(self) -> T.Union[str, None]:
+		return None
+
+################################################################################
+############################## REGISTER PLACEMENT ##############################
+################################################################################
 
 class RegisterPlacement(Component) :
 
@@ -218,32 +232,29 @@ class RegisterPlacement(Component) :
 			       (1 if other.array_size == 0 else other.array_size)
 			return other.address + size > self.address
 		else : # self.address <= other.address
-			size = self.register.size *\
+			size = (self.register.size/8) *\
 			       (1 if self.array_size == 0 else self.array_size)
 			return self.address + size > other.address
 
-	def define(self) -> T.Union[str, None] :
-		if not(self.needs_define()) :
-			return None
-		else :
-			template = "#define {0.alias} {1.name}_t {0.name}"
-			if self.array_size > 0 :
-				template += "[{0.array_size}]"
-			return template.format(self, self.register)
 
-	def define_not(self) -> T.Union[str, None] :
-		if self.needs_define() :
-			return f"#define {self.alias}"
-		else :
-			return None
+	@property
+	def defined_value(self) -> T.Union[str, None]:
+		template = "{1.name}_t {0.name}"
+		if self.array_size > 0 :
+			template += "[{0.array_size}]"
+		return template.format(self, self.register)
+
+	@property
+	def define_not(self) -> str:
+		return fill_periph_hole(self.computed_size, sep=";")
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
-		if self.needs_define() :
-			return self.alias + ";"
+		if self.needs_define :
+			return f"{indent}{self.defined_name};\n"
 		elif self.array_size == 0 :
-			return f"{indent}{self.register.name}_t {self.name}"
+			return f"{indent}{self.register.name}_t {self.name};\n"
 		else :
-			return f"{indent}{self.register.name}_t {self.name}[{self.array_size}]"
+			return f"{indent}{self.register.name}_t {self.name}[{self.array_size}];\n"
 
 
 

@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from structure import ChipSet
 from structure import Component
 from structure import get_node_text, TabManager
+from structure.utils import DefinesHandler
 
 
 class Field(Component) :
@@ -41,7 +42,8 @@ class Field(Component) :
 	def __eq__(self, other):
 		return isinstance(other, Field) and \
 		       self.name == other.name and \
-		       self.position == other.position
+		       self.position == other.position and \
+			   self.size == other.size
 
 	def __cmp__(self, other) -> int :
 		if isinstance(other, Field) :
@@ -67,23 +69,15 @@ class Field(Component) :
 #                                DEFINE AND USE                                #
 ################################################################################
 
-	def define(self) -> T.Union[str,None]:
-		if self.needs_define() :
-			return f"#define {self.alias} {self.name}"
-		else :
-			return None
-
-	def define_not(self) -> T.Union[str, None]:
-		if self.needs_define() :
-			return f"#define {self.alias}"
-		else :
-			return None
+	@property
+	def defined_value(self) -> T.Union[str, None]:
+		return self.name
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
-		name = self.alias if self.needs_define() else self.name
+		name = self.defined_name if self.needs_define else self.name
 		if name is None :
 			name = ""
-		return f"{indent}{name} : {self.size};"
+		return f"{indent}{name} : {self.size};\n"
 
 ################################################################################
 #                            BITWISE VERIFICATIONS                             #

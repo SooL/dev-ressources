@@ -7,8 +7,8 @@ from structure import Component
 
 REG_VAR_DECLARATION : str = """{indent}struct
 {indent}{{
-{fields}
-{indent}}};"""
+{fields}{indent}}};
+"""
 
 class RegisterVariant(Component) :
 	def __init__(self, chips: T.Union[None, ChipSet] = None) :
@@ -17,6 +17,37 @@ class RegisterVariant(Component) :
 
 	def __iter__(self):
 		return iter(self.fields)
+
+	def __contains__(self, item):
+		if isinstance(item, str) :
+			for f in self :
+				if f.name == item :
+					return True
+			return False
+		elif isinstance(item, Field) :
+			for f in self :
+				if f == item :
+					return True
+			return False
+
+	def __getitem__(self, item):
+		if isinstance(item, str) :
+			for f in self :
+				if f.name == item :
+					return f
+			raise KeyError()
+		elif isinstance(item, Field) :
+			for f in self :
+				if f == item :
+					return f
+			raise KeyError()
+		elif isinstance(item, int) :
+			for f in self :
+				if f.position == item :
+					return f
+			raise KeyError()
+		else :
+			raise KeyError()
 
 	def __eq__(self, other):
 		if not(isinstance(other, RegisterVariant)) : return False
@@ -27,7 +58,7 @@ class RegisterVariant(Component) :
 
 		self.sort_fields()
 		other.sort_fields()
-		for i in range(0, s_len-1) :
+		for i in range(0, s_len) :
 			if self.fields[i] != other.fields[i] : return False
 
 		return True
@@ -36,28 +67,21 @@ class RegisterVariant(Component) :
 #                                DEFINE AND USE                                #
 ################################################################################
 
-	def define(self) -> T.Union[str,None] :
-		if self.needs_define() :
-			return f"#define {self.alias}"
-		else :
-			return None
-
-	def define_not(self) -> T.Union[str, None] :
-		return None
+	# define is the same as parent class : only alias, if needed
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		if len(self.parent.variants) == 1 :
-			return "\n".join(
+			return "".join(
 			map(lambda f : f.declare(indent=indent), self.fields))
 		else :
 			indent.increment()
-			fields_declaration = "\n".join(
+			fields_declaration = "".join(
 				map(lambda f : f.declare(indent= indent), self.fields))
 			indent.decrement()
 			out = REG_VAR_DECLARATION.format(indent= indent, fields= fields_declaration)
 
-		if self.needs_define() :
-			out += f"#ifdef {self.alias}\n" + out + "\n#endif"
+		if self.needs_define :
+			out = f"#ifdef {self.defined_name}\n{out}#endif\n"
 		return out
 
 ################################################################################
@@ -90,9 +114,10 @@ class RegisterVariant(Component) :
 		fillers: T.List[Field] = list()
 		for f in self.fields :
 			if f.position > pos :
-				fillers.append(Field(position = pos, size = f.position-pos))
+				fillers.append(Field(position = pos, size = f.position - pos))
 			pos = f.position + f.size
-
+		if pos < self.parent.size :
+			fillers.append(Field(position=pos, size = f.parent.size - pos))
 		self.fields.extend(fillers)
 		self.sort_fields()
 
