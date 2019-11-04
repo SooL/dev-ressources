@@ -223,6 +223,10 @@ class RegisterPlacement(Component) :
 	# 	pass
 
 	@property
+	def name(self):
+		return self.register.name
+
+	@property
 	def computed_size(self) -> int:
 		return self.register.size * (1 if self.array_size == 0 else self.array_size)
 
