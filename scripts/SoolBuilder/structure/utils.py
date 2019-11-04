@@ -109,7 +109,7 @@ class DefinesHandler :
 
 	def output_defines(self, chip_set: "ChipSet", use_else = True) :
 		out: str = "#if\t"
-		out += chip_set.defined_list().replace("\n", "\n\t") + "\n"
+		out += chip_set.defined_list() + "\n"
 
 		for define in self.defines :
 			out += define + "\n"

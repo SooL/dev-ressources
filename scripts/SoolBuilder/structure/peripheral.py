@@ -218,12 +218,13 @@ class Peripheral(Component) :
 		for m in self.mappings :
 			out += m.declare(indent)
 		if len(self.mappings) > 1 :
-			out += f"{indent}}}\n"
 			indent.decrement()
+			out += f"{indent}}};\n"
+		
 		indent.decrement()
-		out += f"\n{indent}}};"
+		out += f"{indent}}};\n"
 		indent.decrement()
-		out += f"\n{indent}}};"
+		out += f"{indent}}};\n"
 
 		# Instances are declared after all classes of the group.
 		# Instances declaration is handled in the 'cpp_output' method fo the class Group
@@ -350,7 +351,7 @@ class PeripheralMapping(Component) :
 				# add filler
 				out += fill_periph_hole(size=parent_size - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			indent.decrement()
-			out += f"\n{indent}}}\n"
+			out += f"{indent}}};\n"
 
 		return out
 

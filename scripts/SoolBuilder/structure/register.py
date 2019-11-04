@@ -153,7 +153,7 @@ class Register(Component) :
 		indent.decrement()
 
 		if is_union :
-			out += f"\n{indent}}}\n"
+			out += f"\n{indent}}};"
 			indent.decrement()
 
 		out = REGISTER_DECLARATION.format(
