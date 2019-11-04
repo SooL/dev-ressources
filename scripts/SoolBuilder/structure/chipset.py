@@ -114,16 +114,21 @@ class ChipSet :
 		if matched_family.keys() == reference_chipset.families.keys() :
 			return "1"
 
+		for family in sorted(matched_family.keys()) :
+			if line_size == chips_per_line:
+				output += "\\\n    "
+				line_size = 0
+			output += f"defined({family:13s}) || "
+			matched_family[family] = False
+			line_size += 1
+			
 		for chip in sorted(self.chips, key=lambda x: x.name) :
 			family = ChipSet.get_family(chip.name)
 			if family not in matched_family or matched_family[family] :
 				if line_size == chips_per_line :
 					output += "\\\n    "
 					line_size = 0
-				if family in matched_family :
-					output += f"defined({family:13s}) || "
-					matched_family[family] = False
-				else :
+				if family not in matched_family :
 					output += f"defined({chip.name:13s}) || "
 				line_size += 1
 
