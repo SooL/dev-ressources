@@ -134,8 +134,8 @@ class Group(Component) :
 					length -= 1
 
 				# If only one mapping per peripheral and mappings are compatibles
-				elif len(periph_1.mappings) == 1 and len(periph_2.mappings) == 1 and periph_1.compatible(periph_2) :
-					periph_1.merge_peripheral(periph_2)
+				elif len(periph_1.mappings) == 1 and len(periph_2.mappings) == 1 and periph_1.mappings[0].compatible(periph_2.mappings[0]) :
+					periph_1.merge(periph_2)
 					self.peripherals.pop(j)
 					length -= 1
 

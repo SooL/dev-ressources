@@ -8,15 +8,15 @@ def DEFAULT_field_cleaner(register : "Register", r_name = None) :
 
 def GPIO_reg_cleaner(field : "Field", parent : "Register" = None):
 	if parent.name in ["OSPEEDR"] :
-		field.name = f"OSPEED{int(field.offset/field.width)}"
+		field.name = f"OSPEED{int(field.position / field.size)}"
 	if parent.name in ["MODER"] :
-		field.name = f"MODE{int(field.offset/field.width)}"
+		field.name = f"MODE{int(field.position / field.size)}"
 	if parent.name in ["IDR"]:
-		field.name = f"ID{int(field.offset / field.width)}"
+		field.name = f"ID{int(field.position / field.size)}"
 	if parent.name in ["ODR"]:
-		field.name = f"OD{int(field.offset / field.width)}"
+		field.name = f"OD{int(field.position / field.size)}"
 	if parent.name in ["PUPDR"]:
-		field.name = f"PUPD{int(field.offset / field.width)}"
+		field.name = f"PUPD{int(field.position / field.size)}"
 
 
 

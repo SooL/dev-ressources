@@ -62,6 +62,13 @@ class Peripheral(Component) :
 	def __contains__(self, item) -> bool:
 		if isinstance(item,PeripheralMapping) :
 			return item in self.mappings
+		elif isinstance(item, Register) :
+			return item in self.registers
+		elif isinstance(item, str) :
+			for r in self.registers :
+				if r.name == item :
+					return True
+			return False
 		raise ValueError()
 
 	def __getitem__(self, item) -> Register:
@@ -76,6 +83,19 @@ class Peripheral(Component) :
 					return reg
 			raise KeyError()
 		raise TypeError()
+
+	@property
+	def alias(self) -> T.Union[None, str]:
+		return self.name
+	
+	@property
+	def computed_size(self):
+		max_size: int = 0
+		for m in self.mappings :
+			size = m.computed_size
+			if size > max_size :
+				max_size = size
+		return max_size
 
 	def add_register(self, reg: Register):
 		self.chips.add(reg.chips)
@@ -167,8 +187,10 @@ class Peripheral(Component) :
 	def finalize(self):
 		super().finalize()
 		for i in self.instances :
+			i.set_parent(self)
 			i.finalize()
 		for m in self.mappings :
+			m.set_parent(self)
 			m.finalize()
 
 
@@ -238,8 +260,22 @@ class PeripheralMapping(Component) :
 			return item in self.register_placements
 		raise TypeError()
 
+	@property
+	def computed_size(self):
+		self.register_placements.sort()
+		last = self.register_placements[-1]
+		return last.address + last.computed_size
+
 	def merge(self, other: "PeripheralMapping"):
 		raise AssertionError("the merge method should not be called on PeripheralMapping")
+
+	def compatible(self, other: "PeripheralMapping"):
+		for reg_p in other :
+			if reg_p.address in self :
+				if self[reg_p.address] != reg_p :
+					return False
+			elif not(self.has_room_for(reg_p)) :
+				return False
 
 	def merge_mapping(self, other: "PeripheralMapping") -> bool:
 		# TODO Use as merge ?
@@ -296,7 +332,7 @@ class PeripheralMapping(Component) :
 		self.register_placements.append(reg_placement)
 
 	def finalize(self):
-		self.register_placements.sort(key= lambda p: p.address)
+		self.register_placements.sort()
 		super().finalize()
 
 	def declare(self, indent: TabManager = TabManager()) -> str:

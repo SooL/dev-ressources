@@ -38,16 +38,28 @@ class Field(Component) :
 	def __str__(self) :
 		return super().__str__() + f" @{self.position}-{self.position + self.size - 1}"
 
+	def __eq__(self, other):
+		return isinstance(other, Field) and \
+		       self.name == other.name and \
+		       self.position == other.position
+
 	def __cmp__(self, other) -> int :
 		if isinstance(other, Field) :
 			return self.position - other.position
 		else :
 			raise TypeError()
 
-	def __eq__(self, other):
-		return isinstance(other, Field) and \
-		       self.name == other.name and \
-		       self.position == other.position
+	def __lt__(self, other) -> bool :
+		if isinstance(other, Field) :
+			return self.position < other.position
+		else :
+			raise TypeError()
+
+	def __gt__(self, other) -> bool :
+		if isinstance(other, Field) :
+			return self.position > other.position
+		else :
+			raise TypeError()
 
 	# def finalize(self):
 	# 	pass

@@ -111,6 +111,7 @@ class Register(Component) :
 
 		if var is None :
 			var = RegisterVariant()
+			self.variants.append(var)
 		var.add_field(field)
 
 	def merge(self, other: "Register"):
@@ -186,6 +187,23 @@ class RegisterPlacement(Component) :
 			       self.register.size == other.register.size
 		else :
 			return False
+
+	def __cmp__(self, other) -> int:
+		if isinstance(other, RegisterPlacement) :
+			return self.address - other.address
+		else :
+			raise TypeError()
+	def __lt__(self, other) -> bool:
+		if isinstance(other, RegisterPlacement) :
+			return self.address < other.address
+		else :
+			raise TypeError()
+
+	def __gt__(self, other) -> bool:
+		if isinstance(other, RegisterPlacement) :
+			return self.address > other.address
+		else :
+			raise TypeError()
 
 	# def finalize(self):
 	# 	pass
