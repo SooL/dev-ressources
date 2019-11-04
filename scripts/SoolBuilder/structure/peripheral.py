@@ -172,6 +172,26 @@ class Peripheral(Component) :
 				else :
 					mapping_offset += 1
 			mapping_index += 1
+		
+		reg_idx = 0
+		reg_offset = 0
+		
+		while reg_idx < len(self.registers) :
+			reg_offset = 1
+			while reg_idx + reg_offset < len(self.registers) :
+				if self.registers[reg_idx].name == self.registers[reg_idx + reg_offset].name :
+					self.registers[reg_idx].merge(self.registers[reg_idx + reg_offset])
+					for mapping in self.mappings :
+						for placement in mapping :
+							if placement.register is self.registers[reg_idx + reg_offset] :
+								placement.register = self.registers[reg_idx]
+								self.registers[reg_idx].chips.add(placement.chips)
+					self.registers.pop(reg_idx + reg_offset)
+					continue
+				else:
+					reg_offset += 1
+			reg_idx += 1
+		
 
 	def perform_name_rework(self) :
 		"""
