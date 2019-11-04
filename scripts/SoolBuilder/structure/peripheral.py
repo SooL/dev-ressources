@@ -180,7 +180,8 @@ class Peripheral(Component) :
 		self.edited = False
 		for reg in self.registers :
 			reg.edited = False
-
+			if self.name in register_association_table :
+				register_association_table[self.name](reg)
 			for variant in reg.variants :
 				variant.edited = False
 				for field in variant.fields :
