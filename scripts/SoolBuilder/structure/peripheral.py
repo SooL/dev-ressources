@@ -345,6 +345,7 @@ class PeripheralMapping(Component) :
 				reg_p.merge(reg_placement)
 				return
 		self.register_placements.append(reg_placement)
+		self.chips.add(reg_placement.chips)
 
 	def finalize(self):
 		self.register_placements.sort()
