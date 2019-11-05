@@ -419,13 +419,13 @@ class PeripheralInstance(Component):
 
 	@property
 	def defined_name(self) -> str :
-		return f"{self.alias}_BASE_ADDR"
+		return f"{self.name}_BASE_ADDR"
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		out = "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2:#08x});"\
-			.format(self.parent.name, self.name, self.address)
+		out = "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});\n"\
+			.format(self.parent.name, self.name, self.defined_name)
 		if self.needs_define :
-			out = f"#ifdef {self.defined_name}\n{out}#endif"
+			out = f"\n#ifdef {self.defined_name}\n{out}#endif\n"
 
 		return out
 
