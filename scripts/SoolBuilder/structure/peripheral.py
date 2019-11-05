@@ -271,6 +271,26 @@ class Peripheral(Component) :
 		for mapping in self.mappings :
 			mapping.define(defines)
 
+	def define_instances(self,defines: T.Dict[ChipSet, DefinesHandler]):
+		for instance in self.instances :
+			instance.define(defines)
+
+	def declare_instances(self, tab_manager : TabManager) -> str:
+		out = ""
+		virtual_instances: T.Dict[str, PeripheralInstance] = dict()
+		for instance in self.instances:
+			if instance.name in virtual_instances:
+				virtual_instances[instance.name].chips.add(instance.chips)
+			else:
+				# The actual address is not relevant
+				virtual_instances[instance.name] = PeripheralInstance(instance.chips, instance.name, instance.brief, 0)
+				virtual_instances[instance.name].parent = self
+				virtual_instances[instance.name].force_define = False
+
+		for i in sorted(virtual_instances.keys()):
+			out += virtual_instances[i].declare(tab_manager)
+		return out
+
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
 		This function will check if the current peripheral have a mapping equivalent to the other one.

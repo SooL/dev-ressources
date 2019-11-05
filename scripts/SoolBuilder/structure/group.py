@@ -266,8 +266,8 @@ class Group(Component) :
 		# get instances addresses and declarations
 		tmp = ""
 		# TODO To be Re-done
-		# for peripheral in self.peripherals :
-		# 	tmp += peripheral.cpp_output_instances(defines)
+		for peripheral in self.peripherals :
+			peripheral.define_instances(defines)
 
 		# add all defines to the group handler
 		for chips in defines :
@@ -278,17 +278,7 @@ class Group(Component) :
 
 		virtual_instances : T.Dict[str,PeripheralInstance] = dict()
 		for p in self.peripherals :
-			for instance in p.instances :
-				if instance.name in virtual_instances :
-					virtual_instances[instance.name].chips.add(instance.chips)
-				else:
-					# The actual address is not relevant
-					virtual_instances[instance.name] = PeripheralInstance(instance.chips,instance.name,instance.brief,0)
-					virtual_instances[instance.name].parent = p
-					virtual_instances[instance.name].force_define = False
-
-		for i in sorted(virtual_instances.keys()) :
-			tmp += virtual_instances[i].declare(default_tabmanager)
+			tmp += p.declare_instances(default_tabmanager)
 		# add instances declaration to the group DefinesHandler
 		defines[self_chips].add_raw(defined=tmp)
 
