@@ -21,6 +21,7 @@ class Component:
 		self.chips = ChipSet(chips)
 		self.brief = brief
 		self.parent = parent
+		self.force_define = False
 
 	# def __contains__(self, item):
 	# 	# noinspection PyTypeChecker
@@ -118,7 +119,8 @@ class Component:
 		Checks whether or not the Component needs to have its alias defined.
 		:returns: True if the Component needs to have its alias defined
 		"""
-		return (self.name is not None) and\
+		return self.force_define or \
+			   (self.name is not None) and\
 		       (self.parent is not None) and\
 		       (self.chips != self.parent.chips)
 
