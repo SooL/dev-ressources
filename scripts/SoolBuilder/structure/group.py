@@ -240,7 +240,7 @@ class Group(Component) :
 			out = license_file.read() + "\n\n"
 		tmp = ""
 		for peripheral in self.peripherals :
-			tmp += peripheral.declare(default_tabmanager) # cpp_output_structure(defines)
+			tmp += peripheral.declare(default_tabmanager)
 			peripheral.define(defines)
 
 		self_chips = self.computed_chips
@@ -253,7 +253,7 @@ class Group(Component) :
 			if chips == self_chips : continue
 			defines[self_chips].add_raw(
 				defined=defines[chips].output_defines(chips),
-				undefine=defines[chips].output_undef())
+				undefine=defines[chips].undefines)
 
 		# add structure definition to the group DefinesHandler
 		defines[self_chips].add_raw(defined=tmp)
@@ -265,23 +265,17 @@ class Group(Component) :
 
 		# get instances addresses and declarations
 		tmp = ""
-		# TODO To be Re-done
 		for peripheral in self.peripherals :
 			peripheral.define_instances(defines)
+			tmp += peripheral.declare_instances(default_tabmanager)
 
 		# add all defines to the group handler
 		for chips in defines :
 			if chips == self_chips : continue
 			defines[self_chips].add_raw(
 				defined=defines[chips].output_defines(chips),
-				undefine=defines[chips].output_undef())
-
-		virtual_instances : T.Dict[str,PeripheralInstance] = dict()
-		for p in self.peripherals :
-			tmp += p.declare_instances(default_tabmanager)
+				undefine=defines[chips].undefines)
 		# add instances declaration to the group DefinesHandler
-		defines[self_chips].add_raw(defined=tmp)
+		defines[self_chips].add_raw(defined=tmp + defines[self_chips].output_undef())
 
 		return out + defines[self_chips].output_defines(self_chips, use_else=False)
-
-

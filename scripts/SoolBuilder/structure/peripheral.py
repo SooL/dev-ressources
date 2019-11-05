@@ -437,6 +437,10 @@ class PeripheralInstance(Component):
 		       self.address == other.address
 
 	@property
+	def undefine(self) -> bool:
+		return False
+
+	@property
 	def defined_value(self) -> T.Union[str, None]:
 		return f"{self.address:#08x}"
 

@@ -15,20 +15,13 @@ def fill_periph_hole(size: int, prefix: str = "", sep: str = "", suffix: str = "
 
 	while size > 0 :
 		if size & 1 :
-			out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{2**pos}"
+			if out != "" :
+				out += sep
+			out += f"__SOOL_PERIPH_PADDING_{2**pos}"
 		pos += 1
 		size >>= 1
 
-	# while pos < size :
-	# 	s = 1
-	# 	while (size - pos) % s == 0 :
-	# 		s *= 2
-	# 	s /= 2
-	# 	out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{int(s)}"
-	# 	pos += s
-	if pos > 0 :
-		out += suffix
-	return out
+	return prefix + out + suffix
 
 class TabManager :
 	def __init__(self):
@@ -81,9 +74,9 @@ class DefinesHandler :
 	def __init__(self):
 		self.defines: T.List[str] = list()
 		self.not_defines: T.List[str] = list()
-		self.undefines: T.List[str] = list()
+		self.undefines: T.Set[str] = set()
 
-	def add(self, alias, defined_value: T.Union[str, None] =None, define_not: T.Union[bool, str] = True, undefine=True):
+	def add(self, alias: str, defined_value: T.Union[str, None] =None, define_not: T.Union[bool, str] = True, undefine=True):
 		"""
 
 		:param alias: the name of the preprocessor constant
@@ -103,16 +96,19 @@ class DefinesHandler :
 		elif define_not :
 			self.not_defines.append(f"#define {alias}")
 
-		if undefine :
-			self.undefines.append(alias)
+		if undefine and len(alias) > 0:
+			self.undefines.add(alias)
 
-	def add_raw(self, defined: str = None, not_defined: str = None, undefine: str = None):
+	def add_raw(self, defined: str = None, not_defined: str = None, undefine: T.Union[str, T.Set[str]] = None):
 		if defined is not None :
 			self.defines.append(defined)
 		if not_defined is not None :
 			self.not_defines.append(not_defined)
 		if undefine is not None :
-			self.undefines.append(undefine)
+			if isinstance(undefine, str) :
+				self.undefines.add(undefine)
+			elif isinstance(undefine, T.Set) :
+				self.undefines.update(undefine)
 
 	def output_defines(self, chip_set: "ChipSet", use_else = True) :
 		out: str = "#if\t"
@@ -122,7 +118,7 @@ class DefinesHandler :
 			out += define + "\n"
 
 		if use_else and len(self.not_defines) > 0 :
-			out += "#else"
+			out += "#else\n"
 			for not_define in self.not_defines :
 				out += not_define + "\n"
 
@@ -133,6 +129,6 @@ class DefinesHandler :
 	def output_undef(self) :
 		out: str = ""
 		for undef in self.undefines :
-			out += f"\n#undef {undef}"
+			out += f"#undef {undef}\n"
 
 		return out

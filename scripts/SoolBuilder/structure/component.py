@@ -125,7 +125,7 @@ class Component:
 		       (self.chips != self.parent.chips)
 
 	@property
-	def undefine(self) -> True:
+	def undefine(self) -> bool:
 		return True
 
 	@property

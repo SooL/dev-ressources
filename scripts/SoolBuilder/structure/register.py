@@ -250,7 +250,7 @@ class RegisterPlacement(Component) :
 
 	@property
 	def define_not(self) -> str:
-		return fill_periph_hole(self.computed_size, sep=";")
+		return fill_periph_hole(int(self.computed_size/8), sep=";", suffix="\n")
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
 		if self.needs_define :
