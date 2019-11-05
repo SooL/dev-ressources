@@ -12,14 +12,21 @@ def fill_periph_hole(size: int, prefix: str = "", sep: str = "", suffix: str = "
 	s: int = 1
 	pos: int = 0
 	out = ""
-	while pos < size :
-		s = 1
-		while (size - pos) % s == 0 :
-			s *= 2
-		s /= 2
-		out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{int(s)}"
-		pos += s
-	if size > 0 :
+
+	while size > 0 :
+		if size & 1 :
+			out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{2**pos}"
+		pos += 1
+		size >>= 1
+
+	# while pos < size :
+	# 	s = 1
+	# 	while (size - pos) % s == 0 :
+	# 		s *= 2
+	# 	s /= 2
+	# 	out += f"{prefix if pos == 0 else sep}__SOOL_PERIPH_PADDING_{int(s)}"
+	# 	pos += s
+	if pos > 0 :
 		out += suffix
 	return out
 

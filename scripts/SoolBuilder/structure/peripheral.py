@@ -318,7 +318,7 @@ class PeripheralMapping(Component) :
 	def computed_size(self):
 		self.register_placements.sort()
 		last = self.register_placements[-1]
-		return last.address + last.computed_size
+		return last.address + int(last.computed_size/4)
 
 	def merge(self, other: "PeripheralMapping"):
 		for reg_p in other :
@@ -356,22 +356,26 @@ class PeripheralMapping(Component) :
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		out: str = ""
 		pos: int = 0
+		last_register : RegisterPlacement = None
 		# add struct and indent only if multiple mappings
 		only_mapping: bool = len(self.parent.mappings) == 1
 		if not only_mapping :
 			out += f"{indent}struct\n{indent}{{\n"
 			indent.increment()
 		for reg_p in self.register_placements :
+			if last_register is None or (reg_p.address + reg_p.computed_size) > (last_register.address + last_register.computed_size) :
+				last_register = reg_p
 			if reg_p.address > pos :
 				# add filler
 				out += fill_periph_hole(size=reg_p.address - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
+				pos += reg_p.address - pos
 			out += reg_p.declare(indent)
-			pos += reg_p.computed_size
+			pos += int(reg_p.computed_size/8)
 		if not only_mapping :
 			parent_size = self.parent.computed_size
-			if parent_size > pos :
+			if parent_size > pos *8 + last_register.computed_size :
 				# add filler
-				out += fill_periph_hole(size=parent_size - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
+				out += fill_periph_hole(size=int(parent_size/8) - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			indent.decrement()
 			out += f"{indent}}};\n"
 
