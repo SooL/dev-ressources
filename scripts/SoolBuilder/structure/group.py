@@ -1,6 +1,6 @@
 import typing as T
 
-from structure import Peripheral, Component
+from structure import Peripheral, Component, PeripheralInstance
 from structure import ChipSet
 from structure import default_tabmanager
 import logging
@@ -276,6 +276,19 @@ class Group(Component) :
 				defined=defines[chips].output_defines(chips),
 				undefine=defines[chips].output_undef())
 
+		virtual_instances : T.Dict[str,PeripheralInstance] = dict()
+		for p in self.peripherals :
+			for instance in p.instances :
+				if instance.name in virtual_instances :
+					virtual_instances[instance.name].chips.add(instance.chips)
+				else:
+					# The actual address is not relevant
+					virtual_instances[instance.name] = PeripheralInstance(instance.chips,instance.name,instance.brief,0)
+					virtual_instances[instance.name].parent = p
+					virtual_instances[instance.name].force_define = False
+
+		for i in sorted(virtual_instances.keys()) :
+			tmp += virtual_instances[i].declare(default_tabmanager)
 		# add instances declaration to the group DefinesHandler
 		defines[self_chips].add_raw(defined=tmp)
 

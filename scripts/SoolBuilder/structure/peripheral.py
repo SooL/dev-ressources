@@ -263,6 +263,11 @@ class Peripheral(Component) :
 	def defined_name(self) -> str :
 		return self.alias if self.parent.alias is not None else f"PERIPH_{self.alias}"
 
+	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
+		super().define(defines)
+		for instance in self.instances :
+			instance.define(defines)
+
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
 		This function will check if the current peripheral have a mapping equivalent to the other one.
@@ -397,6 +402,7 @@ class PeripheralInstance(Component):
 		super().__init__(chips=chips, name=name, brief=brief)
 
 		self.address = address
+		self.force_define = True
 
 	def __eq__(self, other):
 		return isinstance(other, PeripheralInstance) and \
