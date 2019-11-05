@@ -276,7 +276,7 @@ class Peripheral(Component) :
 			instance.define(defines)
 
 	def declare_instances(self, tab_manager : TabManager) -> str:
-		out = ""
+		out = f"\n//Instances for peripheral {self.name}\n"
 		virtual_instances: T.Dict[str, PeripheralInstance] = dict()
 		for instance in self.instances:
 			if instance.name in virtual_instances:
@@ -287,8 +287,9 @@ class Peripheral(Component) :
 				virtual_instances[instance.name].parent = self
 				virtual_instances[instance.name].force_define = False
 
-		for i in sorted(virtual_instances.keys()):
+		for i in sorted(virtual_instances.keys(), key= lambda x : ("1_" if not virtual_instances[x].needs_define else "2_") + virtual_instances[x].name):
 			out += virtual_instances[i].declare(tab_manager)
+
 		return out
 
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
@@ -452,11 +453,34 @@ class PeripheralInstance(Component):
 	def defined_name(self) -> str :
 		return f"{self.name}_BASE_ADDR"
 
+	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
+		super().define(defines)
+
+		if self.parent.needs_define :
+			defines[self.chips].add(
+				alias=super().defined_name,
+				defined_value=self.defined_value,
+				define_not=self.define_not,
+				undefine=self.undefine)
+
+
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		out = "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});\n"\
+		out = str(indent) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});\n"\
 			.format(self.parent.name, self.name, self.defined_name)
+
+		ifdef_string : str = ""
+
 		if self.needs_define :
-			out = f"\n#ifdef {self.defined_name}\n{out}#endif\n"
+			ifdef_string += f"defined({self.defined_name}) "
+		if self.parent.needs_define :
+			if ifdef_string != "" :
+				ifdef_string += "&& "
+			ifdef_string += f"defined({super().defined_name}) "
+
+		if len(ifdef_string) > 0 :
+			indent.increment()
+			out = f"\n{indent -1 }#if {ifdef_string}\n{out}{indent-1}#endif\n"
+			indent.decrement()
 
 		return out
 
