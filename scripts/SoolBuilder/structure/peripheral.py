@@ -222,10 +222,13 @@ class Peripheral(Component) :
 		for i in self.instances :
 			i.set_parent(self)
 			i.finalize()
+
+		map_idx: int = 0
 		for m in self.mappings :
 			m.set_parent(self)
+			m.name = str(map_idx)
+			map_idx += 1
 			m.finalize()
-
 
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		out =""
@@ -265,8 +268,8 @@ class Peripheral(Component) :
 
 	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
 		super().define(defines)
-		for instance in self.instances :
-			instance.define(defines)
+		for mapping in self.mappings :
+			mapping.define(defines)
 
 	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
 		"""
@@ -392,6 +395,10 @@ class PeripheralMapping(Component) :
 			indent.decrement()
 			out += f"{indent}}};\n"
 
+		if self.needs_define :
+			out = f"#ifdef {self.defined_name}\n" \
+			      f"{out}" \
+			       "#endif\n"
 		return out
 
 class PeripheralInstance(Component):
