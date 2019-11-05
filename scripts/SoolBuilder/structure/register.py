@@ -222,9 +222,9 @@ class RegisterPlacement(Component) :
 	# def finalize(self):
 	# 	pass
 
-	@property
-	def name(self):
-		return self.register.name
+	# @property
+	# def name(self):
+	# 	return self.register.name
 
 	@property
 	def computed_size(self) -> int:

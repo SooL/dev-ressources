@@ -201,7 +201,15 @@ class Peripheral(Component) :
 		for reg in self.registers :
 			reg.edited = False
 			if self.name in register_association_table :
+				reg_name = reg.name
 				register_association_table[self.name](reg)
+				# change register placements that had the register name before the fix
+				if reg.name != reg_name :
+					for m in self.mappings :
+						for reg_p in m :
+							if reg_p.register is reg and reg_p.name == reg_name:
+								reg_p.name = reg.name
+
 			for variant in reg.variants :
 				variant.edited = False
 				for field in variant.fields :
