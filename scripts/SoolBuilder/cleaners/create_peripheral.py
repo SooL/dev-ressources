@@ -89,6 +89,6 @@ create_association_table : T.Dict[str,T.Callable] = {
 	"ETHERNET"  : ETHERNET_create_cleaner,
 	"ADC"       : ADC_create_cleaner,
 	"I2C"       : I2C_create_cleaner,
-	"Toto"		: GPIO_create_cleaner,
+	"GPIO"		: GPIO_create_cleaner,
 	None        : DEFAULT_create_cleaner
 }
