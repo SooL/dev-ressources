@@ -285,9 +285,11 @@ class Group(Component) :
 				undefine=defines[chips].undefines)
 
 		default_tabmanager.decrement()
+		tmp += f"{default_tabmanager}}};\n"
 		default_tabmanager.decrement()
+		tmp += f"{default_tabmanager}}};\n"
 		# add instances declaration to the group DefinesHandler
-		defines[self_chips].add_raw(defined=f"{tmp} \n{default_tabmanager+1}}};\n{default_tabmanager}}};\n{defines[self_chips].output_undef()}")
+		defines[self_chips].add_raw(defined=f"{tmp}{defines[self_chips].output_undef()}")
 
 		out += defines[self_chips].output_defines(self_chips, use_else=False)
 		out = (f"{licence_text}\n\n"
