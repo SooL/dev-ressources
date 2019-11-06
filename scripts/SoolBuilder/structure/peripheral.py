@@ -215,7 +215,7 @@ class Peripheral(Component) :
 				for field in variant.fields :
 					field.edited = False
 					if reg.name in field_association_table :
-						field_association_table[reg.name](field,reg)
+						field_association_table[reg.name](field)
 
 	def finalize(self):
 		super().finalize()
