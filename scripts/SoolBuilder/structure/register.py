@@ -154,7 +154,7 @@ class Register(Component) :
 		indent.decrement()
 
 		if is_union :
-			out += f"\n{indent}}};"
+			out += f"{indent}}};\n"
 			indent.decrement()
 
 		out = REGISTER_DECLARATION.format(
@@ -251,7 +251,7 @@ class RegisterPlacement(Component) :
 
 	@property
 	def define_not(self) -> str:
-		return fill_periph_hole(int(self.computed_size/8), sep=";", suffix="\n")
+		return fill_periph_hole(int(self.computed_size/8), sep=";")
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
 		if self.needs_define :
