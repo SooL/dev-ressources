@@ -78,6 +78,8 @@ class Component:
 				out.add(child.computed_chips)
 		return out
 
+	def exists_for(self, chip_pattern: str) -> bool :
+		return self.chips.match(chip_pattern)
 
 	def set_parent(self, parent: "Component"):
 		self.parent = parent
