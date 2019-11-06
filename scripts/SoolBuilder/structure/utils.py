@@ -37,9 +37,10 @@ class TabManager :
 				self.level += other
 		else :
 			raise TypeError("Can only add integers")
+		return self
 
 	def __isub__(self, other):
-		self.__iadd__(-other)
+		return self.__iadd__(-other)
 
 	def __add__(self, other) -> str:
 		if isinstance(other, int) :
