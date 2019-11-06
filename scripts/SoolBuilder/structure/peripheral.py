@@ -226,7 +226,7 @@ class Peripheral(Component) :
 		map_idx: int = 0
 		for m in self.mappings :
 			m.set_parent(self)
-			m.name = str(map_idx)
+			m.name = f"MAP{map_idx}"
 			map_idx += 1
 			m.finalize()
 
@@ -241,9 +241,6 @@ class Peripheral(Component) :
 		for reg in self.registers :
 			out += reg.declare(indent)
 
-		out += f"{indent}struct\n" \
-		       f"{indent}{{\n"
-		indent.increment()
 		if len(self.mappings) > 1 :
 			out += f"{indent}union\n" \
 			       f"{indent}{{\n"
