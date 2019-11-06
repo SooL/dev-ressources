@@ -237,6 +237,7 @@ class Peripheral(Component) :
 		out += f"{indent}class {self.name}\n" \
 		       f"{indent}{{\n"
 		indent.increment()
+		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES"
 		for reg in self.registers :
 			out += reg.declare(indent)
 
@@ -252,9 +253,11 @@ class Peripheral(Component) :
 		if len(self.mappings) > 1 :
 			indent.decrement()
 			out += f"{indent}}};\n"
-		
-		indent.decrement()
-		out += f"{indent}}};\n"
+
+		out += f"{indent}private:\n" \
+		       f"{indent}{self.name}() = delete;\n" \
+		       f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
+
 		indent.decrement()
 		out += f"{indent}}};\n"
 

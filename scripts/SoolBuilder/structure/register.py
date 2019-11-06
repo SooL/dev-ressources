@@ -16,9 +16,10 @@ logger = logging.getLogger()
 ################################### REGISTER ###################################
 ################################################################################
 REGISTER_DEFAULT_SIZE: int = 32
-REGISTER_DECLARATION: str = """{indent}struct {name}_t: Reg{size}_t
+REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: Reg{reg.size}_t
 {indent}{{
-{variants}{indent}}};
+{variants}{indent}\t//SOOL-{reg.alias}-DECLARATIONS
+{indent}}};
 """
 
 class Register(Component) :
@@ -157,7 +158,7 @@ class Register(Component) :
 			indent.decrement()
 
 		out = REGISTER_DECLARATION.format(
-			indent=indent, name=self.name, size=self.size,
+			indent=indent, reg=self,
 			variants=out)
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"

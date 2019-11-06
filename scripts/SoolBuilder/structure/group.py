@@ -237,6 +237,8 @@ class Group(Component) :
 		defines: T.Dict[ChipSet, DefinesHandler] = dict()
 		out = ""
 		licence_text = ""
+		includes_text = "#include \"lib_utils/peripheral_include.h\"\n" \
+		                f"//SOOL-{self.name}-INCLUDES\n"
 
 		# default_tabmanager += 2
 		with open("license_header.txt", "r") as license_file :
@@ -277,6 +279,8 @@ class Group(Component) :
 			peripheral.define_instances(defines)
 			tmp += peripheral.declare_instances(default_tabmanager)
 
+		tmp += f"{default_tabmanager}//SOOL-{self.name}-DEFINES\n"
+		tmp += f"{default_tabmanager}//SOOL-{self.name}-DEFINITIONS\n"
 		# add all defines to the group handler
 		for chips in defines :
 			if chips == self_chips : continue
@@ -292,7 +296,8 @@ class Group(Component) :
 		defines[self_chips].add_raw(defined=f"{tmp}{defines[self_chips].output_undef()}")
 
 		out += defines[self_chips].output_defines(self_chips, use_else=False)
-		out = (f"{licence_text}\n\n"
+		out = (f"{licence_text}\n"
+		       f"{includes_text}\n"
 			   f"{out}")
 
 		# default_tabmanager -= 2
