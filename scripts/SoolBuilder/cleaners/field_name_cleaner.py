@@ -19,7 +19,7 @@ def GPIO_reg_cleaner(field : "Field",):
 		field.name = f"PUPD{int(field.position / field.size)}"
 
 	if field.parent.name in ["AFRH"]:
-		field.name = f"AFSEL{int((field.position +16)/ field.size)}"
+		field.name = f"AFSEL{int((field.position +32)/ field.size)}"
 	if field.parent.name in ["AFRL"]:
 		field.name = f"AFSEL{int((field.position)/ field.size)}"
 
