@@ -233,7 +233,7 @@ class Peripheral(Component) :
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		out =""
 		if self.needs_define :
-			out += f"#if {self.defined_name}\n"
+			out += f"{indent}#if {self.defined_name}\n"
 		out += f"{indent}class {self.name}\n" \
 		       f"{indent}{{\n"
 		indent.increment()
@@ -417,9 +417,9 @@ class PeripheralMapping(Component) :
 			out += f"{indent}}};\n"
 
 		if self.needs_define :
-			out = f"#ifdef {self.defined_name}\n" \
+			out = f"{indent}#ifdef {self.defined_name}\n" \
 			      f"{out}" \
-			       "#endif\n"
+			       f"{indent}#endif\n"
 		return out
 
 class PeripheralInstance(Component):

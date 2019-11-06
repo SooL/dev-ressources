@@ -160,7 +160,7 @@ class Register(Component) :
 			indent=indent, name=self.name, size=self.size,
 			variants=out)
 		if self.needs_define :
-			out = f"#ifdef {self.defined_name}\n{out}#endif\n"
+			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
 
 	@property

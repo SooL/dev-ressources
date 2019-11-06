@@ -81,7 +81,7 @@ class RegisterVariant(Component) :
 			out = REG_VAR_DECLARATION.format(indent= indent, fields= fields_declaration)
 
 		if self.needs_define :
-			out = f"#ifdef {self.defined_name}\n{out}#endif\n"
+			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
 
 ################################################################################
