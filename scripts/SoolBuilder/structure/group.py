@@ -235,9 +235,12 @@ class Group(Component) :
 	def cpp_output(self):
 
 		defines: T.Dict[ChipSet, DefinesHandler] = dict()
+		out = ""
+		licence_text = ""
 
+		# default_tabmanager += 2
 		with open("license_header.txt", "r") as license_file :
-			out = license_file.read() + "\n\n"
+			licence_text = license_file.read() + "\n\n"
 		tmp = ""
 		for peripheral in self.peripherals :
 			tmp += peripheral.declare(default_tabmanager)
@@ -278,4 +281,11 @@ class Group(Component) :
 		# add instances declaration to the group DefinesHandler
 		defines[self_chips].add_raw(defined=tmp + defines[self_chips].output_undef())
 
-		return out + defines[self_chips].output_defines(self_chips, use_else=False)
+		out += defines[self_chips].output_defines(self_chips, use_else=False)
+		out = (f"{licence_text}\n\n"
+			   f"namespace sool{{\n"
+			   f"namespace core {{\n{out}\n}};\n}};")
+
+		# default_tabmanager -= 2
+
+		return out
