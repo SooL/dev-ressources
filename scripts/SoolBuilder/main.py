@@ -171,7 +171,10 @@ if __name__ == "__main__" :
 				handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
 				break
 		if handler is None :
-			handler = SVDFile(svd_file)
+			logger.warning(f"No define found for svd file {svd_file}")
+			continue
+			# To add a default define based upon SVD name, uncomment
+			# handler = SVDFile(svd_file)
 			
 		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
 		#handler.cleanup()
