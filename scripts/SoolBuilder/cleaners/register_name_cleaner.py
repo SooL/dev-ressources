@@ -7,6 +7,9 @@ def DEFAULT_reg_cleaner(register : "Register", periph_name = None) :
 
 
 def GPIO_reg_cleaner(register : "Register", p_name = None):
+	if register.name.startswith("GPIOx_") :
+		register.name = register.name[len("GPIOx_"):]
+
 	if register.name in ["OSPEEDER", "GPIOB_OSPEEDR"] :
 		register.name = "OSPEEDR"
 
