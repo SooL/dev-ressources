@@ -69,16 +69,14 @@ class RegisterVariant(Component) :
 
 	# define is the same as parent class : only alias, if needed
 
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
+	def declare(self, indent: TabManager = TabManager(),reverse_endian : bool = False) -> T.Union[None,str] :
 		if len(self.parent.variants) == 1 :
-			return "".join(
-			map(lambda f : f.declare(indent=indent), self.fields))
+			out = "".join([f.declare(indent) for f in sorted(self.fields,reverse=reverse_endian)])
 		else :
 			indent.increment()
-			fields_declaration = "".join(
-				map(lambda f : f.declare(indent= indent), self.fields))
+			content = "".join([f.declare(indent) for f in sorted(self.fields,reverse=reverse_endian)])
 			indent.decrement()
-			out = REG_VAR_DECLARATION.format(indent= indent, fields= fields_declaration)
+			out = REG_VAR_DECLARATION.format(indent= indent, fields= content)
 
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
