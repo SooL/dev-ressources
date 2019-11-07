@@ -265,7 +265,8 @@ if __name__ == "__main__" :
 		if os.path.exists("out/") :
 			shutil.rmtree("out")
 		os.mkdir("out")
-
+	
+	logger.info("Printing output files...")
 	for name, group in output_groups.items():
 		with open(f"out/{name}.h","w") as header :
 			header.write(group.cpp_output())

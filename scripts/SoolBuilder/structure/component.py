@@ -3,7 +3,9 @@ import typing as T
 from structure import TabManager
 from structure import ChipSet
 from structure.utils import DefinesHandler
+import logging
 
+logger = logging.getLogger()
 
 class Component:
 ################################################################################
@@ -16,8 +18,10 @@ class Component:
 	             brief: T.Union[None, str] = None,
 				 parent: "Component" = None
 	             ):
-		self._name = name
+		self._name = None
 		self.edited = True
+		self.name = name
+		
 		self.chips = ChipSet(chips)
 		self.brief = brief
 		self.parent = parent
@@ -45,8 +49,12 @@ class Component:
 		return self._name
 
 	@name.setter
-	def name(self,new):
+	def name(self,new : str):
 		if new != self._name :
+			if new is not None :
+				new = new.replace("[","_").replace("]","")
+				if not new.isidentifier() and not new.isalnum():
+					logger.error(f"Setting non-alphanum component name {new}")
 			self._name = new
 			self.edited = True
 
