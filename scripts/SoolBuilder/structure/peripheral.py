@@ -252,7 +252,9 @@ class Peripheral(Component) :
 			out += f"{indent}}};\n"
 
 		out += f"{indent}private:\n" \
+			   f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n"\
 		       f"{indent}{self.name}() = delete;\n" \
+			   f"{indent}#endif\n" \
 		       f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
 
 		indent.decrement()
@@ -423,6 +425,9 @@ class PeripheralMapping(Component) :
 		return out
 
 class PeripheralInstance(Component):
+
+	generate_nophy : bool = False
+
 	def __init__(self, chips: T.Union[ChipSet, None] = None,
 	             name: T.Union[str, None] = None,
 	             brief: T.Union[str, None] = None,
@@ -464,9 +469,23 @@ class PeripheralInstance(Component):
 				undefine=self.undefine)
 
 
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		out = str(indent) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});\n"\
+	def declaration_strings(self,indent : TabManager = TabManager(), with_nophy = False) -> str:
+		normal_instance = str(indent + (1 if with_nophy else 0)) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
 			.format(self.parent.name, self.name, self.defined_name)
+
+		nophy_instance = (str(indent +1) + "volatile class {0} * const {1} = new {0}();\n" +
+						  str(indent +1) + "#undef {2}\n" +
+						  str(indent +1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
+			.format(self.parent.name, self.name, self.defined_name)
+
+		out = f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
+			  f"{normal_instance}\n" \
+			  f"{indent}#else\n" \
+			  f"{nophy_instance}\n" \
+			  f"{indent}#endif"
+		return out if with_nophy else normal_instance
+
+	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 
 		ifdef_string : str = ""
 
@@ -479,8 +498,14 @@ class PeripheralInstance(Component):
 
 		if len(ifdef_string) > 0 :
 			indent.increment()
-			out = f"\n{indent -1 }#if {ifdef_string}\n{out}{indent-1}#endif\n"
+			out = f"\n{indent -1 }#if {ifdef_string}\n" \
+				  f"{self.declaration_strings(indent, PeripheralInstance.generate_nophy)}\n" \
+				  f"{indent-1}#endif\n"
 			indent.decrement()
+		else:
+			out = self.declaration_strings(indent, PeripheralInstance.generate_nophy) + "\n"
+			if PeripheralInstance.generate_nophy :
+				out += "\n"
 
 		return out
 
