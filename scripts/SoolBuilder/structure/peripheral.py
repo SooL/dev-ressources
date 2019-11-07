@@ -237,7 +237,7 @@ class Peripheral(Component) :
 		out += f"{indent}class {self.name}\n" \
 		       f"{indent}{{\n"
 		indent.increment()
-		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES"
+		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES\n"
 		for reg in self.registers :
 			out += reg.declare(indent)
 
