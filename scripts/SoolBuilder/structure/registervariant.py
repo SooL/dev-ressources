@@ -110,7 +110,7 @@ class RegisterVariant(Component) :
 		"""
 		pos: int = 0
 		fillers: T.List[Field] = list()
-		for f in self.fields :
+		for f in sorted(self.fields) :
 			if f.position > pos :
 				fillers.append(Field(position = pos, size = f.position - pos))
 			pos = f.position + f.size
