@@ -11,6 +11,7 @@ REG_VAR_DECLARATION : str = """{indent}struct
 """
 
 class RegisterVariant(Component) :
+	big_endian : bool = False
 	def __init__(self, chips: T.Union[None, ChipSet] = None) :
 		super().__init__(chips=chips)
 		self.fields : T.List[Field] = list()
@@ -69,12 +70,12 @@ class RegisterVariant(Component) :
 
 	# define is the same as parent class : only alias, if needed
 
-	def declare(self, indent: TabManager = TabManager(),reverse_endian : bool = False) -> T.Union[None,str] :
+	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		if len(self.parent.variants) == 1 :
-			out = "".join([f.declare(indent) for f in sorted(self.fields,reverse=reverse_endian)])
+			out = "".join([f.declare(indent) for f in sorted(self.fields, reverse=RegisterVariant.big_endian)])
 		else :
 			indent.increment()
-			content = "".join([f.declare(indent) for f in sorted(self.fields,reverse=reverse_endian)])
+			content = "".join([f.declare(indent) for f in sorted(self.fields, reverse=RegisterVariant.big_endian)])
 			indent.decrement()
 			out = REG_VAR_DECLARATION.format(indent= indent, fields= content)
 

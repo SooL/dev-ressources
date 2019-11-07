@@ -128,6 +128,9 @@ if __name__ == "__main__" :
 						dest="group_filter",
 						help="groups to regenerate",
 						default=None)
+	parser.add_argument("-b","--big-endian",
+						action="store_true",
+						help="This flag will reverse generate the library for big endianness.")
 	parser.add_argument("-k","--keep-generated",
 						action="store_false",
 						dest="refresh_output",
@@ -138,6 +141,10 @@ if __name__ == "__main__" :
 	if not os.path.exists(svd.file_path) :
 		logger.info("First initialization")
 		svd.init()
+
+	if args.big_endian :
+		logger.warning("The library will be generated for big endian.")
+		RegisterVariant.big_endian = True
 
 	if args.update_all :
 		svd.init()
