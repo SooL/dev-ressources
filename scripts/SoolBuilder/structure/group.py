@@ -296,9 +296,12 @@ class Group(Component) :
 		defines[self_chips].add_raw(defined=f"{tmp}{defines[self_chips].output_undef()}")
 
 		out += defines[self_chips].output_defines(self_chips, use_else=False)
-		out = (f"{licence_text}\n"
+		out = (f"{licence_text}"
+		       f"#ifndef __SOOL_CORE_{self.name}_H\n"
+		       f"#define __SOOL_CORE_{self.name}_H\n"
 		       f"{includes_text}\n"
-			   f"{out}")
+			   f"{out}\n"
+			   f"#endif //__SOOL_CORE_{self.name}_H")
 
 		# default_tabmanager -= 2
 
