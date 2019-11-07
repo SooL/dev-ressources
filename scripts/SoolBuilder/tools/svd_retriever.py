@@ -10,9 +10,12 @@ import tempfile
 import zipfile
 import typing as T
 import json
+import configparser
+
 logger = logging.getLogger()
 file_path = "./.data/svd"
 fileset_path = "./.data/fileset"
+config_file = "./.data/versions.ini"
 
 defined_archives_st = {
 	"STM32F0"  : "stm32f0_svd.zip",
@@ -111,8 +114,10 @@ def download_and_handle_st(archive : str, destination : str = file_path) -> T.Li
 		return [os.path.basename(f) for f in svd_files]
 
 
-def download_and_handle_keil(archive : str, destination : str = file_path):
-	
+def download_and_handle_keil(archive : str, destination : str = file_path, versions_path : str = config_file):
+	version_handler = configparser.ConfigParser()
+	version_handler.read(versions_path)
+
 	base_url_check = "http://pack.keil.com/api/pack/check?pack="
 	
 	if archive.upper() in defined_archives_keil :
@@ -127,7 +132,8 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 			t = json.loads(response.read().decode())
 			check_ok = t["Success"]
 			new_version = t["LatestVersion"]
-			
+			version_handler["PackagesVersion"][archive] = None
+			version_handler["GENERAL"]["VersionHash"] = hash(version_handler["PackagesVersion"][archive])
 			if not check_ok :
 				logger.error(f"Unable to retrieve {archive}'s version value")
 				return list()
@@ -165,7 +171,9 @@ def download_and_handle_keil(archive : str, destination : str = file_path):
 					shutil.copy(temp_dir + "/"+archive + "pdsc",fileset_path)
 				else :
 					logger.warning("Fileset not found")
-				
+
+				version_handler["PackagesVersion"][archive] = new_version
+				version_handler["GENERAL"]["VersionHash"] = hash(version_handler["PackagesVersion"][archive])
 				return [os.path.basename(f) for f in svd_files]
 	
 	except urllib.error.HTTPError as err :
