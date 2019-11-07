@@ -119,10 +119,18 @@ if __name__ == "__main__" :
 						action="store_true",
 						dest="update_all",
 						help="Trigger a full update of svd files")
-	parser.add_argument("--update", "-u",
+	parser.add_argument("--update",
 						action="append",
 						dest="update_svd",
 						help="Add a family to the files to be updated.",
+						choices=svd.defined_archives_keil.keys())
+	parser.add_argument("--upgrade-all",
+						action="store_true",
+						help="Trigger a full upgrade of svd files")
+	parser.add_argument("--upgrade", "-u",
+						action="append",
+						dest="upgrade_svd",
+						help="Add a family to the files to be upgraded.",
 						choices=svd.defined_archives_keil.keys())
 	parser.add_argument("--limit-groups",
 						dest="group_filter",
@@ -156,13 +164,40 @@ if __name__ == "__main__" :
 	if args.update_all :
 		svd.init()
 		args.update_svd = svd.defined_archives_keil.keys()
+		
+	if args.upgrade_all :
+		#svd.init()
+		args.upgrade_svd = svd.defined_archives_keil.keys()
 
 	if args.update_svd is not None and len(args.update_svd) :
 		logger.warning("Refresh definition for following families :")
+		not_retrieved = list()
 		for chip in args.update_svd :
 			logger.warning("\t" + chip)
 		for chip in args.update_svd :
-			svd.download_and_handle_keil(chip)
+			if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
+				not_retrieved.append(chip)
+		if len(not_retrieved) > 0 :
+			logger.warning("Several chip families have not been retrieved :")
+			for chip in sorted(not_retrieved) :
+				logger.warning(f"\t{chip}")
+		else:
+			logger.info("All families retrieved")
+	
+	if args.upgrade_svd is not None and len(args.upgrade_svd) :
+		logger.warning("Refresh definition for following families :")
+		not_retrieved = list()
+		for chip in args.upgrade_svd :
+			logger.warning("\t" + chip)
+		for chip in args.upgrade_svd :
+			if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
+				not_retrieved.append(chip)
+		if len(not_retrieved) > 0 :
+			logger.warning("Several chip families have not been retrieved :")
+			for chip in sorted(not_retrieved) :
+				logger.warning(f"\t{chip}")
+		else:
+			logger.info("All families retrieved")
 
 	FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
 
