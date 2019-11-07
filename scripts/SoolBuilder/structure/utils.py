@@ -113,17 +113,23 @@ class DefinesHandler :
 
 	def output_defines(self, chip_set: "ChipSet", use_else = True) :
 		out: str = "#if\t"
-		out += chip_set.defined_list() + "\n"
+		defined_list = chip_set.defined_list()
+		always_true = defined_list == "1"
+		if not always_true :
+			out +=  defined_list + "\n"
+		else :
+			out = ""
 
 		for define in self.defines :
 			out += define + "\n"
 
-		if use_else and len(self.not_defines) > 0 :
+		if not always_true and use_else and len(self.not_defines) > 0 :
 			out += "#else\n"
 			for not_define in self.not_defines :
 				out += not_define + "\n"
 
-		out += "#endif\n"
+		if not always_true :
+			out += "#endif\n"
 
 		return out
 
