@@ -222,7 +222,7 @@ def download_and_handle_keil(archive_arg : str, destination : str = file_path, v
 			logger.warning("Fileset not found")
 
 		version_handler["PackagesVersion"][archive_arg] = new_version
-		version_handler["GENERAL"]["VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in version_handler[f"PackagesVersion"]])):X}'
+		version_handler["GENERAL"]["VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in sorted(version_handler[f"PackagesVersion"])])):X}'
 		
 		version_handler.write(open(versions_path,"w"))
 		return [os.path.basename(f) for f in svd_files]
