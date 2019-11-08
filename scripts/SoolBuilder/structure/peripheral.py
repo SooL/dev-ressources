@@ -191,7 +191,6 @@ class Peripheral(Component) :
 				else:
 					reg_offset += 1
 			reg_idx += 1
-		
 
 	def perform_name_rework(self) :
 		"""
@@ -464,14 +463,16 @@ class PeripheralInstance(Component):
 		return f"{self.name}_BASE_ADDR"
 
 	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
+		# defines the address
 		super().define(defines)
 
+		# defines the peripheral it has to be defined to
 		if self.parent.needs_define :
 			defines[self.chips].add(
 				alias=super().defined_name,
-				defined_value=self.defined_value,
-				define_not=self.define_not,
-				undefine=self.undefine)
+				# defined_value=self.defined_value,
+				define_not=False,
+				undefine=True)
 
 
 	def declaration_strings(self,indent : TabManager = TabManager(), with_nophy = False) -> str:

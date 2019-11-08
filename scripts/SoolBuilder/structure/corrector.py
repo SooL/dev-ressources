@@ -13,9 +13,16 @@ def change_name(obj, name) :
 
 
 class Corrector:
-	def __init__(self, local_correction: T.Callable = None, child_correctors: T.Dict[T.Union[None, str], "Corrector"] = None) :
-		self.function: T.Union[None, T.Callable] = local_correction
-		self.child_correctors: T.Union[None, T.Dict[T.Union[None, str], Corrector]] = child_correctors
+	def __init__(self, arg1: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None, arg2: T.Dict[T.Optional[str], "Corrector"] = None) :
+		if isinstance(arg1, T.Callable) :
+			self.function: T.Optional[T.Callable] = arg1
+			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = arg2
+		elif isinstance(arg1, T.Dict) :
+			self.function: T.Optional[T.Callable] = None
+			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = arg1
+		else :
+			self.function: T.Optional[T.Callable] = None
+			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = None
 
 	def __getitem__(self, item):
 		return tuple(self.sub_correctors(item))
@@ -49,38 +56,39 @@ class Corrector:
 		else :
 			return self.function(component)
 
-root_corrector = Corrector(None, {
-	"TIM?*"      : Corrector(lambda group: change_name(group, "TIM")),
+root_corrector = Corrector({
+	"DMAMUX*"   : Corrector(lambda group: change_name(group, "DMAMUX")),
+	"TIM?*"     : Corrector(lambda group: change_name(group, "TIM")),
 	"USB_*"     : Corrector(lambda group: change_name(group, "USB")),
-	"HRTIM"     : Corrector(None, {
+	"HRTIM"     : Corrector({
 		"*"        : Corrector(HRTIM_periph_cleaner)
 	}),
-	"USB"       : Corrector(None, {
+	"USB"       : Corrector({
 		"*"        : Corrector(USB_periph_cleaner)
 	}),
-	"I2C"       : Corrector(None, {
+	"I2C"       : Corrector({
 		"*"        : Corrector(I2C_periph_cleaner)
 	}),
-	"ADC"       : Corrector(None, {
+	"ADC"       : Corrector({
 		"*"        : Corrector(ADC_periph_cleaner)
 	}),
-	"ETHERNET"  : Corrector(None, {
+	"ETHERNET"  : Corrector({
 		"*"        : Corrector(ETHERNET_periph_cleaner)
 	}),
-	"TIM"       : Corrector(None, {
+	"TIM"       : Corrector({
 		"*"        : Corrector(TIM_periph_cleaner, {
 			"*_OR"   : Corrector(lambda reg: change_name(reg, "OR"))
 		})
 	}),
-	"GPIO"      : Corrector(None, {
+	"GPIO"      : Corrector({
 		"*"        : Corrector(GPIO_periph_cleaner, {
 			"GPIO*_*"   : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:])),
 			"OSPEEDER"  : Corrector(lambda reg: change_name(reg, "OSPEEDR")),
-			"OSPEEDR"   : Corrector(None, {"*":Corrector(None,{ "*": lambda f: change_name(f, f"OSPEED{int(f.position / f.size)}") })}),
-			"MODER"     : Corrector(None, {"*":Corrector(None,{ "*": lambda f: change_name(f, f"MODE{  int(f.position / f.size)}") })}),
-			"IDR"       : Corrector(None, {"*":Corrector(None,{ "*": lambda f: change_name(f, f"ID{    int(f.position / f.size)}") })}),
-			"ODR"       : Corrector(None, {"*":Corrector(None,{ "*": lambda f: change_name(f, f"OD{    int(f.position / f.size)}") })}),
-			"PUPDR"     : Corrector(None, {"*":Corrector(None,{ "*": lambda f: change_name(f, f"PUPD{  int(f.position / f.size)}") })})
+			"OSPEEDR"   : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OSPEED{int(f.position/f.size)}")})}),
+			"MODER"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"MODE{  int(f.position/f.size)}")})}),
+			"IDR"       : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"ID{    int(f.position/f.size)}")})}),
+			"ODR"       : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OD{    int(f.position/f.size)}")})}),
+			"PUPDR"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"PUPD{  int(f.position/f.size)}")})})
 		})
 	})
 })
