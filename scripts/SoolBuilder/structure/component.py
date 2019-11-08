@@ -25,7 +25,6 @@ class Component:
 		self.chips = ChipSet(chips)
 		self.brief = brief
 		self.parent = parent
-		self.force_define = False
 
 	# def __contains__(self, item):
 	# 	# noinspection PyTypeChecker
@@ -59,14 +58,30 @@ class Component:
 			self.edited = True
 
 	@property
-	def have_been_edited(self):
+	def has_been_edited(self):
 		if self.edited :
 			return True
 		if hasattr(self,'__iter__') :
+			# noinspection PyTypeChecker
 			for child in self :
-				if child.have_been_edited :
+				if child.has_been_edited :
 					return True
 		return False
+
+	def validate_edit(self):
+		if self.edited :
+			self.edited = False
+		if hasattr(self,'__iter__') :
+			# noinspection PyTypeChecker
+			for child in self :
+				child.validate_edit()
+
+	def attach_hierarchy(self):
+		if hasattr(self,'__iter__') :
+			# noinspection PyTypeChecker
+			for child in self :
+				child.set_parent(self)
+				child.attach_hierarchy()
 
 	def finalize(self):
 		if hasattr(self,'__iter__') :
@@ -82,6 +97,7 @@ class Component:
 		out = ChipSet(self.chips)
 		if hasattr(self,'__iter__'):
 			child : Component
+			# noinspection PyTypeChecker
 			for child in self :
 				out.add(child.computed_chips)
 		return out
@@ -129,8 +145,7 @@ class Component:
 		Checks whether or not the Component needs to have its alias defined.
 		:returns: True if the Component needs to have its alias defined
 		"""
-		return self.force_define or \
-			   (self.name is not None) and\
+		return (self.name is not None) and\
 		       (self.parent is not None) and\
 		       (self.chips != self.parent.chips)
 
@@ -162,6 +177,7 @@ class Component:
 
 		if hasattr(self,'__iter__'):
 			child : Component
+			# noinspection PyTypeChecker
 			for child in self :
 				child.define(defines)
 
@@ -170,6 +186,22 @@ class Component:
 ################################################################################
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		return None
+################################################################################
+#                                     FIX                                      #
+################################################################################
+
+
+	def fix(self, parent_corrector: "Corrector") :
+		self.edited = False
+		for corrector in parent_corrector[self] :
+			corrector(self)
+			if hasattr(self,'__iter__'):
+				# noinspection PyTypeChecker
+				for child in self :
+					child.fix(corrector)
+
+
+
 
 
 

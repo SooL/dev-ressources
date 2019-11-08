@@ -116,7 +116,7 @@ class RegisterVariant(Component) :
 				fillers.append(Field(position = pos, size = f.position - pos))
 			pos = f.position + f.size
 		if pos < self.parent.size :
-			fillers.append(Field(position=pos, size = f.parent.size - pos))
+			fillers.append(Field(position=pos, size = self.parent.size - pos))
 		self.fields.extend(fillers)
 		self.sort_fields()
 

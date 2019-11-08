@@ -6,7 +6,7 @@ def DEFAULT_field_cleaner(register : "Register", r_name = None) :
 	pass
 
 
-def GPIO_reg_cleaner(field : "Field",):
+def GPIO_field_cleaner(field : "Field", ):
 	if field.parent.name in ["OSPEEDR"] :
 		field.name = f"OSPEED{int(field.position / field.size)}"
 	if field.parent.name in ["MODER"] :
@@ -27,12 +27,12 @@ def GPIO_reg_cleaner(field : "Field",):
 
 # For a given group, provide a proper cleaner function. None is the default one.
 field_association_table : T.Dict[T.Union[None,str],T.Callable] = {
-	"PUPDR" : GPIO_reg_cleaner,
-	"IDR"	: GPIO_reg_cleaner,
-	"ODR"	: GPIO_reg_cleaner,
-	"MODER"		: GPIO_reg_cleaner,
-	"OSPEEDR"	: GPIO_reg_cleaner,
-	"AFRH"		: GPIO_reg_cleaner,
-	"AFRL"		: GPIO_reg_cleaner,
+	"PUPDR" : GPIO_field_cleaner,
+	"IDR"	: GPIO_field_cleaner,
+	"ODR"	: GPIO_field_cleaner,
+	"MODER"		: GPIO_field_cleaner,
+	"OSPEEDR"	: GPIO_field_cleaner,
+	"AFRH"		: GPIO_field_cleaner,
+	"AFRL"		: GPIO_field_cleaner,
 	None        : DEFAULT_field_cleaner
 }

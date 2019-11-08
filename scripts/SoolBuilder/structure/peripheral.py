@@ -200,9 +200,9 @@ class Peripheral(Component) :
 		self.edited = False
 		for reg in self.registers :
 			reg.edited = False
-			if self.name in register_association_table :
+			if self.parent.name in register_association_table :
 				reg_name = reg.name
-				register_association_table[self.name](reg)
+				register_association_table[self.parent.name](reg)
 				# change register placements that had the register name before the fix
 				if reg.name != reg_name :
 					for m in self.mappings :
@@ -266,7 +266,7 @@ class Peripheral(Component) :
 
 	@property
 	def defined_name(self) -> str :
-		return self.alias if self.parent.alias is not None else f"PERIPH_{self.alias}"
+		return f"PERIPH_{self.alias}"
 
 	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
 		super().define(defines)
@@ -287,7 +287,6 @@ class Peripheral(Component) :
 				# The actual address is not relevant
 				virtual_instances[instance.name] = PeripheralInstance(instance.chips, instance.name, instance.brief, 0)
 				virtual_instances[instance.name].parent = self
-				virtual_instances[instance.name].force_define = False
 
 		for i in sorted(virtual_instances.keys(), key= lambda x : ("1_" if not virtual_instances[x].needs_define else "2_") + virtual_instances[x].name):
 			out += virtual_instances[i].declare(tab_manager)
@@ -435,12 +434,18 @@ class PeripheralInstance(Component):
 		super().__init__(chips=chips, name=name, brief=brief)
 
 		self.address = address
-		self.force_define = True
 
 	def __eq__(self, other):
 		return isinstance(other, PeripheralInstance) and \
 		       self.name == other.name and \
 		       self.address == other.address
+
+	@property
+	def needs_define(self) -> bool:
+		if self.address != 0 :
+			return True
+		else :
+			return super().needs_define
 
 	@property
 	def undefine(self) -> bool:

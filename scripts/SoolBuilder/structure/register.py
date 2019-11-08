@@ -172,6 +172,15 @@ class Register(Component) :
 	def defined_value(self) -> T.Union[str, None]:
 		return None
 
+	def fix(self, parent_corrector: "Corrector"):
+		old_name = self.name
+		super().fix(parent_corrector)
+		if self.name != old_name :
+			for m in self.parent.mappings :
+				for reg_p in m :
+					if reg_p.register is self and reg_p.name == old_name:
+						reg_p.name = self.name
+
 ################################################################################
 ############################## REGISTER PLACEMENT ##############################
 ################################################################################
@@ -260,6 +269,4 @@ class RegisterPlacement(Component) :
 			return f"{indent}{self.register.name}_t {self.name};\n"
 		else :
 			return f"{indent}{self.register.name}_t {self.name}[{self.array_size}];\n"
-
-
 

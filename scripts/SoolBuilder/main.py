@@ -32,7 +32,7 @@ import argparse
 import os
 import shutil
 from structure import *
-
+from structure.corrector import root_corrector
 
 from tools import svd_retriever as svd
 from tools import sanity
@@ -247,13 +247,12 @@ if __name__ == "__main__" :
 
 	logger.info("Iterative merging...")
 	for name, group in output_groups.items() :
-		if group.have_been_edited :
+		while group.has_been_edited :
+			group.validate_edit()
+			logger.info(f"Re-merging {group.name}")
+			group.fix(root_corrector)
 			for periph in group.peripherals :
-				while periph.have_been_edited :
-					logger.info(f"Re-merging {periph.name}")
-					periph.self_merge()
-					#periph.clean_register_list()
-					periph.perform_name_rework()
+				periph.self_merge()
 
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")

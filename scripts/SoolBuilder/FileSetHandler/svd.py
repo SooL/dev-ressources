@@ -109,7 +109,7 @@ class SVDFile :
 			periph_instances_dict[inst_name] = instance
 		
 		for grp_name in self.groups:
-			self.groups[grp_name].merge_svd_peripherals()
+			self.groups[grp_name].svd_finish()
 			
 	def cleanup(self):
 		for n, g in self.groups.items() :

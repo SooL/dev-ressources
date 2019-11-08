@@ -7,3 +7,4 @@ from structure.registervariant import RegisterVariant
 from structure.register import Register, RegisterPlacement
 from structure.peripheral import Peripheral, PeripheralInstance, PeripheralMapping
 from structure.group import Group
+from structure.corrector import Corrector
