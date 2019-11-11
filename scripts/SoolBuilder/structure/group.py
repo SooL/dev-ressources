@@ -205,7 +205,7 @@ class Group(Component) :
 		for i in range(0, len(self.peripherals)-1) :
 			for j in range(i+1, len(self.peripherals)) :
 				if self.peripherals[i].name == self.peripherals[j].name :
-					raise AssertionError(f"Peripherals {self.peripherals[i]} and {self.peripherals[j]} are identical")
+					raise AssertionError(f"Peripherals {self.peripherals[i]} and {self.peripherals[j]} have the same name, but are not identical")
 
 	def merge_new_peripheral(self, periph : Peripheral):
 		"""

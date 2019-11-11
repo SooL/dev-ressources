@@ -8,36 +8,58 @@ tim_log: str = ""
 
 def TIM_log():
 	return tim_log
+def TIM_GENERAL_decider(periph) :
+	if "CCMR2" in periph :
+		periph.name = "TIM_GENERAL_1"
+	elif "BDTR" in periph :
+		if "CCR2" in periph :
+			periph.name = "TIM_GENERAL_2"
+		else :
+			periph.name = "TIM_GENERAL_3"
+	elif "CCR2" in periph :
+		if "CR2" in periph :
+			periph.name = "TIM_GENERAL_4"
+		else :
+			periph.name = "TIM_GENERAL_5"
+	else :
+		periph.name = "TIM_GENERAL_6"
 
 def TIM_periph_cleaner(periph : "Peripheral") :
 	global tim_log
 
+	if not periph.instances[0].name.startswith("TIM") :
+		return
+	if periph.name is not None :
+		return
 	brief_tokens = periph.brief.split()
 
 	if periph.brief[-5:] == "timer" :
 		periph.brief += 's'
 
-	periph_name = ""
 	if "advanced" in brief_tokens :
-		periph_name = "TIM_ADVANCED"
+		periph.name = "TIM_ADVANCED"
 	elif "basic" in brief_tokens :
-		periph_name = "TIM_BASIC"
+		periph.name = "TIM_BASIC"
 	elif "general" in brief_tokens :
-		periph_name = "TIM_GENERAL"
-
-		tim_log += f"{periph.chips} :" \
-		           f" {repr(list(inst.name for inst in periph.instances))} :" \
-		           f" {repr(list(reg.name for reg in periph.registers))}"
-
-		# TODO split timers depending on numbers or registers presence
-		periph_name += "_" + periph.instances[0].name[3:]
+		TIM_GENERAL_decider(periph)
 
 	else :
-		logger.error(f"TIM type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
-		periph_name = "TIM_GENERIC"
-		periph_name += "_" + periph.instances[0].name[3:]
+		reg_placements = list(reg_p.name for reg_p in sorted(periph.mappings[0].register_placements))
+		if reg_placements == ["CR1", "CR2", "DIER", "SR", "EGR", "CNT", "PSC", "ARR"] :
+			periph.name = "TIM_BASIC"
+		elif reg_placements[:6] == ["CR1", "CR2", "SMCR", "DIER", "SR", "EGR"] and \
+			 "CCMR1" in reg_placements[6] and "CCMR2" in reg_placements[7] and \
+			 reg_placements[8:18] == ["CCER", "CNT", "PSC", "ARR", "RCR", "CCR1", "CCR2", "CCR3", "CCR4", "BDTR"] :
+			periph.name = "TIM_ADVANCED"
+		else :
+			TIM_GENERAL_decider(periph)
 
-	periph.name = periph_name
+	tim_log += f"{next(iter(periph.chips.chips))};"
+	tim_log += f"TIM{repr('-'.join(inst.name[3:] for inst in periph.instances))};"
+	placements = list()
+	for m in periph.mappings :
+		placements.extend(m.register_placements)
+	tim_log += f"{repr(';'.join(r_p.name for r_p in sorted(placements)))}\n"
 
 def HRTIM_periph_cleaner(periph: "Peripheral") :
 

@@ -219,13 +219,19 @@ class RegisterPlacement(Component) :
 			raise TypeError()
 	def __lt__(self, other) -> bool:
 		if isinstance(other, RegisterPlacement) :
-			return self.address < other.address
+			if self.address != other.address :
+				return self.address < other.address
+			else :
+				return self.name < other.name
 		else :
 			raise TypeError()
 
 	def __gt__(self, other) -> bool:
 		if isinstance(other, RegisterPlacement) :
-			return self.address > other.address
+			if self.address != other.address :
+				return self.address > other.address
+			else :
+				return self.name > other.name
 		else :
 			raise TypeError()
 
