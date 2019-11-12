@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 
 import logging
 
-from structure import Field, Corrector
+from structure import Field
 from structure import RegisterVariant
 from structure import get_node_text, TabManager
 from structure import ChipSet
