@@ -98,6 +98,13 @@ class Peripheral(Component) :
 				max_size = size
 		return max_size
 
+	@property
+	def templated(self):
+		for reg in self.registers :
+			if reg.templated :
+				return True
+		return False
+
 	def add_register(self, reg: Register):
 		self.chips.add(reg.chips)
 		try :
@@ -230,6 +237,7 @@ class Peripheral(Component) :
 			m.finalize()
 
 	def declare(self, indent: TabManager = TabManager()) -> str:
+		# TODO consider templates
 		out =""
 		if self.needs_define :
 			out += f"{indent}#if {self.defined_name}\n"
@@ -423,7 +431,7 @@ class PeripheralMapping(Component) :
 		return out
 
 class PeripheralInstance(Component):
-
+	#TODO consider templates
 	generate_nophy : bool = False
 
 	def __init__(self, chips: T.Union[ChipSet, None] = None,

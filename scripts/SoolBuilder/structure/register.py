@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 
 import logging
 
-from structure import Field
+from structure import Field, Corrector
 from structure import RegisterVariant
 from structure import get_node_text, TabManager
 from structure import ChipSet
@@ -60,11 +60,13 @@ class Register(Component) :
 	             name: T.Union[str, None] = None,
 	             brief: T.Union[str, None] = None,
 	             size: int = 32,
-	             access: T.Union[str, None] = None) :
+	             access: T.Union[str, None] = None,
+	             templated: bool = False) :
 		super().__init__(chips=chips, name=name, brief=brief)
 		self.size = size
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
+		self.templated : bool = templated
 
 	def __iter__(self) :
 		return iter(self.variants)
@@ -259,10 +261,10 @@ class RegisterPlacement(Component) :
 
 	@property
 	def defined_value(self) -> T.Union[str, None]:
-		template = "{1.name}_t {0.name}"
+		template = "{1.name}_t {2}{0.name}"
 		if self.array_size > 0 :
 			template += "[{0.array_size}]"
-		return template.format(self, self.register)
+		return template.format(self, self.register, "tmpl::" if self.register.templated else "")
 
 	@property
 	def define_not(self) -> str:
@@ -271,8 +273,6 @@ class RegisterPlacement(Component) :
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
 		if self.needs_define :
 			return f"{indent}{self.defined_name};\n"
-		elif self.array_size == 0 :
-			return f"{indent}{self.register.name}_t {self.name};\n"
 		else :
-			return f"{indent}{self.register.name}_t {self.name}[{self.array_size}];\n"
+			return f"{indent}{self.defined_value};\n"
 
