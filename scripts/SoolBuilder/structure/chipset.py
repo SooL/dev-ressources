@@ -71,10 +71,20 @@ class ChipSet :
 
 	def __iadd__(self, other: T.Union[T.List[Chip], 'ChipSet', Chip]):
 		self.add(other)
+		return self
 
 	def __add__(self, other: T.Union[T.List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
 		ret: ChipSet = ChipSet(self.chips)
 		ret.add(other)
+		return ret
+
+	def __isub__(self, other):
+		self.remove(other)
+		return self
+
+	def __sub__(self, other):
+		ret : ChipSet = ChipSet(self.chips)
+		ret.remove(other)
 		return ret
 
 	def add(self, other: T.Union[T.List[Chip], T.Set[Chip], 'ChipSet', Chip]):
@@ -86,6 +96,20 @@ class ChipSet :
 			self.chips.update(other)
 		elif isinstance(other, Chip) :
 			self.chips.add(other)
+		else:
+			raise TypeError(f"{type(other)} provided")
+
+		self._families_up_to_date = False
+
+	def remove(self, other: T.Union[T.List[Chip], T.Set[Chip], 'ChipSet', Chip]):
+		if isinstance(other, ChipSet) :
+			self.chips.difference_update(other.chips)
+		elif isinstance(other, list) :
+			self.chips.difference_update(other)
+		elif isinstance(other,set) :
+			self.chips.difference_update(other)
+		elif isinstance(other, Chip) :
+			self.chips.remove(other)
 		else:
 			raise TypeError(f"{type(other)} provided")
 
@@ -139,3 +163,14 @@ class ChipSet :
 			if fnmatch(str(chip), str(pattern)) :
 				return True
 		return False
+
+	def reverse(self,reference : T.Optional["ChipSet"]= None) -> None:
+		if reference is None :
+			reference = ChipSet.reference_chipset
+		self.chips = (reference - self).chips
+		self._families_up_to_date = False
+
+	def reversed(self,reference : T.Optional["ChipSet"]= None) -> "ChipSet":
+		if reference is None :
+			reference = ChipSet.reference_chipset
+		return reference - self
