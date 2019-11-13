@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import logging
 #from structure import Group
 
-from structure import Register, RegisterPlacement
+from structure import Register, RegisterPlacement, PeripheralInstance, PeripheralMapping
 from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
@@ -45,6 +45,10 @@ class Peripheral(Component) :
 		self.mappings: T.List[PeripheralMapping] = list()
 		self.instances: T.List[PeripheralInstance] = list()
 		self.max_size = 0
+
+################################################################################
+#                                  OPERATORS                                   #
+################################################################################
 
 	def __iter__(self):
 		return iter(self.registers)
@@ -99,19 +103,27 @@ class Peripheral(Component) :
 		return max_size
 
 	@property
-	def templated(self):
-		for reg in self.registers :
-			if reg.templated :
+	def has_template(self):
+		for reg in self :
+			if reg.has_template :
 				return True
 		return False
 
+################################################################################
+#                             REGISTERS MANAGEMENT                             #
+################################################################################
+
 	def add_register(self, reg: Register):
-		self.chips.add(reg.chips)
-		try :
-			self_reg = self[reg.name]
-			self_reg.merge(reg)
-		except KeyError :
+		if reg.name in self :
+			self[reg.name].inter_svd_merge(reg)
+		else :
 			self.registers.append(reg)
+			reg.set_parent(self)
+			self.edited = True
+
+################################################################################
+#                             INSTANCES MANAGEMENT                             #
+################################################################################
 
 	def add_instance(self, other: "PeripheralInstance") :
 		if isinstance(other, PeripheralInstance) :
@@ -119,10 +131,11 @@ class Peripheral(Component) :
 
 			for i in self.instances :
 				if i == other :
-					i.merge(other)
+					i.inter_svd_merge(other)
 					return
 			other.parent = self
 			self.instances.append(other)
+			self.edited = True
 		else:
 			raise TypeError(f"Expected a peripheral instance. Got {type(other)}.")
 
@@ -136,13 +149,60 @@ class Peripheral(Component) :
 		else :
 			raise TypeError(f"Expected a peripheral instances list or peripheral. Got {type(other)}.")
 
+################################################################################
+#                              MAPPING MANAGEMENT                              #
+################################################################################
+
+	def mapping_equivalent_to(self,other : "Peripheral", ignore_templates: bool=True) -> bool :
+		"""
+		This function will check if the current peripheral has a mapping equivalent to the other one.
+		:param ignore_templates: True if template registers should be ignored
+		 (two peripherals can be identical, even if they have different template registers)
+		:param other: The other peripheral
+		:return:
+		"""
+		self_placements = list()
+		other_placements = list()
+		diff = list()
+		for m in self.mappings :
+			self_placements.extend(m.register_placements)
+		for m in other.mappings :
+			other_placements.extend(m.register_placements)
+
+		for reg_p in self_placements :
+			if reg_p not in other_placements :
+				diff.append(reg_p)
+		for reg_p  in other_placements :
+			if reg_p not in self_placements :
+				diff.append(reg_p)
+
+		if ignore_templates :
+			for reg_p in diff :
+				# if the register is only present in one of the two peripherals, merging is allowed only if the register in templated
+				if not reg_p.register.has_template :
+					return False
+
+			for i in range(0, len(diff)-1) :
+				for j in range(i+1, len(diff)) :
+					# if the templated register's address is used by another templated register with the same name,
+					# the two peripherals can be merged together. Otherwise, merging is possible only if the address is not used
+					if diff[i].overlap(diff[j]) and diff[i].name != diff[j].name :
+						return False
+			return True
+		else :
+			return len(diff) == 0
+
+	def add_mapping(self, mapping: PeripheralMapping) :
+		for reg_p in mapping :
+			self.place_register(reg_p)
+
 	def place_register(self, reg_placement: RegisterPlacement) :
 		mapping: T.Union[PeripheralMapping, None] = None
 
 		reg_placement.register = self[reg_placement.register.name]
 		for m in self.mappings :
 			if reg_placement in m :
-				m[reg_placement].merge(reg_placement)
+				m[reg_placement].inter_svd_merge(reg_placement)
 				return
 			elif m.has_room_for(reg_placement) :
 				mapping = m
@@ -150,78 +210,61 @@ class Peripheral(Component) :
 			mapping = PeripheralMapping()
 			mapping.parent = self
 			self.mappings.append(mapping)
-		mapping.place_register(reg_placement)
+			self.edited = True
+		mapping.add_register_placement(reg_placement)
 
-	def merge(self, other: "Peripheral") :
-		for r in other.registers :
-			self.add_register(r)
-		for i in other.instances :
-			self.add_instance(i)
-		for m in other.mappings :
-			for r_p in m :
-				self.place_register(r_p)
+################################################################################
+#                             COMPILATION, MERGING                             #
+################################################################################
 
-		super().merge(other)
+	def svd_compile(self):
+		super().svd_compile()
 
-	def self_merge(self) :
-		mapping_index = 0
-		for r in self.registers :
-			r.self_merge()
+		m_idx = 0
 
-		while mapping_index < len(self.mappings) :
-			mapping_offset = 1
+		while m_idx < len(self.mappings) :
+			m_offset = 1
 
-			while mapping_index + mapping_offset < len(self.mappings) :
-				if self.mappings[mapping_index].compatible(self.mappings[mapping_index + mapping_offset]) :
-					self.mappings[mapping_index].merge(self.mappings[mapping_index + mapping_offset])
-					self.mappings.pop(mapping_index + mapping_offset)
+			while m_idx + m_offset < len(self.mappings) :
+				if self.mappings[m_idx].compatible(self.mappings[m_idx + m_offset]) :
+					self.mappings[m_idx].merge(self.mappings[m_idx + m_offset])
+					self.mappings.pop(m_idx + m_offset)
+					self.edited = True
 					continue
 				else :
-					mapping_offset += 1
-			mapping_index += 1
-		
-		reg_idx = 0
-		reg_offset = 0
-		
-		while reg_idx < len(self.registers) :
-			reg_offset = 1
-			while reg_idx + reg_offset < len(self.registers) :
-				if self.registers[reg_idx].name == self.registers[reg_idx + reg_offset].name :
-					self.registers[reg_idx].merge(self.registers[reg_idx + reg_offset])
+					m_offset += 1
+			m_idx += 1
+
+		r_idx = 0
+		r_offset = 0
+
+		while r_idx < len(self.registers) :
+			r_offset = 1
+			while r_idx + r_offset < len(self.registers) :
+				if self.registers[r_idx].name == self.registers[r_idx + r_offset].name :
+					self.registers[r_idx].inter_svd_merge(self.registers[r_idx + r_offset])
 					for mapping in self.mappings :
 						for placement in mapping :
-							if placement.register is self.registers[reg_idx + reg_offset] :
-								placement.register = self.registers[reg_idx]
-								self.registers[reg_idx].chips.add(placement.chips)
-					self.registers.pop(reg_idx + reg_offset)
+							if placement.register is self.registers[r_idx + r_offset] :
+								placement.register = self.registers[r_idx]
+					self.registers.pop(r_idx + r_offset)
+					self.edited = True
 					continue
-				else:
-					reg_offset += 1
-			reg_idx += 1
+				else :
+					r_offset += 1
+			r_idx += 1
 
-	def perform_name_rework(self) :
-		"""
-		Clean all name_edited flags and perform all name fixing tasks
-		"""
-		self.edited = False
-		for reg in self.registers :
-			reg.edited = False
-			if self.parent.name in register_association_table :
-				reg_name = reg.name
-				register_association_table[self.parent.name](reg)
-				# change register placements that had the register name before the fix
-				if reg.name != reg_name :
-					for m in self.mappings :
-						for reg_p in m :
-							if reg_p.register is reg and reg_p.name == reg_name:
-								reg_p.name = reg.name
+	def intra_svd_merge(self, other: "Peripheral") :
+		super().intra_svd_merge(other)
+		for r in other.registers : self.add_register(r)
+		for i in other.instances : self.add_instance(i)
+		for m in other.mappings  : self.add_mapping(m)
 
-			for variant in reg.variants :
-				variant.edited = False
-				for field in variant.fields :
-					field.edited = False
-					if reg.name in field_association_table :
-						field_association_table[reg.name](field)
+	def inter_svd_merge(self, other: "Peripheral") :
+		super().intra_svd_merge(other)
+		for r in other.registers : self.add_register(r)
+		for i in other.instances : self.add_instance(i)
+		for m in other.mappings  : self.add_mapping(m)
 
 	def finalize(self):
 		super().finalize()
@@ -235,6 +278,10 @@ class Peripheral(Component) :
 			m.name = f"MAP{map_idx}"
 			map_idx += 1
 			m.finalize()
+
+################################################################################
+#                          DEFINE, UNDEFINE, DECLARE                           #
+################################################################################
 
 	def declare(self, indent: TabManager = TabManager()) -> str:
 		# TODO consider templates
@@ -299,227 +346,3 @@ class Peripheral(Component) :
 			out += virtual_instances[i].declare(tab_manager)
 
 		return out
-
-	def mapping_equivalent_to(self,other : "Peripheral") -> bool :
-		"""
-		This function will check if the current peripheral have a mapping equivalent to the other one.
-		As of right now it does not check if mappings are compatible but if an equal mapping is present in other.
-
-		:param other: The other peripheral
-		:return:
-		"""
-		for map in self.mappings :
-			if map not in other :
-				return False
-		return True
-
-
-
-class PeripheralMapping(Component) :
-	def __init__(self, chips: T.Union[ChipSet, None] = None,
-	             name: T.Union[str, None] = None) :
-		super().__init__(chips=chips, name=name)
-
-		self.register_placements: T.List[RegisterPlacement] = list()
-
-	def __iter__(self):
-		return iter(self.register_placements)
-
-	def __eq__(self, other):
-		if not(isinstance(other, PeripheralMapping)):
-			return False
-		if len(self.register_placements) != len(other.register_placements) :
-			return False
-		for reg_p in self :
-			if reg_p not in other :
-				return False
-		return True
-
-	def __getitem__(self, item):
-		if isinstance(item,int):
-			for x in self.register_placements :
-				if x.address == item :
-					return x
-			raise KeyError()
-		if isinstance(item,RegisterPlacement):
-			for x in self.register_placements :
-				if x == item :
-					return x
-			raise KeyError()
-		raise TypeError()
-
-	def __contains__(self, item):
-		if isinstance(item,int):
-			try :
-				a = self[item]
-				return True
-			except KeyError :
-				return False
-		if isinstance(item,RegisterPlacement) :
-			return item in self.register_placements
-		raise TypeError()
-
-	@property
-	def computed_size(self):
-		self.register_placements.sort()
-		last = self.register_placements[-1]
-		return last.address + int(last.computed_size/4)
-
-	def merge(self, other: "PeripheralMapping"):
-		for reg_p in other :
-			self.place_register(reg_p)
-
-	def compatible(self, other: "PeripheralMapping"):
-		for reg_p in other :
-			if reg_p.address in self :
-				if self[reg_p.address] != reg_p :
-					return False
-			elif not(self.has_room_for(reg_p)) :
-				return False
-		return True
-
-	def has_room_for(self, reg_placement: RegisterPlacement) -> bool :
-		for p in self.register_placements :
-			if p.overlap(reg_placement) :
-				return False
-		return True
-
-	def place_register(self, reg_placement: RegisterPlacement) :
-		for reg_p in self :
-			if reg_p == reg_placement :
-				reg_p.merge(reg_placement)
-				return
-		self.register_placements.append(reg_placement)
-		self.chips.add(reg_placement.chips)
-
-	def finalize(self):
-		self.register_placements.sort()
-		for reg_p in self.register_placements :
-			reg_p.finalize()
-		super().finalize()
-
-	def declare(self, indent: TabManager = TabManager()) -> str:
-		out: str = ""
-		pos: int = 0
-		last_register : RegisterPlacement = None
-		# add struct and indent only if multiple mappings
-		only_mapping: bool = len(self.parent.mappings) == 1
-		if not only_mapping :
-			out += f"{indent}struct\n{indent}{{\n"
-			indent.increment()
-		for reg_p in self.register_placements :
-			if last_register is None or (reg_p.address + reg_p.computed_size) > (last_register.address + last_register.computed_size) :
-				last_register = reg_p
-			if reg_p.address > pos :
-				# add filler
-				out += fill_periph_hole(size=reg_p.address - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
-				pos += reg_p.address - pos
-			out += reg_p.declare(indent)
-			pos += int(reg_p.computed_size/8)
-		if not only_mapping :
-			parent_size = self.parent.computed_size
-			if parent_size > pos *8 + last_register.computed_size :
-				# add filler
-				out += fill_periph_hole(size=int(parent_size/8) - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
-			indent.decrement()
-			out += f"{indent}}};\n"
-
-		if self.needs_define :
-			out = f"{indent}#ifdef {self.defined_name}\n" \
-			      f"{out}" \
-			       f"{indent}#endif\n"
-		return out
-
-class PeripheralInstance(Component):
-	#TODO consider templates
-	generate_nophy : bool = False
-
-	def __init__(self, chips: T.Union[ChipSet, None] = None,
-	             name: T.Union[str, None] = None,
-	             brief: T.Union[str, None] = None,
-	             address: T.Union[int, None] = None) :
-		super().__init__(chips=chips, name=name, brief=brief)
-
-		self.address = address
-
-	def __eq__(self, other):
-		return isinstance(other, PeripheralInstance) and \
-		       self.name == other.name and \
-		       self.address == other.address
-
-	@property
-	def needs_define(self) -> bool:
-		if self.address != 0 :
-			return True
-		else :
-			return super().needs_define
-
-	@property
-	def undefine(self) -> bool:
-		return False
-
-	@property
-	def defined_value(self) -> T.Union[str, None]:
-		return f"((uint32_t){self.address:#08x}U"
-
-	@property
-	def define_not(self) -> T.Union[bool, str] :
-		return False
-
-	@property
-	def defined_name(self) -> str :
-		return f"{self.name}_BASE_ADDR"
-
-	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
-		# defines the address
-		super().define(defines)
-
-		# defines the peripheral it has to be defined to
-		if self.parent.needs_define :
-			defines[self.chips].add(
-				alias=super().defined_name,
-				# defined_value=self.defined_value,
-				define_not=False,
-				undefine=True)
-
-
-	def declaration_strings(self,indent : TabManager = TabManager(), with_nophy = False) -> str:
-		normal_instance = str(indent + (1 if with_nophy else 0)) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
-			.format(self.parent.name, self.name, self.defined_name)
-
-		nophy_instance = (str(indent +1) + "volatile class {0} * const {1} = new {0}();\n" +
-						  str(indent +1) + "#undef {2}\n" +
-						  str(indent +1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
-			.format(self.parent.name, self.name, self.defined_name)
-
-		out = f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
-			  f"{normal_instance}\n" \
-			  f"{indent}#else\n" \
-			  f"{nophy_instance}\n" \
-			  f"{indent}#endif"
-		return out if with_nophy else normal_instance
-
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-
-		ifdef_string : str = ""
-
-		if self.needs_define :
-			ifdef_string += f"defined({self.defined_name}) "
-		if self.parent.needs_define :
-			if ifdef_string != "" :
-				ifdef_string += "&& "
-			ifdef_string += f"defined({super().defined_name}) "
-
-		if len(ifdef_string) > 0 :
-			indent.increment()
-			out = f"\n{indent -1 }#if {ifdef_string}\n" \
-				  f"{self.declaration_strings(indent, PeripheralInstance.generate_nophy)}\n" \
-				  f"{indent-1}#endif\n"
-			indent.decrement()
-		else:
-			out = self.declaration_strings(indent, PeripheralInstance.generate_nophy) + "\n"
-			if PeripheralInstance.generate_nophy :
-				out += "\n"
-
-		return out
-

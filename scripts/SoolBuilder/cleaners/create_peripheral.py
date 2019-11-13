@@ -4,12 +4,8 @@ import logging
 
 logger = logging.getLogger()
 
-tim_log: str = ""
-
-def TIM_log():
-	return tim_log
 def TIM_GENERAL_decider(periph) :
-	if "CCMR2" in periph :
+	if "CCMR2_Input" in periph :
 		periph.name = "TIM_GENERAL_1"
 	elif "BDTR" in periph :
 		if "CCR2" in periph :
@@ -29,8 +25,6 @@ def TIM_periph_cleaner(periph : "Peripheral") :
 
 	if not periph.instances[0].name.startswith("TIM") :
 		return
-	if periph.name is not None :
-		return
 	brief_tokens = periph.brief.split()
 
 	if periph.brief[-5:] == "timer" :
@@ -47,19 +41,16 @@ def TIM_periph_cleaner(periph : "Peripheral") :
 		reg_placements = list(reg_p.name for reg_p in sorted(periph.mappings[0].register_placements))
 		if reg_placements == ["CR1", "CR2", "DIER", "SR", "EGR", "CNT", "PSC", "ARR"] :
 			periph.name = "TIM_BASIC"
-		elif reg_placements[:6] == ["CR1", "CR2", "SMCR", "DIER", "SR", "EGR"] and \
-			 "CCMR1" in reg_placements[6] and "CCMR2" in reg_placements[7] and \
-			 reg_placements[8:18] == ["CCER", "CNT", "PSC", "ARR", "RCR", "CCR1", "CCR2", "CCR3", "CCR4", "BDTR"] :
+		elif len(reg_placements) >= 18 and \
+				reg_placements[:6] == ["CR1", "CR2", "SMCR", "DIER", "SR", "EGR"] and \
+			    "CCMR1" in reg_placements[6] and "CCMR2" in reg_placements[7] and \
+			    reg_placements[8:18] == ["CCER", "CNT", "PSC", "ARR", "RCR", "CCR1", "CCR2", "CCR3", "CCR4", "BDTR"] :
 			periph.name = "TIM_ADVANCED"
 		else :
 			TIM_GENERAL_decider(periph)
-
-	tim_log += f"{next(iter(periph.chips.chips))};"
-	tim_log += f"TIM{repr('-'.join(inst.name[3:] for inst in periph.instances))};"
 	placements = list()
 	for m in periph.mappings :
 		placements.extend(m.register_placements)
-	tim_log += f"{repr(';'.join(r_p.name for r_p in sorted(placements)))}\n"
 
 def HRTIM_periph_cleaner(periph: "Peripheral") :
 

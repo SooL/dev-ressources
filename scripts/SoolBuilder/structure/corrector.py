@@ -70,14 +70,16 @@ root_corrector = Corrector({
 		"*"        : Corrector(I2C_periph_cleaner)
 	}),
 	"ADC"       : Corrector({
-		"*"        : Corrector(ADC_periph_cleaner)
+		"*"        : Corrector(ADC_periph_cleaner, {
+			"ADC*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
+		})
 	}),
 	"ETHERNET"  : Corrector({
 		"*"        : Corrector(ETHERNET_periph_cleaner)
 	}),
 	"TIM"       : Corrector({
 		"*"        : Corrector(TIM_periph_cleaner, {
-			"*_OR"   : Corrector(lambda reg: change_name(reg, "OR"))
+			"TIM*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
 		})
 	}),
 	"GPIO"      : Corrector({

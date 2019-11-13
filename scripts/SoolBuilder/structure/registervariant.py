@@ -1,4 +1,5 @@
 import typing as T
+from copy import copy
 
 from structure import TabManager
 from structure import Field
@@ -12,10 +13,16 @@ REG_VAR_DECLARATION : str = """{indent}struct
 
 class RegisterVariant(Component) :
 	big_endian : bool = False
-	def __init__(self, chips: T.Union[None, ChipSet] = None) :
+	def __init__(self, chips: T.Optional[ChipSet] = None) :
 		super().__init__(chips=chips)
 		self.fields : T.List[Field] = list()
 
+		from structure import PeripheralInstance
+		self.linked_instances : T.Optional[T.List[PeripheralInstance]] = None
+
+################################################################################
+#                                  OPERATORS                                   #
+################################################################################
 	def __iter__(self):
 		return iter(self.fields)
 
@@ -57,6 +64,9 @@ class RegisterVariant(Component) :
 		o_len = len(other.fields)
 		if s_len != o_len : return False
 
+		if self.for_template != other.for_template :
+			return False
+
 		self.sort_fields()
 		other.sort_fields()
 		for i in range(0, s_len) :
@@ -64,28 +74,28 @@ class RegisterVariant(Component) :
 
 		return True
 
-################################################################################
-#                                DEFINE AND USE                                #
-################################################################################
-
-	# define is the same as parent class : only alias, if needed
-
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		if len(self.parent.variants) == 1 :
-			out = "".join([f.declare(indent) for f in sorted(self.fields, reverse=RegisterVariant.big_endian)])
-		else :
-			indent.increment()
-			content = "".join([f.declare(indent) for f in sorted(self.fields, reverse=RegisterVariant.big_endian)])
-			indent.decrement()
-			out = REG_VAR_DECLARATION.format(indent= indent, fields= content)
-
-		if self.needs_define :
-			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
-		return out
+	@property
+	def for_template(self):
+		return self.linked_instances is not None and len(self.linked_instances) > 0
 
 ################################################################################
 #                              FIELDS MANAGEMENT                               #
 ################################################################################
+
+	def before_svd_compile(self, parent_corrector) :
+		super().before_svd_compile(parent_corrector)
+		self.sort_fields()
+		if self.linked_instances is None :
+			self.linked_instances = copy(self.parent.parent.instances)
+
+	def after_svd_compile(self):
+		super().after_svd_compile()
+		self.sort_fields()
+		if self.linked_instances is not None :
+			self.linked_instances.sort()
+			if sorted(self.linked_instances) == sorted(self.parent.parent.instances) :
+				self.linked_instances = None
+				self.edited = True
 
 	def has_room_for(self, field: Field) :
 		for f in self.fields :
@@ -94,14 +104,25 @@ class RegisterVariant(Component) :
 		return True
 
 	def add_field(self, field: Field) :
-		self.fields.append(field)
-		self.chips.add(field.chips)
+		if field in self :
+			self[field].inter_svd_merge(field)
+		else :
+			self.fields.append(field)
+			field.set_parent(self)
+			self.chips.add(field.chips)
 
-	def sort_fields(self):
-		self.fields.sort(key=(lambda f: f.position))
+	def sort_fields(self, reverse = False):
+		self.fields.sort(key=(lambda f: f.position), reverse=reverse)
 
-	def merge(self, other: "RegisterVariant") :
-		raise AssertionError("the merge method should not be called on RegisterVariant")
+	def inter_svd_merge(self, other: "RegisterVariant") :
+		super().inter_svd_merge(other)
+		for f in other :
+			self.add_field(f)
+
+	def intra_svd_merge(self, other: "RegisterVariant"):
+		super().intra_svd_merge(other)
+		for f in other :
+			self.add_field(f)
 
 	def fill_holes(self):
 		"""
@@ -111,18 +132,40 @@ class RegisterVariant(Component) :
 		"""
 		pos: int = 0
 		fillers: T.List[Field] = list()
-		for f in sorted(self.fields) :
+		self.sort_fields()
+		for f in self :
 			if f.position > pos :
-				fillers.append(Field(position = pos, size = f.position - pos))
+				filler = Field(position = pos, size = f.position - pos)
+				filler.set_parent(self)
+				fillers.append(filler)
 			pos = f.position + f.size
 		if pos < self.parent.size :
-			fillers.append(Field(position=pos, size = self.parent.size - pos))
+			filler = Field(position=pos, size = self.parent.size - pos)
+			filler.set_parent(self)
+			fillers.append(filler)
 		self.fields.extend(fillers)
 		self.sort_fields()
 
 	def finalize(self):
-		self.sort_fields()
 		self.fill_holes()
 		if len(self.parent.variants) > 1 :
 			self.name = str(self.parent.variants.index(self))
 		super().finalize()
+
+################################################################################
+#                                DEFINE AND USE                                #
+################################################################################
+
+	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
+		self.sort_fields(reverse=RegisterVariant.big_endian)
+		if len(self.parent.variants) == 1 :
+			out = "".join([f.declare(indent) for f in self])
+		else :
+			indent.increment()
+			content = "".join([f.declare(indent) for f in self])
+			indent.decrement()
+			out = REG_VAR_DECLARATION.format(indent= indent, fields= content)
+
+		if self.needs_define :
+			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
+		return out

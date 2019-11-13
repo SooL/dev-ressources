@@ -51,7 +51,7 @@ class Register(Component) :
 		xml_fields = xml_data.findall("fields/field")
 		if xml_fields is not None :
 			for xml_field in xml_fields :
-				register.add_field(Field.create_from_xml(chips, xml_field))
+				register.add_field(field=Field.create_from_xml(chips, xml_field), in_xml_node=True)
 
 		return register
 
@@ -60,13 +60,15 @@ class Register(Component) :
 	             name: T.Union[str, None] = None,
 	             brief: T.Union[str, None] = None,
 	             size: int = 32,
-	             access: T.Union[str, None] = None,
-	             templated: bool = False) :
+	             access: T.Union[str, None] = None) :
 		super().__init__(chips=chips, name=name, brief=brief)
 		self.size = size
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
-		self.templated : bool = templated
+
+################################################################################
+#                                  OPERATORS                                   #
+################################################################################
 
 	def __iter__(self) :
 		return iter(self.variants)
@@ -84,64 +86,121 @@ class Register(Component) :
 	def __getitem__(self, item: str) -> Field:
 		result: T.Union[Field, None] = None
 		for var in self :
-			result = var[item]
-			if result is not None :
-				return result
+			if item in var :
+				return var[item]
 		raise KeyError()
 
 	def __eq__(self, other):
 		if isinstance(other, Register) :
 			for var in self :
+				if var.for_template :
+					continue
 				for field in var :
 					if field not in other :
 						return False
 			for var in other :
+				if var.for_template :
+					continue
 				for field in var :
 					if field not in self :
 						return False
 			return True
 		raise TypeError(f"Provided type {type(other)}")
 
-	def add_field(self, field: Field) :
-		self.chips.add(field.chips)
-		field.parent = self
+	@property
+	def has_template(self) -> bool :
+		for v in self :
+			if v.for_template :
+				return True
+		return False
 
-		var: T.Union[RegisterVariant, None] = None
+################################################################################
+#                         FIELDS & VARIANTS MANAGEMENT                         #
+################################################################################
+
+	def add_field(self, field: Field, in_xml_node: bool = False) :
+		self.chips.add(field.chips)
+
+		var: T.Optional[RegisterVariant] = None
 		for v in self.variants :
+			if (not in_xml_node) and v.for_template :
+				continue # don't add single fields to template variants
+
 			if field in v :
-				v[field].merge(field)
+				v[field].inter_svd_merge(field)
 				return
 			if v.has_room_for(field) :
 				var = v
+				break
 
 		if var is None :
 			var = RegisterVariant()
-			self.variants.append(var)
+			self.add_variant(var)
 		var.add_field(field)
 
-	def merge(self, other: "Register"):
-		for v in other :
-			for f in v:
-				self.add_field(f)
-		super().merge(other)
+	def add_variant(self, variant: RegisterVariant) :
+		self.variants.append(variant)
+		variant.set_parent(self)
+		self.edited = True
 
-	def self_merge(self):
-		for var in self.variants :
-			var.sort_fields()
+	def intra_svd_merge(self, other: "Register") :
+		for v in other :
+			self.add_variant(v)
+
+	def inter_svd_merge(self, other: "Register"):
+		super().inter_svd_merge(other)
+		if other.size > self.size :
+			self.size = other.size
+		for o_v in other :
+			placed = False
+			for s_v in self :
+				if o_v == s_v :
+					s_v.inter_svd_merge(o_v)
+					placed = True
+					break
+			if not placed :
+				if o_v.for_template :
+					self.add_variant(o_v)
+				else :
+					for f in o_v :
+						self.add_field(f)
+
+	def before_svd_compile(self, parent_corrector):
+		old_name = self.name
+		super().before_svd_compile(parent_corrector)
+		if self.name != old_name :
+			for m in self.parent.mappings :
+				for reg_p in m :
+					if reg_p.register is self and reg_p.name == old_name :
+						reg_p.name = self.name
+
+	def svd_compile(self):
+		super().svd_compile()
 
 		var_index = 0
-		while var_index < len(self.variants):
+		while var_index < len(self.variants)-1 :
 			var_offset = 1
-
-			while var_index + var_offset < len(self.variants):
+			while var_index + var_offset < len(self.variants) :
 				if self.variants[var_index] == self.variants[var_index + var_offset] :
 					for f in self.variants[var_index + var_offset] :
-						self.variants[var_index][f].merge(f)
+						self.variants[var_index][f].intra_svd_merge(f)
 					self.variants.pop(var_index + var_offset)
-					continue
+					self.edited = True
 				else :
 					var_offset += 1
 			var_index += 1
+
+################################################################################
+#                          DEFINE, UNDEFINE & DECLARE                          #
+################################################################################
+
+	@property
+	def undefine(self) -> True:
+		return False
+
+	@property
+	def defined_value(self) -> T.Union[str, None]:
+		return None
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		out: str = ""
@@ -152,7 +211,11 @@ class Register(Component) :
 
 		indent.increment()
 		out += "".join(
-			map(lambda v : v.declare(indent), self.variants))
+			map(lambda v : v.declare(indent), filter(lambda var: not var.for_template, self.variants)))
+
+		if self.has_template :
+			out += f"{indent}tmpl::{self.name}_t;\n"
+
 		indent.decrement()
 
 		if is_union :
@@ -165,114 +228,3 @@ class Register(Component) :
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
-
-	@property
-	def undefine(self) -> True:
-		return False
-
-	@property
-	def defined_value(self) -> T.Union[str, None]:
-		return None
-
-	def fix(self, parent_corrector: "Corrector"):
-		old_name = self.name
-		super().fix(parent_corrector)
-		if self.name != old_name :
-			for m in self.parent.mappings :
-				for reg_p in m :
-					if reg_p.register is self and reg_p.name == old_name:
-						reg_p.name = self.name
-
-################################################################################
-############################## REGISTER PLACEMENT ##############################
-################################################################################
-
-class RegisterPlacement(Component) :
-
-	@staticmethod
-	def create_from_xml(chips: ChipSet, register: Register,
-	                    xml_data: ET.Element) -> "RegisterPlacement":
-		name = get_node_text(xml_data, "name").strip(None)
-		offset = int(get_node_text(xml_data, "addressOffset"), 0)
-		return RegisterPlacement(chips=chips, name=name, register=register,
-		                         address=offset)
-
-	def __init__(self, chips: ChipSet, name: T.Union[str, None],
-	             register: Register, address: int, array_size: int = 0) :
-		super().__init__(chips=chips, name=name)
-		self.register : Register = register
-		self.address: int  = address
-		self.array_size : int = array_size
-
-	def __eq__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
-			return self.name == other.name and\
-			       self.address == other.address and\
-			       self.array_size == other.array_size and\
-			       self.register.name == other.register.name and\
-			       self.register.size == other.register.size
-		else :
-			return False
-
-	def __cmp__(self, other) -> int:
-		if isinstance(other, RegisterPlacement) :
-			return self.address - other.address
-		else :
-			raise TypeError()
-	def __lt__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
-			if self.address != other.address :
-				return self.address < other.address
-			else :
-				return self.name < other.name
-		else :
-			raise TypeError()
-
-	def __gt__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
-			if self.address != other.address :
-				return self.address > other.address
-			else :
-				return self.name > other.name
-		else :
-			raise TypeError()
-
-	# def finalize(self):
-	# 	pass
-
-	# @property
-	# def name(self):
-	# 	return self.register.name
-
-	@property
-	def computed_size(self) -> int:
-		return self.register.size * (1 if self.array_size == 0 else self.array_size)
-
-	def overlap(self, other: "RegisterPlacement"):
-		if other.address < self.address :
-			size = other.register.size *\
-			       (1 if other.array_size == 0 else other.array_size)
-			return other.address + size > self.address
-		else : # self.address <= other.address
-			size = (self.register.size/8) *\
-			       (1 if self.array_size == 0 else self.array_size)
-			return self.address + size > other.address
-
-
-	@property
-	def defined_value(self) -> T.Union[str, None]:
-		template = "{1.name}_t {2}{0.name}"
-		if self.array_size > 0 :
-			template += "[{0.array_size}]"
-		return template.format(self, self.register, "tmpl::" if self.register.templated else "")
-
-	@property
-	def define_not(self) -> str:
-		return fill_periph_hole(int(self.computed_size/8), sep=";")
-
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
-		if self.needs_define :
-			return f"{indent}{self.defined_name};\n"
-		else :
-			return f"{indent}{self.defined_value};\n"
-

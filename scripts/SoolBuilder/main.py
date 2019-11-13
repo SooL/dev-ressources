@@ -41,7 +41,7 @@ import xml.etree.ElementTree as ET
 
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
-from cleaners.create_peripheral import create_association_table, TIM_log
+from cleaners.create_peripheral import create_association_table
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 
@@ -228,8 +228,6 @@ if __name__ == "__main__" :
 		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
 		#handler.cleanup()
 		svd_list.append(handler)
-
-	TIM_log() # DEGUB
 	
 	output_groups : T.Dict[str,Group] = dict()
 	
@@ -240,19 +238,19 @@ if __name__ == "__main__" :
 			if name not in output_groups :
 				output_groups[name] = data
 			else:
-				output_groups[name].merge_group(data)
+				output_groups[name].inter_svd_merge(data)
 		i += 1
 	del i
 
 
-	logger.info("Iterative merging...")
-	for name, group in output_groups.items() :
-		while group.has_been_edited :
-			group.validate_edit()
-			logger.info(f"Re-merging {group.name}")
-			group.fix(root_corrector)
-			for periph in group.peripherals :
-				periph.self_merge()
+	# logger.info("Iterative merging...")
+	# for name, group in output_groups.items() :
+	# 	while group.has_been_edited :
+	# 		group.validate_edit()
+	# 		logger.info(f"Re-merging {group.name}")
+	# 		group.finalize()
+	# 		for periph in group.peripherals :
+	# 			periph.self_merge()
 
 	for name, group in output_groups.items() :
 		logger.info(f"Finalizing {name}")

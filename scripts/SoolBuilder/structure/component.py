@@ -26,20 +26,6 @@ class Component:
 		self.brief = brief
 		self.parent = parent
 
-	# def __contains__(self, item):
-	# 	# noinspection PyTypeChecker
-	# 	for child in self :
-	# 		if child == item :
-	# 			return True
-	# 	return False
-	#
-	# def __getitem__(self, item):
-	# 	# noinspection PyTypeChecker
-	# 	for child in self :
-	# 		if child == item :
-	# 			return child
-	# 	raise KeyError()
-
 	def __eq__(self, other):
 		return self.name == other.name
 
@@ -108,8 +94,11 @@ class Component:
 	def set_parent(self, parent: "Component"):
 		self.parent = parent
 
-	def merge(self, other: "Component"):
+	def inter_svd_merge(self, other: "Component"):
 		self.chips.add(other.chips)
+
+	def intra_svd_merge(self, other: "Component"):
+		pass
 
 ################################################################################
 #                            STRING REPRESENTATIONS                            #
@@ -136,7 +125,7 @@ class Component:
 			else                    : return parent_alias + "_" + self.name
 
 ################################################################################
-#                              DEFINE / UNDEFINE                               #
+#                          DEFINE, UNDEFINE & DECLARE                          #
 ################################################################################
 
 	@property
@@ -181,27 +170,52 @@ class Component:
 			for child in self :
 				child.define(defines)
 
-################################################################################
-#                                    USAGE                                     #
-################################################################################
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 		return None
+
 ################################################################################
 #                                     FIX                                      #
 ################################################################################
 
-
-	def fix(self, parent_corrector: "Corrector") :
+	def before_svd_compile(self, parent_corrector) :
+		"""
+		Applies corrections, prepare templates
+		"""
 		self.edited = False
-		for corrector in parent_corrector[self] :
-			corrector(self)
-			if hasattr(self,'__iter__'):
+
+		correctors = None if (parent_corrector is None) else parent_corrector[self]
+
+		if (correctors is not None) and (len(correctors) > 0) :
+			for corrector in correctors :
+				if hasattr(self, '__iter__') :
+					# noinspection PyTypeChecker
+					for child in self :
+						child.before_svd_compile(corrector)
+				corrector(self)
+		else :
+			if hasattr(self, '__iter__') :
 				# noinspection PyTypeChecker
 				for child in self :
-					child.fix(corrector)
+					child.before_svd_compile(None)
 
 
+	def svd_compile(self) :
+		"""
+		Merges identical child components
+		"""
+		self.edited = False
+		if hasattr(self, '__iter__') :
+			# noinspection PyTypeChecker
+			for child in self :
+				child.svd_compile()
 
-
-
-
+	def after_svd_compile(self) :
+		"""
+		Cleans the component and its children, checks for potential errors
+		:return:
+		"""
+		self.edited = False
+		if hasattr(self, '__iter__') :
+			# noinspection PyTypeChecker
+			for child in self :
+				child.after_svd_compile()

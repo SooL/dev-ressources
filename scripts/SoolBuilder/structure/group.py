@@ -47,7 +47,8 @@ class Group(Component) :
 		group_name = Group.fix_name(group_name)
 		group = Group(group_name)
 
-		group.fix(root_corrector) # changes only the group name (if necessary)
+		if group.name in root_corrector :
+			root_corrector(group) # changes only the group name (if necessary)
 
 		if group.name in group_dict :
 			return group_dict[group_name]
@@ -60,7 +61,7 @@ class Group(Component) :
 		self.peripherals: T.List[Peripheral] = list()
 
 	def __contains__(self, item):
-		if isinstance(item,Peripheral) :
+		if isinstance(item, Peripheral) :
 			for p in self.peripherals :
 				if item is p or item == p :
 					return True
@@ -72,10 +73,15 @@ class Group(Component) :
 			return False
 		raise TypeError()
 
-	def __getitem__(self, item: str) -> Peripheral:
+	def __getitem__(self, item) -> Peripheral:
 		if isinstance(item,str) :
 			for p in self.peripherals :
 				if str(p.name) == item:
+					return p
+			raise KeyError()
+		elif isinstance(item, Peripheral) :
+			for p in self.peripherals :
+				if p is item or p == item :
 					return p
 			raise KeyError()
 		raise TypeError()
@@ -83,33 +89,16 @@ class Group(Component) :
 	def __iter__(self):
 		return iter(self.peripherals)
 
-	@property
-	def has_been_edited(self):
-		for peripheral in self.peripherals :
-			if peripheral.has_been_edited :
-				return True
-		return False
-
-	def cleanup(self):
-		for p in self.peripherals :
-			p.cleanup()
-
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################
 
 	def add_peripheral(self, peripheral):
 		self.peripherals.append(peripheral)
-		if peripheral.parent is None:
-			peripheral.parent = self
-		elif peripheral.parent != self:
-			raise AssertionError()
+		peripheral.set_parent(self)
+		self.edited = True
 
-########################################################################################################################
-#                                                  PERIPHERALS FUSION                                                  #
-########################################################################################################################
-
-	def __merge_svd_peripherals(self):
+	def __merge_svd_peripherals(self, name_based: bool = False):
 		length = len(self.peripherals)
 		i = 0
 
@@ -120,8 +109,10 @@ class Group(Component) :
 			j = i  # begin at next peripheral
 			while j < length:
 				periph_2 : Peripheral = self.peripherals[j]
+				condition = (periph_1.name is not None and periph_1.name == periph_2.name) if name_based\
+					else periph_1.mapping_equivalent_to(periph_2, ignore_templates=False)
 
-				if periph_1.mapping_equivalent_to(periph_2):  # registers, fields are the same.
+				if condition :  # registers, fields are the same.
 					if periph_1.name != periph_2.name :
 						if periph_1.name is None :
 							periph_1.name = periph_2.name
@@ -135,20 +126,23 @@ class Group(Component) :
 							            " Second periph merged into first")
 						elif periph_2.name is not None :
 							logger.error("merged two peripherals with a different name :"
-							                f" {repr(periph_1.instances)} and {repr(periph_2.instances)}")
+							                f" {periph_1} ({repr(periph_1.instances)}) and"
+							                f" {periph_2} ({repr(periph_2.instances)})")
 					if periph_1.brief != periph_2.brief:
 						logger.warning(f"peripherals {repr(periph_1.instances)} and {repr(periph_2.instances)}"
 						               f" don't have the same description, despite being identical :"
 						               f" {periph_1.brief}, {periph_2.brief}")
-					periph_1.merge(periph_2)
+					periph_1.intra_svd_merge(periph_2)
 					self.peripherals.pop(j)
+					self.edited = True
 					length -= 1
 
 				# If only one mapping per peripheral and mappings are compatibles
 				elif len(periph_1.mappings) == 1 and len(periph_2.mappings) == 1 \
 						and periph_1.mappings[0].compatible(periph_2.mappings[0]) :
-					periph_1.merge(periph_2)
+					periph_1.intra_svd_merge(periph_2)
 					self.peripherals.pop(j)
+					self.edited = True
 					length -= 1
 
 				else :
@@ -179,50 +173,34 @@ class Group(Component) :
 			             f" for chipset {repr(list(unnamed)[0].chips.chips)}"
 			             f" cannot be named.")
 
-	def svd_finish(self):
-		"""
-		This function will merge all peripherals detected during one SVD analysis
-		It will also perform the naming step
-		"""
+	def before_svd_compile(self, parent_corrector=root_corrector):
+		super().before_svd_compile(parent_corrector)
 
-		self.edited = True # TODO might be useless, as the constructor already edits the name
-		while self.has_been_edited :
-			self.validate_edit()
-			# ---------- step 1 : merge identical peripherals
-			self.__merge_svd_peripherals()
-			self.attach_hierarchy()
-			# ---------- step 2 : apply fixes
-			self.fix(root_corrector)
-			for periph in self :
-				if periph.has_been_edited :
-					# logger.info(f"Re-merging {periph.name}")
-					periph.self_merge()
+	def svd_compile(self):
+		super().svd_compile()
+		self.__merge_svd_peripherals()
+		if not self.edited :
+			self.__merge_svd_peripherals(name_based=True)
 
-		# ---------- step 3 : identify unnamed peripherals
+	def after_svd_compile(self):
+		super().after_svd_compile()
 		self.__identify_unnamed()
-
-		i = 0
 		for i in range(0, len(self.peripherals)-1) :
 			for j in range(i+1, len(self.peripherals)) :
 				if self.peripherals[i].name == self.peripherals[j].name :
-					raise AssertionError(f"Peripherals {self.peripherals[i]} and {self.peripherals[j]} have the same name, but are not identical")
+					periph_1 = self.peripherals[i]
+					periph_2 = self.peripherals[j]
+					raise AssertionError(f"Peripherals {periph_1.instances} and {periph_2.instances}"
+					                     f" share the name {periph_1.name}, but are not identical")
 
-	def merge_new_peripheral(self, periph : Peripheral):
-		"""
-		This function will merge the given periph within the current group.
-		:param periph:
-		"""
-		if str(periph.name) not in self :
-			self.peripherals.append(periph)
-		else:
-			ref = self[str(periph.name)]
-			ref.merge(periph)
-	
-	def merge_group(self,other : "Group"):
+	def inter_svd_merge(self, other: "Group"):
 		if other.name != self.name :
 			logger.error(f"Merging two groups with different names : {other.name} into {self.name}")
-		for p in other.peripherals :
-			self.merge_new_peripheral(p)
+		for p in other :
+			if (p.name is not None) and (p.name in self) :
+				self[p.name].inter_svd_merge(p)
+			else :
+				self.add_peripheral(p)
 		
 	def cpp_output(self):
 

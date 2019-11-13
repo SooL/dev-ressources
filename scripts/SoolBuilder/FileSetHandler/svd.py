@@ -109,11 +109,18 @@ class SVDFile :
 			periph_instances_dict[inst_name] = instance
 		
 		for grp_name in self.groups:
-			self.groups[grp_name].svd_finish()
-			
-	def cleanup(self):
-		for n, g in self.groups.items() :
-			g.cleanup()
-		del self.root
+			grp = self.groups[grp_name]
+
+			grp.edited = True
+			while grp.has_been_edited :
+				grp.before_svd_compile()
+
+			grp.edited = True
+			while grp.has_been_edited :
+				grp.svd_compile()
+
+			grp.edited = True
+			while grp.has_been_edited :
+				grp.after_svd_compile()
 		
 	
