@@ -39,6 +39,7 @@ from tools import sanity
 import typing as T
 import xml.etree.ElementTree as ET
 
+import pickle
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
 from cleaners.create_peripheral import create_association_table
@@ -81,7 +82,7 @@ logger.info("Tool startup")
 
 OutputDirectory = "out/"
 pdsc_path_model = ".data/fileset/*.pdsc"
-
+pickle_data_path = ".data/SooL.dat"
 
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
@@ -146,12 +147,33 @@ if __name__ == "__main__" :
 						action="store_false",
 						dest="refresh_output",
 						help="Keeps all non-refreshed output files")
+	parser.add_argument("--dump",
+						action="store_true",
+						help="Generate a SooL.dat file which might be used by other scripts")
+	parser.add_argument("--reuse",
+						action="store_true",
+						help="Reuse an existing .data/SooL.dat file to skip the analysis step.")
 
 	args = parser.parse_args()
 
-	if not os.path.exists(svd.file_path) :
-		logger.info("First initialization")
-		svd.init()
+
+	skip_analysis = False
+	output_groups: T.Dict[str, Group] = dict()
+
+	if args.reuse :
+		try :
+			logger.info("Trying to restore a previous database...")
+			with open(pickle_data_path,"rb") as pickle_file :
+				output_groups = pickle.load(pickle_file)
+			skip_analysis = True
+			logger.info("\tDone !")
+		except Exception as e :
+			output_groups = dict()
+			skip_analysis = False
+			logger.error(f"Error while trying to reuse a previous database : {e.__cause__}")
+
+
+
 
 	if args.big_endian :
 		logger.warning("The library will be generated for big endian.")
@@ -161,112 +183,123 @@ if __name__ == "__main__" :
 		logger.warning("The library will be generated with non-physical capabilities.")
 		PeripheralInstance.generate_nophy = True
 
-	if args.update_all :
-		svd.init()
-		args.update_svd = svd.defined_archives_keil.keys()
-		
-	if args.upgrade_all :
-		#svd.init()
-		args.upgrade_svd = svd.defined_archives_keil.keys()
+	if not skip_analysis :
+		if not os.path.exists(svd.file_path) :
+			logger.info("First initialization")
+			svd.init()
 
-	if args.update_svd is not None and len(args.update_svd) :
-		logger.warning("Refresh definition for following families :")
-		not_retrieved = list()
-		for chip in args.update_svd :
-			logger.warning("\t" + chip)
-		for chip in args.update_svd :
-			if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
-				not_retrieved.append(chip)
-		if len(not_retrieved) > 0 :
-			logger.warning("Several chip families have not been retrieved :")
-			for chip in sorted(not_retrieved) :
-				logger.warning(f"\t{chip}")
-		else:
-			logger.info("All families retrieved")
-	
-	if args.upgrade_svd is not None and len(args.upgrade_svd) :
-		logger.warning("Refresh definition for following families :")
-		not_retrieved = list()
-		for chip in args.upgrade_svd :
-			logger.warning("\t" + chip)
-		for chip in args.upgrade_svd :
-			if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
-				not_retrieved.append(chip)
-		if len(not_retrieved) > 0 :
-			logger.warning("Several chip families have not been retrieved :")
-			for chip in sorted(not_retrieved) :
-				logger.warning(f"\t{chip}")
-		else:
-			logger.info("All families retrieved")
 
-	FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
+		if args.update_all :
+			svd.init()
+			args.update_svd = svd.defined_archives_keil.keys()
 
-	periph_list : T.List[Peripheral] = list()
-	mapping_stm2svd: T.List[PDSCFile] = list()
-	group_dict : T.Dict[str, Group] = dict()
-	svd_list : T.List[SVDFile] = list()
+		if args.upgrade_all :
+			#svd.init()
+			args.upgrade_svd = svd.defined_archives_keil.keys()
 
-	register_forbid_autonamefix.setup()
-
-	logger.info("Reading .pdsc files to map STM number to svd...")
-	for pdsc_file in glob.glob(pdsc_path_model):
-		logger.info(f"\tReading {pdsc_file}...")
-		mapping_stm2svd.append(PDSCFile(pdsc_file))
-
-	for svd_file in FileListing:
-		handler = None
-		for pdsc in mapping_stm2svd :
-			if os.path.basename(svd_file) in pdsc.svd_to_define :
-				handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
-				break
-		if handler is None :
-			logger.warning(f"No define found for svd file {svd_file}")
-			continue
-			# To add a default define based upon SVD name, uncomment
-			# handler = SVDFile(svd_file)
-			
-		handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
-		#handler.cleanup()
-		svd_list.append(handler)
-	
-	output_groups : T.Dict[str,Group] = dict()
-	
-	i = 1
-	for svd in svd_list :
-		logger.info(f"Final merge {i:2d}/{len(svd_list)} of SVD {svd.file_name} ")
-		for name, data in svd.groups.items() :
-			if name not in output_groups :
-				output_groups[name] = data
+		if args.update_svd is not None and len(args.update_svd) :
+			logger.warning("Refresh definition for following families :")
+			not_retrieved = list()
+			for chip in args.update_svd :
+				logger.warning("\t" + chip)
+			for chip in args.update_svd :
+				if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
+					not_retrieved.append(chip)
+			if len(not_retrieved) > 0 :
+				logger.warning("Several chip families have not been retrieved :")
+				for chip in sorted(not_retrieved) :
+					logger.warning(f"\t{chip}")
 			else:
-				output_groups[name].inter_svd_merge(data)
-		i += 1
-	del i
+				logger.info("All families retrieved")
+
+		if args.upgrade_svd is not None and len(args.upgrade_svd) :
+			logger.warning("Refresh definition for following families :")
+			not_retrieved = list()
+			for chip in args.upgrade_svd :
+				logger.warning("\t" + chip)
+			for chip in args.upgrade_svd :
+				if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
+					not_retrieved.append(chip)
+			if len(not_retrieved) > 0 :
+				logger.warning("Several chip families have not been retrieved :")
+				for chip in sorted(not_retrieved) :
+					logger.warning(f"\t{chip}")
+			else:
+				logger.info("All families retrieved")
+
+		FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
+
+		periph_list : T.List[Peripheral] = list()
+		mapping_stm2svd: T.List[PDSCFile] = list()
+		group_dict : T.Dict[str, Group] = dict()
+		svd_list : T.List[SVDFile] = list()
+
+		register_forbid_autonamefix.setup()
+
+		logger.info("Reading .pdsc files to map STM number to svd...")
+		for pdsc_file in glob.glob(pdsc_path_model):
+			logger.info(f"\tReading {pdsc_file}...")
+			mapping_stm2svd.append(PDSCFile(pdsc_file))
+
+		for svd_file in FileListing:
+			handler = None
+			for pdsc in mapping_stm2svd :
+				if os.path.basename(svd_file) in pdsc.svd_to_define :
+					handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
+					break
+			if handler is None :
+				logger.warning(f"No define found for svd file {svd_file}")
+				continue
+				# To add a default define based upon SVD name, uncomment
+				# handler = SVDFile(svd_file)
+
+			handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
+			#handler.cleanup()
+			svd_list.append(handler)
+
+		i = 1
+		for svd in svd_list :
+			logger.info(f"Final merge {i:2d}/{len(svd_list)} of SVD {svd.file_name} ")
+			for name, data in svd.groups.items() :
+				if name not in output_groups :
+					output_groups[name] = data
+				else:
+					output_groups[name].merge_group(data)
+			i += 1
+		del i
 
 
-	# logger.info("Iterative merging...")
-	# for name, group in output_groups.items() :
-	# 	while group.has_been_edited :
-	# 		group.validate_edit()
-	# 		logger.info(f"Re-merging {group.name}")
-	# 		group.finalize()
-	# 		for periph in group.peripherals :
-	# 			periph.self_merge()
+		# logger.info("Iterative merging...")
+		# for name, group in output_groups.items() :
+		# 	while group.has_been_edited :
+		# 		group.validate_edit()
+		# 		logger.info(f"Re-merging {group.name}")
+		# 		group.finalize()
+		# 		for periph in group.peripherals :
+		# 			periph.self_merge()
 
-	for name, group in output_groups.items() :
-		logger.info(f"Finalizing {name}")
-		group.finalize()
+		for name, group in output_groups.items() :
+			logger.info(f"Finalizing {name}")
+			group.finalize()
 
+		if args.dump:
+			logger.info("Dumping data to .data/SooL.dat")
+			with open(".data/SooL.dat", "wb") as dump_file:
+				pickle.dump(output_groups, dump_file)
+
+		# End of generation section. If reuse specified, the code will start here
 	#sanity.report_sanity(output_groups)
-	
+
 	if args.refresh_output :
 		if os.path.exists("out/") :
 			shutil.rmtree("out")
 		os.mkdir("out")
-	
+
 	logger.info("Printing output files...")
 	for name, group in output_groups.items():
-		with open(f"out/{name}.h","w") as header :
-			header.write(group.cpp_output())
+		if args.group_filter is None or name in args.group_filter :
+			with open(f"out/{name}.h","w") as header :
+				header.write(group.cpp_output())
 
 	with open(f"out/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
