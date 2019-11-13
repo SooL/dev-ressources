@@ -264,7 +264,7 @@ if __name__ == "__main__" :
 				if name not in output_groups :
 					output_groups[name] = data
 				else:
-					output_groups[name].merge_group(data)
+					output_groups[name].inter_svd_merge(data)
 			i += 1
 		del i
 
