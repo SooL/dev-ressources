@@ -1,3 +1,4 @@
+import re
 import typing as T
 from fnmatch import fnmatch
 
@@ -7,17 +8,24 @@ from cleaners.field_name_cleaner import GPIO_field_cleaner
 from cleaners.register_name_cleaner import GPIO_reg_cleaner
 from structure import Component
 
-
 def change_name(obj, name) :
 	obj.name = name
 
-
 def reg_remove_periph_prefix(obj : Component) :
-	prefix = f"{obj.parent.parent.name}_"
-	remove_prefix(obj,prefix)
+	from structure import Peripheral
+
+	periph = obj.parent
+	while not isinstance(periph, Peripheral) :
+		periph = periph.parent
+	if periph.name is None :
+		periph = periph.parent # use group name instead
+
+	pattern = f"^{periph.name}[A-Za-z\d]*_\w+$"
+	if re.match(pattern, obj.name) :
+		obj.name = obj.name[obj.name.index("_", len(periph.name))+1:]
 
 
-def remove_prefix(obj : Component, prefix) -> Component:
+def remove_prefix(obj : Component, prefix) :
 	if obj.name[:len(prefix)] == prefix :
 		obj.name = obj.name[len(prefix):]
 
@@ -35,6 +43,7 @@ class Corrector:
 
 	def __getitem__(self, item):
 		return tuple(self.sub_correctors(item))
+
 	def sub_correctors(self, item):
 		if self.child_correctors is None :
 			return list()
@@ -66,6 +75,7 @@ class Corrector:
 			return self.function(component)
 
 root_corrector = Corrector({
+
 	"DMAMUX*"   : Corrector(lambda group: change_name(group, "DMAMUX")),
 	"TIM?*"     : Corrector(lambda group: change_name(group, "TIM")),
 	"USB_*"     : Corrector(lambda group: change_name(group, "USB")),
@@ -79,21 +89,16 @@ root_corrector = Corrector({
 		"*"        : Corrector(I2C_periph_cleaner)
 	}),
 	"ADC"       : Corrector({
-		"*"        : Corrector(ADC_periph_cleaner, {
-			"ADC*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
-		})
+		"*"        : Corrector(ADC_periph_cleaner)
 	}),
 	"ETHERNET"  : Corrector({
 		"*"        : Corrector(ETHERNET_periph_cleaner)
 	}),
 	"TIM"       : Corrector({
-		"*"        : Corrector(TIM_periph_cleaner, {
-			"TIM*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
-		})
+		"*"        : Corrector(TIM_periph_cleaner)
 	}),
 	"GPIO"      : Corrector({
 		"*"        : Corrector(GPIO_periph_cleaner, {
-			"GPIO*_*"   : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:])),
 			"OSPEEDER"  : Corrector(lambda reg: change_name(reg, "OSPEEDR")),
 			"OSPEEDR"   : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OSPEED{int(f.position/f.size)}")})}),
 			"MODER"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"MODE{  int(f.position/f.size)}")})}),
@@ -102,5 +107,5 @@ root_corrector = Corrector({
 			"PUPDR"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"PUPD{  int(f.position/f.size)}")})})
 		})
 	}),
-	"*"		: Corrector({"*": Corrector({"*": Corrector(reg_remove_periph_prefix) }) })
+	"*"	: Corrector({"*": Corrector({"*_*": Corrector(reg_remove_periph_prefix) }) }),
 })
