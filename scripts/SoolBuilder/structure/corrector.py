@@ -11,6 +11,9 @@ from structure import Component
 def change_name(obj, name) :
 	obj.name = name
 
+def remove_prefix(obj : Component, prefix) -> Component:
+	if obj.name[:len(prefix)] == prefix :
+		obj.name = obj.name[len(prefix):]
 
 class Corrector:
 	def __init__(self, arg1: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None, arg2: T.Dict[T.Optional[str], "Corrector"] = None) :
@@ -80,6 +83,11 @@ root_corrector = Corrector({
 	"TIM"       : Corrector({
 		"*"        : Corrector(TIM_periph_cleaner, {
 			"TIM*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
+		})
+	}),
+	"CRC"		: Corrector({
+		"*"			: Corrector({
+			"CRC_*" : Corrector(lambda reg : remove_prefix(reg,"CRC_"))
 		})
 	}),
 	"GPIO"      : Corrector({
