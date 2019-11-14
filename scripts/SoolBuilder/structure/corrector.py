@@ -11,6 +11,12 @@ from structure import Component
 def change_name(obj, name) :
 	obj.name = name
 
+
+def reg_remove_periph_prefix(obj : Component) :
+	prefix = f"{obj.parent.parent.name}_"
+	remove_prefix(obj,prefix)
+
+
 def remove_prefix(obj : Component, prefix) -> Component:
 	if obj.name[:len(prefix)] == prefix :
 		obj.name = obj.name[len(prefix):]
@@ -85,11 +91,6 @@ root_corrector = Corrector({
 			"TIM*_*"    : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:]))
 		})
 	}),
-	"CRC"		: Corrector({
-		"*"			: Corrector({
-			"CRC_*" : Corrector(lambda reg : remove_prefix(reg,"CRC_"))
-		})
-	}),
 	"GPIO"      : Corrector({
 		"*"        : Corrector(GPIO_periph_cleaner, {
 			"GPIO*_*"   : Corrector(lambda reg: change_name(reg, reg.name[reg.name.index('_')+1:])),
@@ -100,5 +101,6 @@ root_corrector = Corrector({
 			"ODR"       : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OD{    int(f.position/f.size)}")})}),
 			"PUPDR"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"PUPD{  int(f.position/f.size)}")})})
 		})
-	})
+	}),
+	"*"		: Corrector({"*": Corrector({"*": Corrector(reg_remove_periph_prefix) }) })
 })
