@@ -42,7 +42,7 @@ import xml.etree.ElementTree as ET
 import pickle
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
-from cleaners.create_peripheral import create_association_table
+from cleaners.peripheral_cleaners import create_association_table
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 

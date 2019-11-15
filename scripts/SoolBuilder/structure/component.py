@@ -23,7 +23,7 @@ class Component:
 		self.name = name
 		
 		self.chips = ChipSet(chips)
-		self.brief = brief
+		self.brief = None if brief is None else ' '.join(brief.replace("\n", " ").split())
 		self.parent = parent
 
 	def __eq__(self, other):

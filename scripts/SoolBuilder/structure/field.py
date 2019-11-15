@@ -77,7 +77,10 @@ class Field(Component) :
 		name = self.defined_name if self.needs_define else self.name
 		if name is None :
 			name = ""
-		return f"{indent}uint{min(self.parent.parent.size, 64)}_t {name:12} : {self.size};\n"
+		out = f"{indent}uint{min(self.parent.parent.size, 64)}_t {name:16} : {self.size};"
+		if self.brief is not None :
+			out += f" /// {self.brief}"
+		return out + "\n"
 
 ################################################################################
 #                            BITWISE VERIFICATIONS                             #
