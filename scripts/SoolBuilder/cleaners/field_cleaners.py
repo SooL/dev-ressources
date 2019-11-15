@@ -4,20 +4,17 @@ from fnmatch import fnmatch
 
 # noinspection PyUnresolvedReferences
 def GPIO_field_cleaner(field : "Field", ):
-	if field.parent.name in ["OSPEEDR"] :
-		field.name = f"OSPEED{int(field.position / field.size)}"
-	if field.parent.name in ["MODER"] :
-		field.name = f"MODE{int(field.position / field.size)}"
-	if field.parent.name in ["IDR"]:
-		field.name = f"ID{int(field.position / field.size)}"
-	if field.parent.name in ["ODR"]:
-		field.name = f"OD{int(field.position / field.size)}"
-	if field.parent.name in ["PUPDR"]:
-		field.name = f"PUPD{int(field.position / field.size)}"
+	reg = field.parent.parent
+	if reg.name == "OSPEEDR"    : field.name = f"OSPEED{int(field.position / field.size)}"
+	elif reg.name == "MODER"    : field.name = f"MODE{  int(field.position / field.size)}"
+	elif reg.name == "IDR"      : field.name = f"ID{    int(field.position / field.size)}"
+	elif reg.name == "ODR"      : field.name = f"OD{    int(field.position / field.size)}"
+	elif reg.name == "PUPDR"    : field.name = f"PUPD{  int(field.position / field.size)}"
+	elif reg.name == "AFRH"     : field.name = f"AFSEL{ int((field.position +32) / field.size)}"
+	elif reg.name == "AFRL"     : field.name = f"AFSEL{ int(field.position / field.size)}"
 
-	if field.parent.name in ["AFRH"]:
-		field.name = f"AFSEL{int((field.position +32) / field.size)}"
-	if field.parent.name in ["AFRL"]:
-		field.name = f"AFSEL{int(field.position / field.size)}"
-
-	field.brief.replace("(y = 0..15) ", "").replace("These bits are ", "")
+	field.brief = field.brief\
+		.replace(" (y = 0..15)", "")\
+		.replace(" (y = 0..7)", "")\
+		.replace(" (y = 8..15)", "")\
+		.replace("These bits are ", "")
