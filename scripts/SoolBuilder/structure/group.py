@@ -5,7 +5,7 @@ from structure import ChipSet
 from structure import default_tabmanager
 import logging
 
-from cleaners.create_peripheral import create_association_table
+from cleaners.peripheral_cleaners import create_association_table
 from structure.corrector import root_corrector
 from structure.utils import DefinesHandler
 import deprecated

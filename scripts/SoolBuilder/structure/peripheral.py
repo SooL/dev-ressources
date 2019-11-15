@@ -8,7 +8,6 @@ from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
 
-from cleaners import field_association_table, register_association_table
 from structure.utils import DefinesHandler, fill_periph_hole
 
 logger = logging.getLogger()

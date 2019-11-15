@@ -78,7 +78,6 @@ class RegisterPlacement(Component) :
 ################################################################################
 #                          DEFINE, UNDEFINE & DECLARE                          #
 ################################################################################
-
 	@property
 	def defined_value(self) -> T.Union[str, None]:
 		template = "{1.name}_t {0.name}"
@@ -91,7 +90,11 @@ class RegisterPlacement(Component) :
 		return fill_periph_hole(int(self.computed_size/8), sep=";")
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
+		out: str
 		if self.needs_define :
-			return f"{indent}{self.defined_name};\n"
+			out = f"{indent}{self.defined_name};"
 		else :
-			return f"{indent}{self.defined_value};\n"
+			out = f"{indent}{self.defined_value};"
+		if self.brief is not None :
+			out += f"/// {self.register.brief}"
+		return out + "\n"

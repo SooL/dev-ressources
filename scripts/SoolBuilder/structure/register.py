@@ -16,7 +16,7 @@ logger = logging.getLogger()
 ################################### REGISTER ###################################
 ################################################################################
 REGISTER_DEFAULT_SIZE: int = 32
-REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: Reg{reg.size}_t
+REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: Reg{reg.size}_t /// {reg.brief}
 {indent}{{
 {variants}{indent}\t//SOOL-{reg.alias}-DECLARATIONS
 {indent}}};

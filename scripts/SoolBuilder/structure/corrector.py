@@ -2,10 +2,9 @@ import re
 import typing as T
 from fnmatch import fnmatch
 
-from cleaners.create_peripheral import GPIO_periph_cleaner, I2C_periph_cleaner, ADC_periph_cleaner, USB_periph_cleaner, \
-	TIM_periph_cleaner, HRTIM_periph_cleaner, ETHERNET_periph_cleaner
-from cleaners.field_name_cleaner import GPIO_field_cleaner
-from cleaners.register_name_cleaner import GPIO_reg_cleaner
+from cleaners.peripheral_cleaners import *
+from cleaners.field_cleaners import *
+from cleaners.register_cleaners import *
 from structure import Component
 
 def change_name(obj, name) :
@@ -24,22 +23,32 @@ def reg_remove_periph_prefix(obj : Component) :
 	if re.match(pattern, obj.name) :
 		obj.name = obj.name[obj.name.index("_", len(periph.name))+1:]
 
-
-def remove_prefix(obj : Component, prefix) :
-	if obj.name[:len(prefix)] == prefix :
-		obj.name = obj.name[len(prefix):]
-
 class Corrector:
-	def __init__(self, arg1: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None, arg2: T.Dict[T.Optional[str], "Corrector"] = None) :
+	def __init__(self,
+	             arg1: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None,
+	             arg2: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None) :
 		if isinstance(arg1, T.Callable) :
 			self.function: T.Optional[T.Callable] = arg1
 			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = arg2
 		elif isinstance(arg1, T.Dict) :
-			self.function: T.Optional[T.Callable] = None
+			self.function: T.Optional[T.Callable] = arg2
 			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = arg1
 		else :
-			self.function: T.Optional[T.Callable] = None
-			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = None
+			raise TypeError("Unable to build Corrector with arguments " + repr(arg1) + " & " + repr(arg2))
+
+		if self.child_correctors is not None :
+			for key in self.child_correctors :
+				corr = self.child_correctors[key]
+				if isinstance(corr, T.Callable) :
+					self.child_correctors[key] = Corrector(corr)
+				elif isinstance(corr, T.Dict) :
+					self.child_correctors[key] = Corrector(corr)
+				elif isinstance(corr, T.Tuple) :
+					if len(corr) != 2 :
+						raise TypeError("Cannot create Corrector with a tuple if the tuple has not 2 elments : " + repr(corr))
+					self.child_correctors[key] = Corrector(corr[0], corr[1])
+				elif not isinstance(self.child_correctors[key], Corrector) :
+					raise TypeError("Cannot create Corrector without Dict, function, Set or other corrector")
 
 	def __getitem__(self, item):
 		return tuple(self.sub_correctors(item))
@@ -76,36 +85,30 @@ class Corrector:
 
 root_corrector = Corrector({
 
-	"DMAMUX*"   : Corrector(lambda group: change_name(group, "DMAMUX")),
-	"TIM?*"     : Corrector(lambda group: change_name(group, "TIM")),
-	"USB_*"     : Corrector(lambda group: change_name(group, "USB")),
-	"HRTIM"     : Corrector({
-		"*"        : Corrector(HRTIM_periph_cleaner)
-	}),
-	"USB"       : Corrector({
-		"*"        : Corrector(USB_periph_cleaner)
-	}),
-	"I2C"       : Corrector({
-		"*"        : Corrector(I2C_periph_cleaner)
-	}),
-	"ADC"       : Corrector({
-		"*"        : Corrector(ADC_periph_cleaner)
-	}),
-	"ETHERNET"  : Corrector({
-		"*"        : Corrector(ETHERNET_periph_cleaner)
-	}),
-	"TIM"       : Corrector({
-		"*"        : Corrector(TIM_periph_cleaner)
-	}),
-	"GPIO"      : Corrector({
-		"*"        : Corrector(GPIO_periph_cleaner, {
-			"OSPEEDER"  : Corrector(lambda reg: change_name(reg, "OSPEEDR")),
-			"OSPEEDR"   : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OSPEED{int(f.position/f.size)}")})}),
-			"MODER"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"MODE{  int(f.position/f.size)}")})}),
-			"IDR"       : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"ID{    int(f.position/f.size)}")})}),
-			"ODR"       : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"OD{    int(f.position/f.size)}")})}),
-			"PUPDR"     : Corrector({"*":Corrector({"*":lambda f: change_name(f,f"PUPD{  int(f.position/f.size)}")})})
+	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
+	"TIM?*"     : lambda group: change_name(group, "TIM"),
+	"USB_*"     : lambda group: change_name(group, "USB"),
+	"CRC"       : {
+		"*"         : {
+			"DR"        : {"*":{"Data_register": lambda f: change_name(f, "DR")}},
+			"IDR"       : {"*":{"Independent_data_register": lambda f: change_name(f, "IDR")}},
+			"POL"       : {"*":{"Polynomialcoefficients": lambda f: change_name(f, "POL")}},
+		}
+	},
+	"HRTIM"     : {"*": HRTIM_periph_cleaner},
+	"USB"       : {"*": USB_periph_cleaner},
+	"I2C"       : {"*": I2C_periph_cleaner},
+	"ADC"       : {"*": ADC_periph_cleaner},
+	"ETHERNET"  : {"*": ETHERNET_periph_cleaner},
+	"TIM"       : {"*": TIM_periph_cleaner},
+	"GPIO"      : {
+		"*"        : (GPIO_periph_cleaner, {
+			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),
+			"*"         : {"*":{"*":GPIO_field_cleaner}},
 		})
-	}),
-	"*"	: Corrector({"*": Corrector({"*_*": Corrector(reg_remove_periph_prefix) }) }),
+	},
+	"*"	: {"*": {
+			"*_*": reg_remove_periph_prefix,
+			"*"  : {"*_*": reg_remove_periph_prefix}
+	}},
 })
