@@ -24,6 +24,8 @@ class Component:
 		
 		self.chips = ChipSet(chips)
 		self.brief = None if brief is None else ' '.join(brief.replace("\n", " ").split())
+		if self.brief == self.name :
+			self.brief = None
 		self.parent = parent
 
 	def __eq__(self, other):
@@ -96,9 +98,12 @@ class Component:
 
 	def inter_svd_merge(self, other: "Component"):
 		self.chips.add(other.chips)
+		if self.brief is None and other.brief is not None :
+			self.brief = other.brief
 
 	def intra_svd_merge(self, other: "Component"):
-		pass
+		if self.brief is None and other.brief is not None :
+			self.brief = other.brief
 
 ################################################################################
 #                            STRING REPRESENTATIONS                            #
