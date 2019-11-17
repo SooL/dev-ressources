@@ -31,6 +31,11 @@ class PeripheralMapping(Component) :
 				if x.address == item :
 					return x
 			raise KeyError()
+		if isinstance(item, str) :
+			for x in self.register_placements :
+				if x.name == item :
+					return x
+			raise KeyError()
 		if isinstance(item,RegisterPlacement):
 			for x in self.register_placements :
 				if x == item :
@@ -39,13 +44,19 @@ class PeripheralMapping(Component) :
 		raise TypeError()
 
 	def __contains__(self, item):
-		if isinstance(item,int):
+		if isinstance(item, int):
 			try :
 				a = self[item]
 				return True
 			except KeyError :
 				return False
-		if isinstance(item,RegisterPlacement) :
+		elif isinstance(item, str) :
+			try :
+				a = self[item]
+				return True
+			except KeyError :
+				return False
+		elif isinstance(item, RegisterPlacement) :
 			return item in self.register_placements
 		raise TypeError()
 
@@ -64,6 +75,8 @@ class PeripheralMapping(Component) :
 			if reg_p.address in self :
 				if self[reg_p.address] != reg_p :
 					return False
+			elif reg_p.name in self :
+				return False
 			elif not(self.has_room_for(reg_p)) :
 				return False
 		return True
@@ -71,6 +84,8 @@ class PeripheralMapping(Component) :
 	def has_room_for(self, reg_placement: RegisterPlacement) -> bool :
 		for p in self.register_placements :
 			if p.overlap(reg_placement) :
+				return False
+			elif p.name == reg_placement.name :
 				return False
 		return True
 
@@ -92,6 +107,10 @@ class PeripheralMapping(Component) :
 				else :
 					reg_p.inter_svd_merge(reg_placement)
 				return
+			elif reg_p.name == reg_placement.name :
+				raise AssertionError(
+					f"Two different placements for {reg_p.name}: {reg_placement.address}, {reg_p.address}")
+
 		self.register_placements.append(reg_placement)
 		reg_placement.set_parent(self)
 		self.edited = True
