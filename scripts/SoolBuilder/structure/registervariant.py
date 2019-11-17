@@ -116,11 +116,19 @@ class RegisterVariant(Component) :
 
 	def inter_svd_merge(self, other: "RegisterVariant") :
 		super().inter_svd_merge(other)
+		if other.for_template != self.for_template :
+			raise AssertionError("Non-template register variant cannot be merged with template register variant")
+		if self.for_template :
+			self.linked_instances.extend(other.linked_instances)
 		for f in other :
 			self.add_field(f)
 
 	def intra_svd_merge(self, other: "RegisterVariant"):
 		super().intra_svd_merge(other)
+		if other.for_template != self.for_template :
+			raise AssertionError("Non-template register variant cannot be merged with template register variant")
+		if self.for_template :
+			self.linked_instances.extend(other.linked_instances)
 		for f in other :
 			self.add_field(f)
 
