@@ -113,7 +113,7 @@ class Peripheral(Component) :
 ################################################################################
 
 	def add_register(self, reg: Register):
-		if reg.name in self :
+		if reg.name is not None and reg.name in self :
 			self[reg.name].inter_svd_merge(reg)
 		else :
 			self.registers.append(reg)
