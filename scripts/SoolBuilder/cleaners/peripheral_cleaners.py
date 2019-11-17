@@ -57,9 +57,25 @@ def HRTIM_periph_cleaner(periph: "Peripheral") :
 	if len(periph.instances) == 1 :
 		periph.name = periph.instances[0].name
 	else :
-		logger.error(f"HRTIM type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
+		logger.error(f"HRTIM type detection failure for {periph.instances} for chips {str(periph.chips)}. Assigning generic")
 		periph.name = "HRTIM_GENERIC"
 	pass
+
+def USART_periph_cleaner(periph: "Peripheral") :
+	if periph.name is not None :
+		return
+
+	if "low power" in periph.brief :
+		periph.name = "LPUART"
+	else :
+		brief_tokens = periph.brief.split()
+		if "synchronous" in brief_tokens :
+			periph.name = "USART"
+		elif "asynchronous" in brief_tokens :
+			periph.name = "UART"
+		else :
+			logger.error(f"USART type detection failure for {periph.instances} for chips {str(periph.chips)}. Assigning generic")
+			periph.name = "USART_GENERIC"
 
 def USB_periph_cleaner(periph: "Peripheral") :
 
@@ -128,6 +144,13 @@ def GPIO_periph_cleaner(periph) :
 		periph.name = "GPIO_DBG"
 	else :
 		periph.name = "GPIO"
+
+def SERIAL_CONTROL_periph_cleaner(periph) :
+	if len(periph.instances[0].name) > 3 and periph.instances[0].name[3] == "_" : #SCx_XXX
+		periph.name = "SC_" + periph.instances[0].name[4:]
+	# TODO split SC1 and SC2 peripherals into 2 peripherals so that the parts of SC1 and SC2 can be merged together
+	#else :
+	#	periph.name = "SC"
 
 # For a given group, provide a proper cleaner function. None is the default one.
 create_association_table : T.Dict[str,T.Callable] = {

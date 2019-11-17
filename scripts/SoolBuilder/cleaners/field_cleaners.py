@@ -13,8 +13,9 @@ def GPIO_field_cleaner(field : "Field", ):
 	elif reg.name == "AFRH"     : field.name = f"AFSEL{ int((field.position +32) / field.size)}"
 	elif reg.name == "AFRL"     : field.name = f"AFSEL{ int(field.position / field.size)}"
 
-	field.brief = field.brief\
-		.replace(" (y = 0..15)", "")\
-		.replace(" (y = 0..7)", "")\
-		.replace(" (y = 8..15)", "")\
-		.replace("These bits are ", "")
+	if field.brief is not None :
+		field.brief = field.brief\
+			.replace(" (y = 0..15)", "")\
+			.replace(" (y = 0..7)", "")\
+			.replace(" (y = 8..15)", "")\
+			.replace("These bits are ", "")

@@ -2,15 +2,13 @@ import re
 import typing as T
 from fnmatch import fnmatch
 
-from cleaners.peripheral_cleaners import *
-from cleaners.field_cleaners import *
-from cleaners.register_cleaners import *
+from cleaners import *
 from structure import Component
 
 def change_name(obj, name) :
 	obj.name = name
 
-def reg_remove_periph_prefix(obj : Component) :
+def remove_periph_prefix(obj : Component) :
 	from structure import Peripheral
 
 	periph = obj.parent
@@ -83,11 +81,17 @@ class Corrector:
 		else :
 			return self.function(component)
 
+
+
+
 root_corrector = Corrector({
 
 	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
 	"TIM?*"     : lambda group: change_name(group, "TIM"),
 	"USB_*"     : lambda group: change_name(group, "USB"),
+	"LPUART"    : lambda group: change_name(group, "USART"),
+	"AES?"      : lambda group: change_name(group, "AES"),
+	"SERIALCONTROLL": lambda group : change_name(group, "SERIAL_CONTROL"),
 	"CRC"       : {
 		"*"         : {
 			"DR"        : {"*":{"Data_register": lambda f: change_name(f, "DR")}},
@@ -95,6 +99,7 @@ root_corrector = Corrector({
 			"POL"       : {"*":{"Polynomialcoefficients": lambda f: change_name(f, "POL")}},
 		}
 	},
+	"USART"     : {"*" : USART_periph_cleaner},
 	"HRTIM"     : {"*": HRTIM_periph_cleaner},
 	"USB"       : {"*": USB_periph_cleaner},
 	"I2C"       : {"*": I2C_periph_cleaner},
@@ -107,8 +112,14 @@ root_corrector = Corrector({
 			"*"         : {"*":{"*":GPIO_field_cleaner}},
 		})
 	},
-	"*"	: {"*": {
-			"*_*": reg_remove_periph_prefix,
-			"*"  : {"*_*": reg_remove_periph_prefix}
+	"SERIAL_CONTROL" : (SERIAL_CONTROL_group_cleaner, {
+		"*"         : (SERIAL_CONTROL_periph_cleaner,{
+			"SC?_*"     : lambda reg : change_name(reg, reg.name[4:])
+		}),
+	}),
+	"*"	        : {
+		"*"         : {
+			"*_*"       : remove_periph_prefix,
+			"*"         : {"*":{"*_*"       : remove_periph_prefix }}
 	}},
 })
