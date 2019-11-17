@@ -132,7 +132,7 @@ class Peripheral(Component) :
 				if i == other :
 					i.inter_svd_merge(other)
 					return
-			other.parent = self
+			other.set_parent(self)
 			self.instances.append(other)
 			self.edited = True
 		else:
