@@ -119,6 +119,18 @@ class RegisterVariant(Component) :
 			field.set_parent(self)
 			self.chips.add(field.chips)
 
+	def remove_field(self, field: T.Union[str, Field]) :
+		if isinstance(field, Field) :
+			self.fields.remove(field)
+		elif isinstance(field, str) :
+			for f in self :
+				if f.name == field :
+					self.fields.remove(f)
+			raise ValueError(f"{field} is not in {self}")
+		else :
+			raise TypeError(f"Cannot remove {field} from {self} : not a str or Field")
+
+
 	def sort_fields(self, reverse = False):
 		self.fields.sort(key=(lambda f: f.position), reverse=reverse)
 

@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import logging
 #from structure import Group
 
-from structure import Register, RegisterPlacement, PeripheralInstance, PeripheralMapping
+from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping
 from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
@@ -29,9 +29,8 @@ class Peripheral(Component) :
 			new_register = Register.create_from_xml(chips, xml_reg)
 			periph.add_register(new_register)
 
-			pos = int(get_node_text(xml_reg, "addressOffset"), 0)
-			reg_placement = RegisterPlacement(chips=chips, name=new_register.name, register=new_register, address=pos)
-			periph.place_register(reg_placement)
+			reg_placement = MappingElement.create_from_xml(chips=chips, register=new_register, xml_data= xml_reg)
+			periph.add_placement(reg_placement)
 
 		return periph
 
@@ -164,21 +163,21 @@ class Peripheral(Component) :
 		other_placements = list()
 		diff = list()
 		for m in self.mappings :
-			self_placements.extend(m.register_placements)
+			self_placements.extend(m.elements)
 		for m in other.mappings :
-			other_placements.extend(m.register_placements)
+			other_placements.extend(m.elements)
 
-		for reg_p in self_placements :
-			if reg_p not in other_placements :
-				diff.append(reg_p)
-		for reg_p  in other_placements :
-			if reg_p not in self_placements :
-				diff.append(reg_p)
+		for elmt in self_placements :
+			if elmt not in other_placements :
+				diff.append(elmt)
+		for elmt  in other_placements :
+			if elmt not in self_placements :
+				diff.append(elmt)
 
 		if ignore_templates :
-			for reg_p in diff :
+			for elmt in diff :
 				# if the register is only present in one of the two peripherals, merging is allowed only if the register in templated
-				if not reg_p.register.has_template :
+				if not elmt.component.has_template :
 					return False
 
 			for i in range(0, len(diff)-1) :
@@ -192,25 +191,25 @@ class Peripheral(Component) :
 			return len(diff) == 0
 
 	def add_mapping(self, mapping: PeripheralMapping) :
-		for reg_p in mapping :
-			self.place_register(reg_p)
+		for elmt in mapping :
+			self.add_placement(elmt)
 
-	def place_register(self, reg_placement: RegisterPlacement) :
+	def add_placement(self, element: MappingElement) :
 		mapping: T.Union[PeripheralMapping, None] = None
 
-		reg_placement.register = self[reg_placement.register.name]
+		element.component = self[element.component.name]
 		for m in self.mappings :
-			if reg_placement in m :
-				m[reg_placement].inter_svd_merge(reg_placement)
+			if element in m :
+				m[element].inter_svd_merge(element)
 				return
-			elif m.has_room_for(reg_placement) :
+			elif m.has_room_for(element) :
 				mapping = m
 		if mapping is None :
 			mapping = PeripheralMapping()
 			mapping.parent = self
 			self.mappings.append(mapping)
 			self.edited = True
-		mapping.add_register_placement(reg_placement)
+		mapping.add_element(element)
 
 ################################################################################
 #                             COMPILATION, MERGING                             #
@@ -243,9 +242,9 @@ class Peripheral(Component) :
 				if self.registers[r_idx].name == self.registers[r_idx + r_offset].name :
 					self.registers[r_idx].inter_svd_merge(self.registers[r_idx + r_offset])
 					for mapping in self.mappings :
-						for placement in mapping :
-							if placement.register is self.registers[r_idx + r_offset] :
-								placement.register = self.registers[r_idx]
+						for elmt in mapping :
+							if elmt.component is self.registers[r_idx + r_offset] :
+								elmt.component = self.registers[r_idx]
 					self.registers.pop(r_idx + r_offset)
 					self.edited = True
 					continue

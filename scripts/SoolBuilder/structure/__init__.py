@@ -5,7 +5,7 @@ from structure.component import Component
 from structure.field import Field
 from structure.registervariant import RegisterVariant
 from structure.register import Register
-from structure.registerplacement import RegisterPlacement
+from structure.mappingelement import MappingElement
 from structure.peripheralmapping import PeripheralMapping
 from structure.peripheralinstance import PeripheralInstance
 from structure.peripheral import Peripheral

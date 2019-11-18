@@ -38,19 +38,19 @@ def TIM_periph_cleaner(periph : "Peripheral") :
 		TIM_GENERAL_decider(periph)
 
 	else :
-		reg_placements = list(reg_p.name for reg_p in sorted(periph.mappings[0].register_placements))
-		if reg_placements == ["CR1", "CR2", "DIER", "SR", "EGR", "CNT", "PSC", "ARR"] :
+		elements = list(elmt.name for elmt in sorted(periph.mappings[0].elements))
+		if elements == ["CR1", "CR2", "DIER", "SR", "EGR", "CNT", "PSC", "ARR"] :
 			periph.name = "TIM_BASIC"
-		elif len(reg_placements) >= 18 and \
-				reg_placements[:6] == ["CR1", "CR2", "SMCR", "DIER", "SR", "EGR"] and \
-			    "CCMR1" in reg_placements[6] and "CCMR2" in reg_placements[7] and \
-			    reg_placements[8:18] == ["CCER", "CNT", "PSC", "ARR", "RCR", "CCR1", "CCR2", "CCR3", "CCR4", "BDTR"] :
+		elif len(elements) >= 18 and \
+				elements[:6] == ["CR1", "CR2", "SMCR", "DIER", "SR", "EGR"] and \
+			    "CCMR1" in elements[6] and "CCMR2" in elements[7] and \
+			    elements[8:18] == ["CCER", "CNT", "PSC", "ARR", "RCR", "CCR1", "CCR2", "CCR3", "CCR4", "BDTR"] :
 			periph.name = "TIM_ADVANCED"
 		else :
 			TIM_GENERAL_decider(periph)
 	placements = list()
 	for m in periph.mappings :
-		placements.extend(m.register_placements)
+		placements.extend(m.elements)
 
 def HRTIM_periph_cleaner(periph: "Peripheral") :
 

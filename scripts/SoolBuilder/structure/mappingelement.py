@@ -3,20 +3,27 @@ import typing as T
 import xml.etree.ElementTree as ET
 
 
-class RegisterPlacement(Component) :
+class MappingElement(Component) :
 
 	@staticmethod
 	def create_from_xml(chips: ChipSet, register: Register,
-	                    xml_data: ET.Element) -> "RegisterPlacement":
+	                    xml_data: ET.Element) -> "MappingElement" :
 		name = get_node_text(xml_data, "name").strip(None)
 		offset = int(get_node_text(xml_data, "addressOffset"), 0)
-		return RegisterPlacement(chips=chips, name=name, register=register,
-		                         address=offset)
+		return MappingElement(chips=chips, name=name, component=register,
+		                      address=offset)
 
+	# noinspection PyUnresolvedReferences
 	def __init__(self, chips: ChipSet, name: T.Union[str, None],
-	             register: Register, address: int, array_size: int = 0) :
+	             component: T.Union[Register, "Peripheral"], address: int, array_size: int = 0) :
+
+		from structure import Peripheral
+		if not(isinstance(component, Register) or isinstance(component, Peripheral)) :
+			raise TypeError(f"Cannot create placement of {component} : not a register or peripheral")
+
 		super().__init__(chips=chips, name=name)
-		self.register : Register = register
+
+		self.component : T.Union[Register, Peripheral] = component
 		self.address: int  = address
 		self.array_size : int = array_size
 
@@ -25,22 +32,22 @@ class RegisterPlacement(Component) :
 ################################################################################
 
 	def __eq__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
+		if isinstance(other, MappingElement) :
 			return self.name == other.name and\
 			       self.address == other.address and\
 			       self.array_size == other.array_size and\
-			       self.register.name == other.register.name and\
-			       self.register.size == other.register.size
+			       self.component.name == other.component.name and\
+			       self.component.size == other.component.size
 		else :
 			return False
 
 	def __cmp__(self, other) -> int:
-		if isinstance(other, RegisterPlacement) :
+		if isinstance(other, MappingElement) :
 			return self.address - other.address
 		else :
 			raise TypeError()
 	def __lt__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
+		if isinstance(other, MappingElement) :
 			if self.address != other.address :
 				return self.address < other.address
 			else :
@@ -49,7 +56,7 @@ class RegisterPlacement(Component) :
 			raise TypeError()
 
 	def __gt__(self, other) -> bool:
-		if isinstance(other, RegisterPlacement) :
+		if isinstance(other, MappingElement) :
 			if self.address != other.address :
 				return self.address > other.address
 			else :
@@ -61,17 +68,21 @@ class RegisterPlacement(Component) :
 	def size(self) -> int :
 		return self.component.size * (1 if self.array_size == 0 else self.array_size)
 
+	@property
+	def register(self) -> Register :
+		raise AttributeError("register property doesn't exist")
+
 ################################################################################
 #                               PLACE MANAGEMENT                               #
 ################################################################################
 
-	def overlap(self, other: "RegisterPlacement"):
+	def overlap(self, other: "MappingElement"):
 		if other.address < self.address :
-			size = other.register.size *\
+			size = other.component.size *\
 			       (1 if other.array_size == 0 else other.array_size)
 			return other.address + size > self.address
 		else : # self.address <= other.address
-			size = (self.register.size/8) *\
+			size = (self.component.size/8) *\
 			       (1 if self.array_size == 0 else self.array_size)
 			return self.address + size > other.address
 
@@ -80,10 +91,13 @@ class RegisterPlacement(Component) :
 ################################################################################
 	@property
 	def defined_value(self) -> T.Union[str, None]:
-		template = "{1.name}_t {0.name}"
+		template : str = "{0.name}"
+		if isinstance(self.component, Register) :
+			template += "_t"
+		template += " {1.name}"
 		if self.array_size > 0 :
-			template += "[{0.array_size}]"
-		return template.format(self, self.register)
+			template += "[{1.array_size}]"
+		return template.format(self.component, self)
 
 	@property
 	def define_not(self) -> str:
@@ -95,6 +109,6 @@ class RegisterPlacement(Component) :
 			out = f"{indent}{self.defined_name};"
 		else :
 			out = f"{indent}{self.defined_value};"
-		if self.brief is not None :
-			out += f"/// {self.register.brief}"
+		if self.component.brief is not None :
+			out += f" /// {self.component.brief}"
 		return out + "\n"

@@ -178,9 +178,9 @@ class Register(Component) :
 		super().before_svd_compile(parent_corrector)
 		if self.name != old_name :
 			for m in self.parent.mappings :
-				for reg_p in m :
-					if reg_p.register is self and reg_p.name == old_name :
-						reg_p.name = self.name
+				for elmt in m :
+					if elmt.component is self and elmt.name == old_name :
+						elmt.name = self.name
 
 	def svd_compile(self):
 		super().svd_compile()
