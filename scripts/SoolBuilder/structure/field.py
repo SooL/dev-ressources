@@ -31,7 +31,7 @@ class Field(Component) :
 	             ) :
 		super().__init__(chips=chips, name=name, brief=brief)
 		self.position = position
-		self.size = size
+		self._size = size
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -63,8 +63,14 @@ class Field(Component) :
 		else :
 			raise TypeError()
 
-	# def finalize(self):
-	# 	pass
+	@property
+	def size(self) -> int :
+		return self._size
+
+	@size.setter
+	def size(self, new_size: int) :
+		self._size = new_size
+
 ################################################################################
 #                                DEFINE AND USE                                #
 ################################################################################

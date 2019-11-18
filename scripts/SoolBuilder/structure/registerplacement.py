@@ -58,8 +58,8 @@ class RegisterPlacement(Component) :
 			raise TypeError()
 
 	@property
-	def computed_size(self) -> int:
-		return self.register.size * (1 if self.array_size == 0 else self.array_size)
+	def size(self) -> int :
+		return self.component.size * (1 if self.array_size == 0 else self.array_size)
 
 ################################################################################
 #                               PLACE MANAGEMENT                               #
@@ -87,7 +87,7 @@ class RegisterPlacement(Component) :
 
 	@property
 	def define_not(self) -> str:
-		return fill_periph_hole(int(self.computed_size/8), sep=";")
+		return fill_periph_hole(self.byte_size, sep=";")
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None, str] :
 		out: str

@@ -93,12 +93,12 @@ class Peripheral(Component) :
 		return self.name
 	
 	@property
-	def computed_size(self):
+	def size(self):
 		max_size: int = 0
 		for m in self.mappings :
-			size = m.computed_size
-			if size > max_size :
-				max_size = size
+			s = m.size
+			if s > max_size :
+				max_size = s
 		return max_size
 
 	@property

@@ -62,7 +62,7 @@ class Register(Component) :
 	             size: int = 32,
 	             access: T.Union[str, None] = None) :
 		super().__init__(chips=chips, name=name, brief=brief)
-		self.size = size
+		self._size = size
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
 
@@ -113,6 +113,14 @@ class Register(Component) :
 			if v.for_template :
 				return True
 		return False
+
+	@property
+	def size(self) -> int :
+		return self._size
+
+	@size.setter
+	def size(self, new_size: int) :
+		self._size = new_size
 
 ################################################################################
 #                         FIELDS & VARIANTS MANAGEMENT                         #

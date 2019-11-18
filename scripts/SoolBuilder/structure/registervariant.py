@@ -78,6 +78,12 @@ class RegisterVariant(Component) :
 	def for_template(self):
 		return self.linked_instances is not None and len(self.linked_instances) > 0
 
+	@property
+	def size(self) -> int:
+		self.sort_fields()
+		last_field = self.fields[-1]
+		return last_field.position + last_field.size
+
 ################################################################################
 #                              FIELDS MANAGEMENT                               #
 ################################################################################
@@ -101,6 +107,8 @@ class RegisterVariant(Component) :
 		for f in self.fields :
 			if f.overlap(field) :
 				return False
+			elif f.name == field.name :
+				return f == field
 		return True
 
 	def add_field(self, field: Field) :

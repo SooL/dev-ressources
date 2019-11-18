@@ -61,10 +61,10 @@ class PeripheralMapping(Component) :
 		raise TypeError()
 
 	@property
-	def computed_size(self):
+	def size(self):
 		self.register_placements.sort()
 		last = self.register_placements[-1]
-		return last.address + int(last.computed_size/4)
+		return last.address + last.size
 
 ################################################################################
 #                        REGISTER PLACEMENTS MANAGEMENT                        #
@@ -131,17 +131,17 @@ class PeripheralMapping(Component) :
 
 		self.register_placements.sort()
 		for reg_p in self.register_placements :
-			if last_register is None or (reg_p.address + reg_p.computed_size) > (last_register.address + last_register.computed_size) :
+			if last_register is None or (reg_p.address + reg_p.size) > (last_register.address + last_register.size) :
 				last_register = reg_p
 			if reg_p.address > pos :
 				# add filler
 				out += fill_periph_hole(size=reg_p.address - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 				pos += reg_p.address - pos
 			out += reg_p.declare(indent)
-			pos += int(reg_p.computed_size/8)
+			pos += int(reg_p.size/8)
 		if not only_mapping :
-			parent_size = self.parent.computed_size
-			if parent_size > pos *8 + last_register.computed_size :
+			parent_size = self.parent.size
+			if parent_size > pos *8 + last_register.size :
 				# add filler
 				out += fill_periph_hole(size=int(parent_size/8) - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			indent.decrement()

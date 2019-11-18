@@ -90,6 +90,14 @@ class Component:
 				out.add(child.computed_chips)
 		return out
 
+	@property
+	def size(self) -> int :
+		return 0
+
+	@property
+	def byte_size(self) -> int :
+		return int(self.size / 8)
+
 	def exists_for(self, chip_pattern: str) -> bool :
 		return self.chips.match(chip_pattern)
 
