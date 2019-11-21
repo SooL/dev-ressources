@@ -3,34 +3,17 @@ import typing as T
 from structure import Peripheral, Component
 from structure import ChipSet
 from structure import default_tabmanager
-import logging
-
-from cleaners.corrector import root_corrector
+from cleaners import root_corrector
 from structure.utils import DefinesHandler
 
+import logging
+
 logger = logging.getLogger()
-
-name_correction: T.Dict[str, str] = {
-	"TIM1"      : "TIM",
-	"TIMS"      : "TIM",
-	"TIMER"     : "TIM",
-	"USB_OTG"   : "USB",
-	"USB_OTG_FS": "USB",
-	"USB_OTG_HS": "USB",
-	"USB_FS"    : "USB"
-}
-
 
 class Group(Component) :
 ########################################################################################################################
 #                                                    GROUP CREATION                                                    #
 ########################################################################################################################
-	@staticmethod
-	def fix_name(name : str) -> str:
-		if name in name_correction :
-			return name_correction[name]
-		else :
-			return name.upper()
 
 	@staticmethod
 	def get_group(group_dict : T.Dict[str,"Group"], group_name : str) -> "Group":
@@ -41,9 +24,7 @@ class Group(Component) :
 		:param group_name: Group to find
 		:return:
 		"""
-		group_name = Group.fix_name(group_name)
 		group = Group(group_name)
-
 		if group.name in root_corrector :
 			root_corrector(group) # changes only the group name (if necessary)
 
