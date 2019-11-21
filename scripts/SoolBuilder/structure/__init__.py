@@ -10,4 +10,3 @@ from structure.peripheralmapping import PeripheralMapping
 from structure.peripheralinstance import PeripheralInstance
 from structure.peripheral import Peripheral
 from structure.group import Group
-from structure.corrector import Corrector

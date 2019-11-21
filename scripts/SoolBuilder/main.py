@@ -23,26 +23,18 @@
 @package AnalyseHeaderST
 """
 
-
-import logging
 import glob
 
 
 import argparse
-import os
 import shutil
 from structure import *
-from structure.corrector import root_corrector
 
 from tools import svd_retriever as svd
-from tools import sanity
-import typing as T
-import xml.etree.ElementTree as ET
 
 import pickle
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
-from cleaners.peripheral_cleaners import create_association_table
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 
