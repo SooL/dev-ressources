@@ -2,7 +2,7 @@ from structure import Component, ChipSet, TabManager, RegisterVariant, Register
 import typing as T
 
 from structure.utils import DefinesHandler
-
+from tools import global_parameters
 
 class PeripheralInstance(Component):
 	#TODO consider templates
@@ -75,7 +75,7 @@ class PeripheralInstance(Component):
 				undefine=True)
 
 
-	def declaration_strings(self,indent : TabManager = TabManager(), with_nophy = False) -> str:
+	def declaration_strings(self, indent : TabManager = TabManager()) -> str:
 		out = ""
 		class_name = self.parent.name
 		if self.parent.has_template :
@@ -117,14 +117,15 @@ class PeripheralInstance(Component):
 		# end if has_template
 
 		normal_instance = str(indent + (
-			1 if with_nophy else 0)) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
-			                  .format(class_name, self.name, self.defined_name)
+			0 if global_parameters.physical_mapping else 1)) + \
+						  "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
+			              .format(class_name, self.name, self.defined_name)
 
 		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new {0}();\n" +
 		                  str(indent + 1) + "#undef {2}\n" +
 		                  str(indent + 1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
 			.format(self.parent.name, self.name, self.defined_name)
-		if with_nophy :
+		if not global_parameters.physical_mapping :
 			out += f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
 				  f"{normal_instance}\n" \
 				  f"{indent}#else\n" \
@@ -149,12 +150,12 @@ class PeripheralInstance(Component):
 		if len(ifdef_string) > 0 :
 			indent.increment()
 			out = f"\n{indent -1 }#if {ifdef_string}\n" \
-				  f"{self.declaration_strings(indent, PeripheralInstance.generate_nophy)}\n" \
+				  f"{self.declaration_strings(indent)}\n" \
 				  f"{indent-1}#endif\n"
 			indent.decrement()
 		else:
-			out = self.declaration_strings(indent, PeripheralInstance.generate_nophy) + "\n"
-			if PeripheralInstance.generate_nophy :
+			out = self.declaration_strings(indent) + "\n"
+			if not global_parameters.physical_mapping :
 				out += "\n"
 
 		return out

@@ -31,7 +31,7 @@ import shutil
 from structure import *
 
 from tools import svd_retriever as svd
-
+from tools import global_parameters
 import pickle
 from FileSetHandler.pdsc import *
 from FileSetHandler.svd import SVDFile
@@ -147,12 +147,12 @@ if __name__ == "__main__" :
 						help="Reuse an existing .data/SooL.dat file to skip the analysis step.")
 
 	args = parser.parse_args()
-
+	global_parameters.read_args(args)
 
 	skip_analysis = False
 	output_groups: T.Dict[str, Group] = dict()
 
-	if args.reuse :
+	if global_parameters.reuse_db :
 		try :
 			logger.info("Trying to restore a previous database...")
 			with open(pickle_data_path,"rb") as pickle_file :
@@ -167,13 +167,13 @@ if __name__ == "__main__" :
 
 
 
-	if args.big_endian :
+	if global_parameters.big_endian :
 		logger.warning("The library will be generated for big endian.")
-		RegisterVariant.big_endian = True
+		# RegisterVariant.big_endian = True
 
-	if args.no_phy :
+	if not global_parameters.physical_mapping :
 		logger.warning("The library will be generated with non-physical capabilities.")
-		PeripheralInstance.generate_nophy = True
+		# PeripheralInstance.generate_nophy = True
 
 	if not skip_analysis :
 		if not os.path.exists(svd.file_path) :
@@ -274,7 +274,7 @@ if __name__ == "__main__" :
 			logger.info(f"Finalizing {name}")
 			group.finalize()
 
-		if args.dump:
+		if global_parameters.dump:
 			logger.info("Dumping data to .data/SooL.dat")
 			with open(".data/SooL.dat", "wb") as dump_file:
 				pickle.dump(output_groups, dump_file)

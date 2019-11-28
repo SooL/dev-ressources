@@ -10,6 +10,8 @@ from structure import Component
 
 from structure.utils import DefinesHandler, fill_periph_hole
 
+from tools import global_parameters
+
 logger = logging.getLogger()
 
 class Peripheral(Component) :
@@ -305,11 +307,13 @@ class Peripheral(Component) :
 			indent.decrement()
 			out += f"{indent}}};\n"
 
-		out += f"{indent}private:\n" \
-			   f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n"\
-		       f"{indent}{self.name}() = delete;\n" \
-			   f"{indent}#endif\n" \
-		       f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
+		out += f"{indent}private:\n"
+		if not global_parameters.physical_mapping :
+			out += f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n"
+		out += f"{indent +1 }{self.name}() = delete;\n"
+		if not global_parameters.physical_mapping:
+			out += f"{indent}#endif\n"
+		out += f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
 
 		indent.decrement()
 		out += f"{indent}}};\n"

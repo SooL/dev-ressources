@@ -6,13 +6,15 @@ from structure import Field
 from structure import ChipSet
 from structure import Component
 
+from tools import global_parameters
+
 REG_VAR_DECLARATION : str = """{indent}struct
 {indent}{{
 {fields}{indent}}};
 """
 
+
 class RegisterVariant(Component) :
-	big_endian : bool = False
 	def __init__(self, chips: T.Optional[ChipSet] = None) :
 		super().__init__(chips=chips)
 		self.fields : T.List[Field] = list()
@@ -185,7 +187,7 @@ class RegisterVariant(Component) :
 ################################################################################
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
-		self.sort_fields(reverse=RegisterVariant.big_endian)
+		self.sort_fields(reverse=global_parameters.big_endian)
 		if len(self.parent.variants) == 1 :
 			out = "".join([f.declare(indent) for f in self])
 		else :
