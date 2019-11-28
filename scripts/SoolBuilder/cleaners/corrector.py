@@ -91,7 +91,7 @@ root_corrector = Corrector({
 	"USB_*"     : lambda group: change_name(group, "USB"),
 	"LPUART"    : lambda group: change_name(group, "USART"),
 	"AES?"      : lambda group: change_name(group, "AES"),
-	"SERIALCONTROLL": lambda group : change_name(group, "SERIAL_CONTROL"),
+	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
 	"CRC"       : {
 		"*"         : {
 			"DR"        : {"*":{"Data_register": lambda f: change_name(f, "DR")}},
@@ -106,6 +106,7 @@ root_corrector = Corrector({
 	"ADC"       : {"*": ADC_periph_cleaner},
 	"ETHERNET"  : {"*": ETHERNET_periph_cleaner},
 	"TIM"       : {"*": TIM_periph_cleaner},
+	"RAMECC"    : {"*": lambda periph: change_name(periph, "RAMECC")},
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
 			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),
@@ -120,6 +121,6 @@ root_corrector = Corrector({
 	"*"	        : {
 		"*"         : {
 			"*_*"       : remove_periph_prefix,
-			"*"         : {"*":{"*_*"       : remove_periph_prefix }}
+			"*"         : {"*" : {"*_*" : remove_periph_prefix }}
 	}},
 })
