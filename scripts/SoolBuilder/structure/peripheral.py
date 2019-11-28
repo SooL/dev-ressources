@@ -286,6 +286,8 @@ class Peripheral(Component) :
 		out =""
 		if self.needs_define :
 			out += f"{indent}#if {self.defined_name}\n"
+		if self.has_template :
+			out += f"{indent}template<typename tmpl={self.name}_default_tmpl>\n"
 		out += f"{indent}class {self.name}\n" \
 		       f"{indent}{{\n"
 		indent.increment()

@@ -1,4 +1,4 @@
-from structure import Component, ChipSet, TabManager
+from structure import Component, ChipSet, TabManager, RegisterVariant, Register
 import typing as T
 
 from structure.utils import DefinesHandler
@@ -50,6 +50,18 @@ class PeripheralInstance(Component):
 	def defined_name(self) -> str :
 		return f"{self.name}_BASE_ADDR"
 
+	@property
+	def template_reg_variants(self) -> T.List[RegisterVariant]:
+		result: T.List[RegisterVariant] = list()
+		for reg in self.parent :
+			for var in reg :
+				if var.for_template :
+					for instance in var.linked_instances :
+						if instance.name == self.name :
+							result.append(var)
+							break
+		return result
+
 	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
 		# defines the address
 		super().define(defines)
@@ -64,20 +76,64 @@ class PeripheralInstance(Component):
 
 
 	def declaration_strings(self,indent : TabManager = TabManager(), with_nophy = False) -> str:
-		normal_instance = str(indent + (1 if with_nophy else 0)) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
-			.format(self.parent.name, self.name, self.defined_name)
+		out = ""
+		class_name = self.parent.name
+		if self.parent.has_template :
+			template_reg_variants = self.template_reg_variants
+			if len(template_reg_variants) > 0 :
 
-		nophy_instance = (str(indent +1) + "volatile class {0} * const {1} = new {0}();\n" +
-						  str(indent +1) + "#undef {2}\n" +
-						  str(indent +1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
-			.format(self.parent.name, self.name, self.defined_name)
+				class_name += f"<{self.name}_tmpl>"
 
-		out = f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
-			  f"{normal_instance}\n" \
-			  f"{indent}#else\n" \
-			  f"{nophy_instance}\n" \
-			  f"{indent}#endif"
-		return out if with_nophy else normal_instance
+				template_declaration = f"{indent}struct {self.name}_tmpl\n{indent}{{\n"
+				indent.increment()
+				registers: T.List[Register] = list()
+				for var in template_reg_variants :
+					if var.parent not in registers :
+						registers.append(var.parent)
+
+				for reg in registers :
+					template_declaration += f"{indent}struct {reg.name}_t\n{indent}{{\n"
+					indent.increment()
+					variants : T.List[RegisterVariant] = list()
+					for var in template_reg_variants :
+						if var.parent is reg :
+							variants.append(var)
+					if len(variants) > 1 :
+						template_declaration += f"{indent}union\n{indent}{{\n"
+						indent.increment()
+					for var in variants :
+						template_declaration += var.declare(indent)
+					if len(variants) > 1 :
+						indent.decrement()
+						template_declaration += f"{indent}}}\n"
+					indent.decrement()
+					template_declaration += f"{indent}}}\n"
+
+				indent.decrement()
+				template_declaration += f"{indent}}}\n"
+				out += template_declaration
+			else :
+				class_name += f"<>"
+		# end if has_template
+
+		normal_instance = str(indent + (
+			1 if with_nophy else 0)) + "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
+			                  .format(class_name, self.name, self.defined_name)
+
+		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new {0}();\n" +
+		                  str(indent + 1) + "#undef {2}\n" +
+		                  str(indent + 1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
+			.format(self.parent.name, self.name, self.defined_name)
+		if with_nophy :
+			out += f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
+				  f"{normal_instance}\n" \
+				  f"{indent}#else\n" \
+				  f"{nophy_instance}\n" \
+				  f"{indent}#endif"
+		else :
+			out += normal_instance
+
+		return out
 
 	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
 
