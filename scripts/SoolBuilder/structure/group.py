@@ -221,6 +221,9 @@ class Group(Component) :
 		default_tabmanager.increment()
 
 		for peripheral in self.peripherals :
+			tmp += peripheral.declare_templates(default_tabmanager)
+
+		for peripheral in self.peripherals :
 			tmp += peripheral.declare(default_tabmanager)
 			peripheral.define(defines)
 

@@ -180,7 +180,6 @@ if __name__ == "__main__" :
 			logger.info("First initialization")
 			svd.init()
 
-
 		if args.update_all :
 			svd.init()
 			args.update_svd = svd.defined_archives_keil.keys()
@@ -274,7 +273,7 @@ if __name__ == "__main__" :
 			logger.info(f"Finalizing {name}")
 			group.finalize()
 
-		if global_parameters.dump:
+		if global_parameters.dump_db:
 			logger.info("Dumping data to .data/SooL.dat")
 			with open(".data/SooL.dat", "wb") as dump_file:
 				pickle.dump(output_groups, dump_file)

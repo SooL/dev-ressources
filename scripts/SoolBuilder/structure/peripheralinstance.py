@@ -4,7 +4,7 @@ import typing as T
 from structure.utils import DefinesHandler
 from tools import global_parameters
 
-class PeripheralInstance(Component):
+class PeripheralInstance(Component) :
 	#TODO consider templates
 	generate_nophy : bool = False
 
@@ -16,30 +16,30 @@ class PeripheralInstance(Component):
 
 		self.address = address
 
-	def __eq__(self, other):
+	def __eq__(self, other) :
 		return isinstance(other, PeripheralInstance) and \
 		       self.name == other.name and \
 		       self.address == other.address
 
-	def __lt__(self, other: "PeripheralInstance"):
+	def __lt__(self, other: "PeripheralInstance") :
 		if self.address != other.address :
 			return self.address < other.address
 		else :
 			return self.name < other.name
 
 	@property
-	def needs_define(self) -> bool:
+	def needs_define(self) -> bool :
 		if self.address != 0 :
 			return True
 		else :
 			return super().needs_define
 
 	@property
-	def undefine(self) -> bool:
+	def undefine(self) -> bool :
 		return False
 
 	@property
-	def defined_value(self) -> T.Union[str, None]:
+	def defined_value(self) -> T.Union[str, None] :
 		return f"((uint32_t){self.address:#08x}U"
 
 	@property
@@ -51,18 +51,35 @@ class PeripheralInstance(Component):
 		return f"{self.name}_BASE_ADDR"
 
 	@property
-	def template_reg_variants(self) -> T.List[RegisterVariant]:
+	def template_reg_variants(self) -> T.List[RegisterVariant] :
 		result: T.List[RegisterVariant] = list()
+		for reg in self.parent :
+			for var in reg :
+				if var.for_template :
+					if self in var.linked_instances :
+						result.append(var)
+		return result
+
+	@property
+	def needs_template(self) -> bool :
 		for reg in self.parent :
 			for var in reg :
 				if var.for_template :
 					for instance in var.linked_instances :
 						if instance.name == self.name :
-							result.append(var)
-							break
-		return result
+							return True
+		return False
 
-	def define(self, defines: T.Dict[ChipSet, DefinesHandler]):
+	@property
+	def has_template(self) -> bool :
+		for reg in self.parent :
+			for var in reg :
+				if var.for_template :
+					if self in var.linked_instances :
+						return True
+		return False
+
+	def define(self, defines: T.Dict[ChipSet, DefinesHandler]) :
 		# defines the address
 		super().define(defines)
 
@@ -74,44 +91,43 @@ class PeripheralInstance(Component):
 				define_not=False,
 				undefine=True)
 
+		if self.needs_template :
+			chips = ChipSet(self.chips)
+			template_defined = False
+			for tmpl in self.parent.templates :
+				if self in tmpl.instances :
+					if template_defined :
+						raise AssertionError("Two templates defined for " + self.name + "(" + repr(self.chips) + ")."
+                                             " Additional programming is needed")
+					#chips.remove(tmpl.chips)
+					defines[self.chips].add(
+						alias=f"{self.name}_TMPL",
+						defined_value= tmpl.name,
+						define_not=False,
+						undefine=True
+					)
+					template_defined = True
+			if not template_defined :
+				defines[self.chips].add(
+					alias=f"{self.name}_TMPL",
+					# no value (default template)
+					define_not=False,
+					undefine=True
+				)
+
 
 	def declaration_strings(self, indent : TabManager = TabManager()) -> str:
 		out = ""
 		class_name = self.parent.name
 		if self.parent.has_template :
-			template_reg_variants = self.template_reg_variants
-			if len(template_reg_variants) > 0 :
-
-				class_name += f"<{self.name}_tmpl>"
-
-				template_declaration = f"{indent}struct {self.name}_tmpl\n{indent}{{\n"
-				indent.increment()
-				registers: T.List[Register] = list()
-				for var in template_reg_variants :
-					if var.parent not in registers :
-						registers.append(var.parent)
-
-				for reg in registers :
-					template_declaration += f"{indent}struct {reg.name}_t\n{indent}{{\n"
-					indent.increment()
-					variants : T.List[RegisterVariant] = list()
-					for var in template_reg_variants :
-						if var.parent is reg :
-							variants.append(var)
-					if len(variants) > 1 :
-						template_declaration += f"{indent}union\n{indent}{{\n"
-						indent.increment()
-					for var in variants :
-						template_declaration += var.declare(indent)
-					if len(variants) > 1 :
-						indent.decrement()
-						template_declaration += f"{indent}}}\n"
-					indent.decrement()
-					template_declaration += f"{indent}}}\n"
-
-				indent.decrement()
-				template_declaration += f"{indent}}}\n"
-				out += template_declaration
+			template = None
+			for tmpl in self.parent.templates :
+				for instance in tmpl.instances :
+					if instance.name == self.name :
+						template = tmpl
+						break
+			if template is not None :
+				class_name += f"<{self.name}_TMPL>"
 			else :
 				class_name += f"<>"
 		# end if has_template

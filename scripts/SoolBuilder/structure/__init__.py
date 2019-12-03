@@ -8,5 +8,6 @@ from structure.register import Register
 from structure.mappingelement import MappingElement
 from structure.peripheralmapping import PeripheralMapping
 from structure.peripheralinstance import PeripheralInstance
+from structure.peripheraltemplate import PeripheralTemplate
 from structure.peripheral import Peripheral
 from structure.group import Group

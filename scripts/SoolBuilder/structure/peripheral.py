@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import logging
 #from structure import Group
 
-from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping
+from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping, PeripheralTemplate
 from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
@@ -44,6 +44,7 @@ class Peripheral(Component) :
 		self.registers: T.List[Register] = list()
 		self.mappings: T.List[PeripheralMapping] = list()
 		self.instances: T.List[PeripheralInstance] = list()
+		self.templates: T.List[PeripheralTemplate] = list()
 		self.max_size = 0
 
 ################################################################################
@@ -272,6 +273,23 @@ class Peripheral(Component) :
 			i.set_parent(self)
 			i.finalize()
 
+		if self.has_template :
+			for inst in self.instances :
+				if inst.has_template :
+					template = None
+					for tmpl in self.templates :
+						if tmpl.compatible_with(inst) :
+							template = tmpl
+					if template is None :
+						template = PeripheralTemplate(f"{self.name}_tmpl_{len(self.templates)}", parent=self)
+						self.templates.append(template)
+					template.add_instance(inst)
+
+			self.templates.append(PeripheralTemplate(f"{self.name}_tmpl_default", parent=self))
+
+			for tmpl in self.templates :
+				tmpl.finalize()
+
 		map_idx: int = 0
 		for m in self.mappings :
 			m.set_parent(self)
@@ -283,13 +301,20 @@ class Peripheral(Component) :
 #                          DEFINE, UNDEFINE, DECLARE                           #
 ################################################################################
 
-	def declare(self, indent: TabManager = TabManager()) -> str:
+	def declare_templates(self, indent: TabManager = TabManager()) -> str :
+		out = ""
+		if self.has_template :
+			for tmpl in self.templates :
+				out += tmpl.declare(indent)
+		return out
+
+	def declare(self, indent: TabManager = TabManager()) -> str :
 		# TODO consider templates
 		out =""
 		if self.needs_define :
 			out += f"{indent}#if {self.defined_name}\n"
 		if self.has_template :
-			out += f"{indent}template<typename tmpl={self.name}_default_tmpl>\n"
+			out += f"{indent}template<typename tmpl={self.templates[-1].name}>\n"
 		out += f"{indent}class {self.name}\n" \
 		       f"{indent}{{\n"
 		indent.increment()
@@ -330,6 +355,9 @@ class Peripheral(Component) :
 		super().define(defines)
 		for mapping in self.mappings :
 			mapping.define(defines)
+
+		for tmpl in self.templates :
+			tmpl.define(defines)
 
 	def define_instances(self,defines: T.Dict[ChipSet, DefinesHandler]):
 		for instance in self.instances :
