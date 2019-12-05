@@ -125,6 +125,12 @@ if __name__ == "__main__" :
 						dest="upgrade_svd",
 						help="Add a family to the files to be upgraded.",
 						choices=svd.defined_archives_keil.keys())
+	parser.add_argument("--load-local-packs",
+						action="store_true",
+						help="Try to use the local packs repository (.data/packs)")
+	parser.add_argument("--store-packs",
+						action="store_true",
+						help="Store the downloaded .pack files in .data/packs instead of using a temporary location")
 	parser.add_argument("--limit-groups",
 						dest="group_filter",
 						help="groups to regenerate",
@@ -163,9 +169,6 @@ if __name__ == "__main__" :
 			output_groups = dict()
 			skip_analysis = False
 			logger.error(f"Error while trying to reuse a previous database : {e.__cause__}")
-
-
-
 
 	if global_parameters.big_endian :
 		logger.warning("The library will be generated for big endian.")
