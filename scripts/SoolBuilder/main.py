@@ -108,23 +108,23 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 if __name__ == "__main__" :
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
-	parser.add_argument("--update-all",
-						action="store_true",
-						dest="update_all",
-						help="Trigger a full update of svd files")
+	# parser.add_argument("--update-all",
+	# 					action="store_true",
+	# 					dest="update_all",
+	# 					help="Trigger a full update of svd files")
 	parser.add_argument("--update",
 						action="append",
 						dest="update_svd",
 						help="Add a family to the files to be updated.",
-						choices=svd.defined_archives_keil.keys())
-	parser.add_argument("--upgrade-all",
-						action="store_true",
-						help="Trigger a full upgrade of svd files")
+						choices=list(svd.defined_archives_keil.keys()) + ['all'])
+	# parser.add_argument("--upgrade-all",
+	# 					action="store_true",
+	# 					help="Trigger a full upgrade of svd files")
 	parser.add_argument("--upgrade", "-u",
 						action="append",
 						dest="upgrade_svd",
 						help="Add a family to the files to be upgraded.",
-						choices=svd.defined_archives_keil.keys())
+						choices=list(svd.defined_archives_keil.keys()) + ['all'])
 	parser.add_argument("--load-local-packs",
 						action="store_true",
 						help="Try to use the local packs repository (.data/packs)")
@@ -135,22 +135,25 @@ if __name__ == "__main__" :
 						dest="group_filter",
 						help="groups to regenerate",
 						default=None)
-	parser.add_argument("-b","--big-endian",
-						action="store_true",
-						help="This flag will reverse generate the library for big endianness.")
-	parser.add_argument("-p","--no-phy",
-						action="store_true",
-						help="Generate configuration to run on non-physical platform")
+	parser.add_argument("--generate","-g",nargs="+",
+						default=list(),
+						choices=global_parameters.generate_options.keys(),
+						help="Generation options. " +
+						  "Available options are :\n\t" +
+						  "\n\t".join([f"{n} : {x}" for n,x in global_parameters.generate_options.items()]))
 	parser.add_argument("-k","--keep-generated",
 						action="store_false",
 						dest="refresh_output",
 						help="Keeps all non-refreshed output files")
-	parser.add_argument("--dump",
-						action="store_true",
-						help="Generate a SooL.dat file which might be used by other scripts")
+	# parser.add_argument("--dump",
+	# 					action="store_true",
+	# 					help="Generate a SooL.dat file which might be used by other scripts")
 	parser.add_argument("--reuse",
 						action="store_true",
 						help="Reuse an existing .data/SooL.dat file to skip the analysis step.")
+	parser.add_argument("--force-version",
+						action="store_true",
+						help="Force packs versions as specified in .data/version.ini")
 
 	args = parser.parse_args()
 	global_parameters.read_args(args)
@@ -183,22 +186,22 @@ if __name__ == "__main__" :
 			logger.info("First initialization")
 			svd.init()
 
-		if args.update_all :
+		if global_parameters.fileset_reinit :
 			svd.init()
-			args.update_svd = svd.defined_archives_keil.keys()
 
-		if args.upgrade_all :
-			#svd.init()
-			args.upgrade_svd = svd.defined_archives_keil.keys()
-
-		if args.update_svd is not None and len(args.update_svd) :
+		if global_parameters.need_update :
 			logger.warning("Refresh definition for following families :")
 			not_retrieved = list()
-			for chip in args.update_svd :
+			for chip in global_parameters.update_list :
 				logger.warning("\t" + chip)
-			for chip in args.update_svd :
-				if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
-					not_retrieved.append(chip)
+
+				if chip in global_parameters.family_update_request :
+					if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
+						not_retrieved.append(chip)
+				elif chip in global_parameters.family_upgrade_request :
+					if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
+						not_retrieved.append(chip)
+
 			if len(not_retrieved) > 0 :
 				logger.warning("Several chip families have not been retrieved :")
 				for chip in sorted(not_retrieved) :
@@ -206,20 +209,36 @@ if __name__ == "__main__" :
 			else:
 				logger.info("All families retrieved")
 
-		if args.upgrade_svd is not None and len(args.upgrade_svd) :
-			logger.warning("Refresh definition for following families :")
-			not_retrieved = list()
-			for chip in args.upgrade_svd :
-				logger.warning("\t" + chip)
-			for chip in args.upgrade_svd :
-				if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
-					not_retrieved.append(chip)
-			if len(not_retrieved) > 0 :
-				logger.warning("Several chip families have not been retrieved :")
-				for chip in sorted(not_retrieved) :
-					logger.warning(f"\t{chip}")
-			else:
-				logger.info("All families retrieved")
+
+		# if args.update_svd is not None and len(args.update_svd) :
+		# 	logger.warning("Refresh definition for following families :")
+		# 	not_retrieved = list()
+		# 	for chip in args.update_svd :
+		# 		logger.warning("\t" + chip)
+		# 	for chip in args.update_svd :
+		# 		if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
+		# 			not_retrieved.append(chip)
+		# 	if len(not_retrieved) > 0 :
+		# 		logger.warning("Several chip families have not been retrieved :")
+		# 		for chip in sorted(not_retrieved) :
+		# 			logger.warning(f"\t{chip}")
+		# 	else:
+		# 		logger.info("All families retrieved")
+		#
+		# if args.upgrade_svd is not None and len(args.upgrade_svd) :
+		# 	logger.warning("Refresh definition for following families :")
+		# 	not_retrieved = list()
+		# 	for chip in args.upgrade_svd :
+		# 		logger.warning("\t" + chip)
+		# 	for chip in args.upgrade_svd :
+		# 		if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
+		# 			not_retrieved.append(chip)
+		# 	if len(not_retrieved) > 0 :
+		# 		logger.warning("Several chip families have not been retrieved :")
+		# 		for chip in sorted(not_retrieved) :
+		# 			logger.warning(f"\t{chip}")
+		# 	else:
+		# 		logger.info("All families retrieved")
 
 		FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
 
