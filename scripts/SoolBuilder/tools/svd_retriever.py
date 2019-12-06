@@ -79,49 +79,49 @@ def init():
 	if not os.path.exists(packs_path) :
 		os.makedirs(fileset_path)
 
-def download_and_handle_st(archive : str, destination : str = file_path) -> T.List[str]:
-	"""
-	This function will download the archive corresponding to archive, extract all .svd files
-	and put them whithin the destination folder.
-	
-	:param archive: Archive designator. Either alias as defined in defined_archives_st or directly a .zip file
-	:param destination: Destination folder
-	:return: List of all .svd files
-	"""
-	
-	base_url = "https://www.st.com/resource/en/svd"
-	
-	if archive.upper() in defined_archives_st :
-		archive = defined_archives_st[archive.upper()]
-	url = base_url + "/" + archive
-
-	#Create a temporary directory, download the .zip, extract it and retrieve files
-	with tempfile.TemporaryDirectory(prefix=f"SVD_RETR_ST_{archive}_") as temp_dir :
-		with open(temp_dir + "/archive.zip","wb") as temp_archive :
-			logger.info("Trying to download " + url + " ...")
-			logger.debug("Temp path is " + temp_archive.name)
-			with urllib.request.urlopen(url) as response :
-				shutil.copyfileobj(response,temp_archive)
-				logger.info("Download complete !")
-
-		logger.info("Unzipping archive...")
-		with zipfile.ZipFile(temp_archive.name) as zip_handler :
-			zip_handler.extractall(temp_dir)
-		logger.info("Done !")
-
-		#Look for SVD files in the file tree
-		svd_files = []
-		for root,dirs,files in os.walk(temp_dir) :
-			for name in files :
-				if fnmatch.fnmatch(name,"*.svd") :
-					svd_files.append(os.path.join(root,name))
-		logger.info("Found " + str(len(svd_files)) + " SVD file(s)")
-
-		for file in svd_files :
-			logger.info("\tRetrieving " + os.path.basename(file))
-			shutil.copy(file,destination)
-
-		return [os.path.basename(f) for f in svd_files]
+# def download_and_handle_st(archive : str, destination : str = file_path) -> T.List[str]:
+# 	"""
+# 	This function will download the archive corresponding to archive, extract all .svd files
+# 	and put them whithin the destination folder.
+#
+# 	:param archive: Archive designator. Either alias as defined in defined_archives_st or directly a .zip file
+# 	:param destination: Destination folder
+# 	:return: List of all .svd files
+# 	"""
+#
+# 	base_url = "https://www.st.com/resource/en/svd"
+#
+# 	if archive.upper() in defined_archives_st :
+# 		archive = defined_archives_st[archive.upper()]
+# 	url = base_url + "/" + archive
+#
+# 	#Create a temporary directory, download the .zip, extract it and retrieve files
+# 	with tempfile.TemporaryDirectory(prefix=f"SVD_RETR_ST_{archive}_") as temp_dir :
+# 		with open(temp_dir + "/archive.zip","wb") as temp_archive :
+# 			logger.info("Trying to download " + url + " ...")
+# 			logger.debug("Temp path is " + temp_archive.name)
+# 			with urllib.request.urlopen(url) as response :
+# 				shutil.copyfileobj(response,temp_archive)
+# 				logger.info("Download complete !")
+#
+# 		logger.info("Unzipping archive...")
+# 		with zipfile.ZipFile(temp_archive.name) as zip_handler :
+# 			zip_handler.extractall(temp_dir)
+# 		logger.info("Done !")
+#
+# 		#Look for SVD files in the file tree
+# 		svd_files = []
+# 		for root,dirs,files in os.walk(temp_dir) :
+# 			for name in files :
+# 				if fnmatch.fnmatch(name,"*.svd") :
+# 					svd_files.append(os.path.join(root,name))
+# 		logger.info("Found " + str(len(svd_files)) + " SVD file(s)")
+#
+# 		for file in svd_files :
+# 			logger.info("\tRetrieving " + os.path.basename(file))
+# 			shutil.copy(file,destination)
+#
+# 		return [os.path.basename(f) for f in svd_files]
 	
 	
 def version_cmp(v:str):
@@ -135,6 +135,14 @@ def file_to_family(f:str):
 		if fnmatch.fnmatch(f,f"*{archive}*") :
 			return family
 	return None
+
+def get_current_version(family : str) :
+	version_handler = configparser.ConfigParser()
+	version_handler.read(config_file)
+	try :
+		return version_handler["PackagesVersion"][family]
+	except :
+		return None
 
 def keil_get_version(family : str) -> T.Union[None,str]:
 	"""
@@ -161,6 +169,7 @@ def keil_get_version(family : str) -> T.Union[None,str]:
 		logger.error(f"HTTP Error {err.code} : {err.reason}")
 
 	return new_version if check_ok else None
+
 
 def select_local_keil_pack(family : str,version : str = "*") -> T.Union[str,None]:
 	"""
@@ -190,6 +199,7 @@ def select_local_keil_pack(family : str,version : str = "*") -> T.Union[str,None
 		if pack_version > max_version :
 			selected = pack
 	return selected
+
 
 def retrieve_keil_pack(family : str,
 					   version : str = None,
@@ -252,8 +262,13 @@ def retrieve_keil_pack(family : str,
 
 	return temp_dir
 
-def handle_keil_pack(path) :
 
+def handle_keil_pack(path) -> T.List[str]:
+	"""
+	Extract the relevant files from the pack provided by path.
+	:param path: Path to the pack to be handled. /path/to/data.pack
+	:return: List of the SVD files extracted
+	"""
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
 	family = file_to_family(path)
