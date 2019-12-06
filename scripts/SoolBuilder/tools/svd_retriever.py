@@ -276,7 +276,7 @@ def handle_keil_pack(path) -> T.List[str]:
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
 	family = file_to_family(path)
-	temp_dir = os.path.dirname(path)+ "zip/"
+	temp_dir = os.path.dirname(path)+ "/zip"
 	file_name= os.path.basename(path)
 	archive	 = str(file_name.rsplit(".",4)[0]) + "."
 	version_string = ".".join(file_name.rsplit(".",4)[-4:-1])
