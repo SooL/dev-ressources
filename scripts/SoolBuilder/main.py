@@ -113,15 +113,17 @@ if __name__ == "__main__" :
 	# 					dest="update_all",
 	# 					help="Trigger a full update of svd files")
 	parser.add_argument("--update",
-						action="append",
+						nargs="+",
 						dest="update_svd",
+						default=list(),
 						help="Add a family to the files to be updated.",
 						choices=list(svd.defined_archives_keil.keys()) + ['all'])
 	# parser.add_argument("--upgrade-all",
 	# 					action="store_true",
 	# 					help="Trigger a full upgrade of svd files")
 	parser.add_argument("--upgrade", "-u",
-						action="append",
+						nargs="+",
+						default=list(),
 						dest="upgrade_svd",
 						help="Add a family to the files to be upgraded.",
 						choices=list(svd.defined_archives_keil.keys()) + ['all'])
@@ -175,11 +177,9 @@ if __name__ == "__main__" :
 
 	if global_parameters.big_endian :
 		logger.warning("The library will be generated for big endian.")
-		# RegisterVariant.big_endian = True
 
 	if not global_parameters.physical_mapping :
 		logger.warning("The library will be generated with non-physical capabilities.")
-		# PeripheralInstance.generate_nophy = True
 
 	if not skip_analysis :
 		if not os.path.exists(svd.file_path) :
@@ -190,17 +190,48 @@ if __name__ == "__main__" :
 			svd.init()
 
 		if global_parameters.need_update :
+			if global_parameters.use_local_packs :
+				logger.info("Using local packs.")
 			logger.warning("Refresh definition for following families :")
 			not_retrieved = list()
 			for chip in global_parameters.update_list :
 				logger.warning("\t" + chip)
 
-				if chip in global_parameters.family_update_request :
-					if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
-						not_retrieved.append(chip)
-				elif chip in global_parameters.family_upgrade_request :
-					if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
-						not_retrieved.append(chip)
+				enforced_ver = svd.get_current_version(chip)
+				local_failed = False
+				local_pack = None
+				temp_folder = None
+				force_update = chip in global_parameters.family_update_request or global_parameters.enforce_versions
+
+				if global_parameters.use_local_packs :
+					local_pack = svd.select_local_keil_pack(chip, enforced_ver if global_parameters.enforce_versions else "*")
+					if not force_update and svd.version_cmp(enforced_ver) <= svd.version_cmp(svd.pack_version_string(local_pack)) :
+						continue
+
+					local_failed = local_pack is None
+
+				if not global_parameters.use_local_packs or local_failed:
+					current_version = svd.keil_get_version(chip) if not global_parameters.enforce_versions else enforced_ver
+					if not force_update and svd.version_cmp(current_version) <= svd.version_cmp(enforced_ver) :
+						continue
+					temp_folder = svd.retrieve_keil_pack(chip,current_version,global_parameters.store_packs,global_parameters.enforce_versions)
+					if temp_folder is not None :
+						local_pack = temp_folder + "/archive.zip"
+
+				if local_pack is not None :
+					svd.handle_keil_pack(local_pack)
+				else:
+					not_retrieved.append(chip)
+					continue
+				if temp_folder is not None :
+					shutil.rmtree(temp_folder)
+
+				# if chip in global_parameters.family_update_request :
+				# 	if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
+				# 		not_retrieved.append(chip)
+				# elif chip in global_parameters.family_upgrade_request :
+				# 	if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
+				# 		not_retrieved.append(chip)
 
 			if len(not_retrieved) > 0 :
 				logger.warning("Several chip families have not been retrieved :")

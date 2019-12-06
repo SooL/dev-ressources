@@ -13,6 +13,7 @@ import json
 import configparser
 import glob
 
+
 logger = logging.getLogger()
 file_path = "./.data/svd"
 fileset_path = "./.data/fileset"
@@ -144,6 +145,9 @@ def get_current_version(family : str) :
 	except :
 		return None
 
+def pack_version_string(s) :
+	return ".".join(s.rsplit(".", 4)[-4:-1])
+
 def keil_get_version(family : str) -> T.Union[None,str]:
 	"""
 	Retrieve the lateset version string for the pack associated to the provided family from Keil.
@@ -181,7 +185,7 @@ def select_local_keil_pack(family : str,version : str = "*") -> T.Union[str,None
 	:param version: Wanted version strin, format is x.y.z and the use of wildcards is available.
 	:return: The path of the most recent compatible path trying to match the family or None.
 	"""
-	valid_packs = glob.glob(f"{packs_path}/{defined_archives_keil[family.upper()]}.{version}.pack")
+	valid_packs = glob.glob(f"{packs_path}/{defined_archives_keil[family.upper()]}{version}.pack")
 	selected = None
 	max_version = (0,0,0)
 	if len(valid_packs) == 0:
@@ -272,12 +276,12 @@ def handle_keil_pack(path) -> T.List[str]:
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
 	family = file_to_family(path)
-	temp_dir = os.path.dirname(path)
+	temp_dir = os.path.dirname(path)+ "zip/"
 	file_name= os.path.basename(path)
 	archive	 = str(file_name.rsplit(".",4)[0]) + "."
 	version_string = ".".join(file_name.rsplit(".",4)[-4:-1])
 	destination = file_path
-
+	os.mkdir(temp_dir)
 	logger.info("Unzipping archive...")
 	with zipfile.ZipFile(path) as zip_handler:
 		zip_handler.extractall(temp_dir)
@@ -307,6 +311,7 @@ def handle_keil_pack(path) -> T.List[str]:
 		"VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in sorted(version_handler[f"PackagesVersion"])])):X}'
 
 	version_handler.write(open(config_file, "w"))
+	shutil.rmtree(temp_dir,True)
 	return [os.path.basename(f) for f in svd_files]
 
 

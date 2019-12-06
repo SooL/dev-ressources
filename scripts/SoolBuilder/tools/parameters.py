@@ -24,6 +24,8 @@ class ParametersHandler :
 		self.family_upgrade_request: T.List[str] = list()
 		self.fileset_reinit		: bool = False
 
+		self.enforce_versions	: bool = False
+
 
 	@property
 	def need_update(self):
@@ -50,10 +52,10 @@ class ParametersHandler :
 		self.reuse_db 			= args.reuse
 
 		self.process_generate(args.generate)
-		self.dump_db 			|= args.dump
 		# self.physical_mapping 	= not args.no_phy
 		# self.big_endian			= args.big_endian
 
+		self.enforce_versions	= args.force_version
 		self.store_packs		= args.store_packs
 		self.use_local_packs	= args.load_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
