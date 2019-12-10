@@ -78,7 +78,7 @@ def init():
 	os.makedirs(fileset_path)
 
 	if not os.path.exists(packs_path) :
-		os.makedirs(fileset_path)
+		os.makedirs(packs_path)
 
 # def download_and_handle_st(archive : str, destination : str = file_path) -> T.List[str]:
 # 	"""
@@ -238,7 +238,7 @@ def retrieve_keil_pack(family : str,
 	temp_dir = tempfile.mkdtemp(prefix=f"SVD_RETR_Keil_{archive[:-1]}_")
 
 	fallback_triggered = False
-	with open(temp_dir + "/archive.zip","wb") as temp_archive :
+	with open(temp_dir + f"/{pack_filename}","wb") as temp_archive :
 		logger.info("Trying to download " + url + " ...")
 		logger.debug("Temp path is " + temp_archive.name)
 
@@ -260,11 +260,11 @@ def retrieve_keil_pack(family : str,
 		if locally_save and not fallback_triggered:
 			if not os.path.exists(f"{packs_path}/{pack_filename}") :
 				logger.info(f"Copy {temp_archive.name} to local repository")
-				shutil.copy(temp_dir + "/archive.zip",f"{packs_path}/{pack_filename}")
+				shutil.copy(temp_dir + f"/{pack_filename}",f"{packs_path}/{pack_filename}")
 			else:
 				logger.info(f"{pack_filename} already in local repository.")
 
-	return temp_dir
+	return temp_dir + f"/{pack_filename}"
 
 
 def handle_keil_pack(path) -> T.List[str]:
@@ -275,15 +275,23 @@ def handle_keil_pack(path) -> T.List[str]:
 	"""
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
+	
+	if "GENERAL" not in version_handler:
+		version_handler["GENERAL"] = {}
+		version_handler["PackagesVersion"] = {}
+	
 	family = file_to_family(path)
 	temp_dir = os.path.dirname(path)+ "/zip"
 	file_name= os.path.basename(path)
 	archive	 = str(file_name.rsplit(".",4)[0]) + "."
 	version_string = ".".join(file_name.rsplit(".",4)[-4:-1])
 	destination = file_path
+	
+	shutil.rmtree(temp_dir,True)
 	os.mkdir(temp_dir)
 	logger.info("Unzipping archive...")
-	with zipfile.ZipFile(path) as zip_handler:
+	shutil.copy(path,f"{temp_dir}/{os.path.basename(path)}.zip")
+	with zipfile.ZipFile(f"{temp_dir}/{os.path.basename(path)}.zip") as zip_handler:
 		zip_handler.extractall(temp_dir)
 	logger.info("Done !")
 
@@ -305,7 +313,7 @@ def handle_keil_pack(path) -> T.List[str]:
 		shutil.copy(temp_dir + "/" + archive + "pdsc", fileset_path)
 	else:
 		logger.warning("Fileset not found")
-
+	
 	version_handler["PackagesVersion"][family] = version_string
 	version_handler["GENERAL"][
 		"VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in sorted(version_handler[f"PackagesVersion"])])):X}'

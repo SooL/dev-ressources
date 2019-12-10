@@ -57,15 +57,15 @@ class ParametersHandler :
 
 		self.enforce_versions	= args.force_version
 		self.store_packs		= args.store_packs
-		self.use_local_packs	= args.load_local_packs
+		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
 		if self.update_requested :
 			if 'all' in args.update_svd :
 				self.fileset_reinit = True
-				self.family_update_request = defined_archives_keil.keys()
+				self.family_update_request = list(defined_archives_keil.keys())
 			elif 'all' in args.upgrade_svd :
 				self.family_update_request.extend(args.update_svd)
-				self.family_upgrade_request= defined_archives_keil.keys()
+				self.family_upgrade_request= list(defined_archives_keil.keys())
 			else :
 				self.family_update_request.extend(args.update_svd)
 				self.family_upgrade_request.extend(args.upgrade_svd)

@@ -127,7 +127,7 @@ if __name__ == "__main__" :
 						dest="upgrade_svd",
 						help="Add a family to the files to be upgraded.",
 						choices=list(svd.defined_archives_keil.keys()) + ['all'])
-	parser.add_argument("--load-local-packs",
+	parser.add_argument("--use-local-packs",
 						action="store_true",
 						help="Try to use the local packs repository (.data/packs)")
 	parser.add_argument("--store-packs",
@@ -212,11 +212,14 @@ if __name__ == "__main__" :
 
 				if not global_parameters.use_local_packs or local_failed:
 					current_version = svd.keil_get_version(chip) if not global_parameters.enforce_versions else enforced_ver
+					if current_version is None and chip in svd.default_version_keil :
+						current_version = svd.default_version_keil[chip]
+						logger.error(f"Error in getting version number. using static version number {current_version}")
 					if not force_update and svd.version_cmp(current_version) <= svd.version_cmp(enforced_ver) :
 						continue
-					temp_folder = svd.retrieve_keil_pack(chip,current_version,global_parameters.store_packs,global_parameters.enforce_versions)
-					if temp_folder is not None :
-						local_pack = temp_folder + "/archive.zip"
+					local_pack = svd.retrieve_keil_pack(chip,current_version,global_parameters.store_packs,global_parameters.enforce_versions)
+					if local_pack is not None :
+						temp_folder = os.path.dirname(local_pack)
 
 				if local_pack is not None :
 					svd.handle_keil_pack(local_pack)
