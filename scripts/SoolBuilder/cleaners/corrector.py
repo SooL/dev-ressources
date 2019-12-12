@@ -10,16 +10,28 @@ def change_name(obj, name) :
 
 def remove_periph_prefix(obj : Component) :
 	from structure import Peripheral
-
 	periph = obj.parent
+	instances = list()
 	while not isinstance(periph, Peripheral) :
 		periph = periph.parent
+	instances = periph.instances
 	if periph.name is None :
 		periph = periph.parent # use group name instead
 
+	if periph.name in ["HASH", "DFSDM"] :
+		return # shitty peripherals
+
 	pattern = f"^{periph.name}[A-Za-z\d]*_\w+$"
 	if re.match(pattern, obj.name) :
-		obj.name = obj.name[obj.name.index("_", len(periph.name))+1:]
+		if len(instances) == 1 and periph.name == instances[0].name :
+			# one-instance peripheral. if prefix is different from name, leave as is
+			if not obj.name.startswith(periph.name+"_") :
+				return
+		obj_name = obj.name[obj.name.index("_", len(periph.name))+1:]
+		if obj_name in obj.parent :
+			logger.warning(periph.name +" contains registers " + obj_name + " and " + obj.name)
+		else :
+			obj.name = obj_name
 
 class Corrector:
 	def __init__(self,
@@ -86,35 +98,39 @@ class Corrector:
 
 root_corrector = Corrector({
 
-	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
-	"TIM?*"     : lambda group: change_name(group, "TIM"),
-	"USB_*"     : lambda group: change_name(group, "USB"),
-	"LPUART"    : lambda group: change_name(group, "USART"),
-	"AES?"      : lambda group: change_name(group, "AES"),
-	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
+	"ADC"       : { "*" : ADC_periph_cleaner },
+	"AES?"      : lambda group : change_name(group, "AES"),
 	"CRC"       : {
 		"*"         : {
-			"DR"        : {"*":{"Data_register": lambda f: change_name(f, "DR")}},
-			"IDR"       : {"*":{"Independent_data_register": lambda f: change_name(f, "IDR")}},
-			"POL"       : {"*":{"Polynomialcoefficients": lambda f: change_name(f, "POL")}},
+			"DR"        : { "*" : {"Data_register" : lambda f : change_name(f, "DR") }},
+			"IDR"       : { "*" : {"Independent_data_register" : lambda f : change_name(f, "IDR") }},
+			"POL"       : { "*" : {"Polynomialcoefficients" : lambda f : change_name(f, "POL") }},
 		}
 	},
-	"USART"     : {"*" : USART_periph_cleaner},
-	"HRTIM"     : {"*": HRTIM_periph_cleaner},
-	"USB"       : {"*": USB_periph_cleaner},
-	"I2C"       : {"*": I2C_periph_cleaner},
-	"ADC"       : {"*": ADC_periph_cleaner},
-	"ETHERNET"  : {"*": ETHERNET_periph_cleaner},
-	"TIM"       : {"*": TIM_periph_cleaner},
-	"RAMECC"    : {"*": lambda periph: change_name(periph, "RAMECC")},
+	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
+	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
 			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),
-			"*"         : {"*":{"*":GPIO_field_cleaner}},
+			"*"         : {
+			    "*"         : (GPIO_reg_var_cleaner, {
+				    "*"         : GPIO_field_cleaner
+			    })
+			},
 		})
 	},
+	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
+	"I2C"       : { "*" : I2C_periph_cleaner },
+	"LPUART"    : lambda group: change_name(group, "USART"),
+	"RAMECC"    : { "*" : lambda periph: change_name(periph, "RAMECC") },
+	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
+	"TIM?*"     : lambda group: change_name(group, "TIM"),
+	"TIM"       : { "*" : TIM_periph_cleaner },
+	"USART"     : {"*" : USART_periph_cleaner },
+	"USB_*"     : lambda group: change_name(group, "USB"),
+	"USB"       : { "*" : USB_periph_cleaner },
 	"SERIAL_CONTROL" : (SERIAL_CONTROL_group_cleaner, {
-		"*"         : (SERIAL_CONTROL_periph_cleaner,{
+		"*"         : (SERIAL_CONTROL_periph_cleaner, {
 			"SC?_*"     : lambda reg : change_name(reg, reg.name[4:])
 		}),
 	}),
