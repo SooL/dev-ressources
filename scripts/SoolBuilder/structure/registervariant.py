@@ -141,7 +141,9 @@ class RegisterVariant(Component) :
 		if other.for_template != self.for_template :
 			raise AssertionError("Non-template register variant cannot be merged with template register variant")
 		if self.for_template :
-			self.linked_instances.extend(other.linked_instances)
+			for inst in other.linked_instances :
+				if inst not in self.linked_instances :
+					self.linked_instances.append(inst)
 		for f in other :
 			self.add_field(f)
 

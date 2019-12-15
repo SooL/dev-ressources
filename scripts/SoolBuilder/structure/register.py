@@ -1,3 +1,4 @@
+import re
 import typing as T
 import xml.etree.ElementTree as ET
 
@@ -90,7 +91,7 @@ class Register(Component) :
 				return var[item]
 		raise KeyError()
 
-	def __eq__(self, other):
+	def mergeable_with(self, other: "Register") :
 		if isinstance(other, Register) :
 			for var in self :
 				if var.for_template :
@@ -101,6 +102,22 @@ class Register(Component) :
 			for var in other :
 				if var.for_template :
 					continue
+				for field in var :
+					if field not in self :
+						return False
+			return True
+		raise TypeError(f"Provided type {type(other)}")
+
+	def __eq__(self, other) :
+		raise AssertionError("reg == reg")
+
+	def equals(self, other: "Register") :
+		if isinstance(other, Register) :
+			for var in self :
+				for field in var :
+					if field not in other :
+						return False
+			for var in other :
 				for field in var :
 					if field not in self :
 						return False
@@ -158,16 +175,64 @@ class Register(Component) :
 	def inter_svd_merge(self, other: "Register"):
 		super().inter_svd_merge(other)
 		if self.name != other.name :
-			name_1 = ''.join(filter(lambda c : c.isalpha(), self.name))
-			name_2 = ''.join(filter(lambda c : c.isalpha(), other.name))
-			if name_1 == name_2 :
-				self.name = name_1
-			elif name_1.startswith(name_2) :
-				self.name = name_2
-			elif name_2.startswith(name_1) :
-				self.name = name_1
+
+			name_1 = self.name
+			name_2 = other.name
+			new_name = ""
+			if len(name_1) > len(name_2) :
+				tmp = name_1
+				name_1 = name_2
+				name_2 = tmp
+
+			if name_2.startswith(name_1) :
+				new_name = name_1
 			else :
-				logger.warning(f"cannot decide name when merging {self.name} with {other.name}. Keeping {self.name}.")
+				tokens_1 = re.split('([xy\d]+)', name_1)
+				tokens_2 = re.split('([xy\d]+)', name_2)
+				no_digit_1 = (''.join(map(lambda c : 'x' if c.isdigit() else c, tokens_1)))
+				no_digit_2 = (''.join(map(lambda c : 'x' if c.isdigit() else c, tokens_2)))
+				if no_digit_1 == no_digit_2 :
+					if tokens_1[0] + ''.join(tokens_1[2:]) == tokens_2[0] + ''.join(tokens_2[2:]) :
+						new_name = tokens_1[0] + 'x' + ''.join(tokens_1[2:])
+					elif tokens_2[0] + ''.join(tokens_2[2:]) == name_1 :
+						new_name = name_1
+					elif ''.join(tokens_1[:-2]) + tokens_1[-1] == ''.join(tokens_2[:-2]) + tokens_2[-1] :
+						new_name = ''.join(tokens_1[:-2]) + 'x' + tokens_1[-1]
+					elif ''.join(tokens_2[:-2]) + tokens_2[-1] == name_1 :
+						new_name = name_1
+					else :
+						new_name = no_digit_1
+				else :
+
+					suffix = name_1
+					prefix = name_1
+					while len(suffix) > 0 and (suffix[0] == '_' or not name_2.endswith(suffix)) :
+						suffix = suffix[1:]
+					while len(prefix) > 0 and (prefix[-1] == '_' or not name_2.startswith(prefix)) :
+						prefix = prefix[:-1]
+
+					filler_length = (len(name_1) - len(prefix) - len(suffix)) if len(prefix) > 0 and len(suffix) > 0 else 0
+
+					if (filler_length > 0 and abs(len(name_1) - len(name_2)) > 0) or \
+							filler_length > 2 or \
+							(len(prefix) + len(suffix)) < 2 :
+						logger.warning(f"cannot decide name when merging {self.name} with {other.name}. Keeping {self.name}.")
+						new_name = self.name
+					else :
+						filler = "x"
+						new_name = prefix + filler + suffix
+			while self.name != new_name and other.name != new_name and new_name in self.parent : # name already taken
+
+				if 'n' in new_name :
+					raise AssertionError("replacement name already taken")
+				elif 'z' in new_name :
+					new_name = new_name.replace('z', 'n')
+				elif 'y' in new_name :
+					new_name = new_name.replace('y', 'z')
+				elif 'x' in new_name :
+					new_name = new_name.replace('x', 'y')
+			self.name = new_name
+			logger.info(f"merged registers {name_1} and {name_2} : {self.name}")
 
 		if other.size > self.size :
 			self.size = other.size
