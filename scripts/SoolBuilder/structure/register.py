@@ -157,6 +157,18 @@ class Register(Component) :
 
 	def inter_svd_merge(self, other: "Register"):
 		super().inter_svd_merge(other)
+		if self.name != other.name :
+			name_1 = ''.join(filter(lambda c : c.isalpha(), self.name))
+			name_2 = ''.join(filter(lambda c : c.isalpha(), other.name))
+			if name_1 == name_2 :
+				self.name = name_1
+			elif name_1.startswith(name_2) :
+				self.name = name_2
+			elif name_2.startswith(name_1) :
+				self.name = name_1
+			else :
+				logger.warning(f"cannot decide name when merging {self.name} with {other.name}. Keeping {self.name}.")
+
 		if other.size > self.size :
 			self.size = other.size
 		for o_v in other :

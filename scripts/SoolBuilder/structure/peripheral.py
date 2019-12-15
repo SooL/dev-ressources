@@ -236,13 +236,17 @@ class Peripheral(Component) :
 					m_offset += 1
 			m_idx += 1
 
+	def after_svd_compile(self):
+		super().after_svd_compile()
+
 		r_idx = 0
 		r_offset = 0
 
 		while r_idx < len(self.registers) :
 			r_offset = 1
 			while r_idx + r_offset < len(self.registers) :
-				if self.registers[r_idx].name == self.registers[r_idx + r_offset].name :
+				if self.registers[r_idx] == self.registers[r_idx + r_offset] :
+					logger.info(f"merged registers {self.registers[r_idx]} and {self.registers[r_idx+r_offset]}")
 					self.registers[r_idx].inter_svd_merge(self.registers[r_idx + r_offset])
 					for mapping in self.mappings :
 						for elmt in mapping :

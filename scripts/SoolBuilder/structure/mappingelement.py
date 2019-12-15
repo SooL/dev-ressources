@@ -21,7 +21,7 @@ class MappingElement(Component) :
 		if not(isinstance(component, Register) or isinstance(component, Peripheral)) :
 			raise TypeError(f"Cannot create placement of {component} : not a register or peripheral")
 
-		super().__init__(chips=chips, name=name)
+		super().__init__(chips=chips, name=name, brief=component.brief)
 
 		self.component : T.Union[Register, Peripheral] = component
 		self.address: int  = address
@@ -78,12 +78,10 @@ class MappingElement(Component) :
 
 	def overlap(self, other: "MappingElement"):
 		if other.address < self.address :
-			size = other.component.size *\
-			       (1 if other.array_size == 0 else other.array_size)
+			size = other.byte_size
 			return other.address + size > self.address
 		else : # self.address <= other.address
-			size = (self.component.size/8) *\
-			       (1 if self.array_size == 0 else self.array_size)
+			size = self.byte_size
 			return self.address + size > other.address
 
 ################################################################################
@@ -109,6 +107,8 @@ class MappingElement(Component) :
 			out = f"{indent}{self.defined_name};"
 		else :
 			out = f"{indent}{self.defined_value};"
-		if self.component.brief is not None :
+		if self.brief is not None :
+			out += f" /// {self.brief}"
+		elif self.component.brief is not None :
 			out += f" /// {self.component.brief}"
 		return out + "\n"
