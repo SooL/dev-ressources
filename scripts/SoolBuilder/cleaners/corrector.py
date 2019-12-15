@@ -109,6 +109,7 @@ root_corrector = Corrector({
 	},
 	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
+	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
 			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),

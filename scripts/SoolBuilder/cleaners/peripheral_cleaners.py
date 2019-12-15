@@ -104,13 +104,18 @@ def USB_periph_cleaner(periph: "Peripheral") :
 	pass
 
 def ETHERNET_periph_cleaner(periph: "Peripheral") :
-
 	if len(periph.instances) == 1 :
 		periph.name = periph.instances[0].name
 	else :
 		logger.error(f"ETHERNET type detection failure for {periph.name} for chips {str(periph.chips)}. Assigning generic")
 		periph.name = "ETHERNET_GENERIC"
 	pass
+
+def FDCAN_periph_cleaner(periph: "Peripheral") :
+	if re.match(r"^fdcan\d?", periph.brief) :
+		periph.name = "FDCAN"
+	elif periph.instances[0].name.startswith("CAN_CCU") :
+		periph.name = "CAN_CCU"
 
 def ADC_periph_cleaner(periph: "Peripheral") :
 	common: bool = False
