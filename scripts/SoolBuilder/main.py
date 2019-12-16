@@ -108,19 +108,12 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 if __name__ == "__main__" :
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
-	# parser.add_argument("--update-all",
-	# 					action="store_true",
-	# 					dest="update_all",
-	# 					help="Trigger a full update of svd files")
 	parser.add_argument("--update",
 						nargs="+",
 						dest="update_svd",
 						default=list(),
 						help="Add a family to the files to be updated.",
 						choices=list(svd.defined_archives_keil.keys()) + ['all'])
-	# parser.add_argument("--upgrade-all",
-	# 					action="store_true",
-	# 					help="Trigger a full upgrade of svd files")
 	parser.add_argument("--upgrade", "-u",
 						nargs="+",
 						default=list(),
@@ -229,50 +222,12 @@ if __name__ == "__main__" :
 				if temp_folder is not None :
 					shutil.rmtree(temp_folder)
 
-				# if chip in global_parameters.family_update_request :
-				# 	if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
-				# 		not_retrieved.append(chip)
-				# elif chip in global_parameters.family_upgrade_request :
-				# 	if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
-				# 		not_retrieved.append(chip)
-
 			if len(not_retrieved) > 0 :
 				logger.warning("Several chip families have not been retrieved :")
 				for chip in sorted(not_retrieved) :
 					logger.warning(f"\t{chip}")
 			else:
 				logger.info("All families retrieved")
-
-
-		# if args.update_svd is not None and len(args.update_svd) :
-		# 	logger.warning("Refresh definition for following families :")
-		# 	not_retrieved = list()
-		# 	for chip in args.update_svd :
-		# 		logger.warning("\t" + chip)
-		# 	for chip in args.update_svd :
-		# 		if len(svd.download_and_handle_keil(chip,force=True)) == 0 :
-		# 			not_retrieved.append(chip)
-		# 	if len(not_retrieved) > 0 :
-		# 		logger.warning("Several chip families have not been retrieved :")
-		# 		for chip in sorted(not_retrieved) :
-		# 			logger.warning(f"\t{chip}")
-		# 	else:
-		# 		logger.info("All families retrieved")
-		#
-		# if args.upgrade_svd is not None and len(args.upgrade_svd) :
-		# 	logger.warning("Refresh definition for following families :")
-		# 	not_retrieved = list()
-		# 	for chip in args.upgrade_svd :
-		# 		logger.warning("\t" + chip)
-		# 	for chip in args.upgrade_svd :
-		# 		if len(svd.download_and_handle_keil(chip,force=False)) == 0 :
-		# 			not_retrieved.append(chip)
-		# 	if len(not_retrieved) > 0 :
-		# 		logger.warning("Several chip families have not been retrieved :")
-		# 		for chip in sorted(not_retrieved) :
-		# 			logger.warning(f"\t{chip}")
-		# 	else:
-		# 		logger.info("All families retrieved")
 
 		FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
 
@@ -285,7 +240,7 @@ if __name__ == "__main__" :
 
 		logger.info("Reading .pdsc files to map STM number to svd...")
 		for pdsc_file in glob.glob(pdsc_path_model):
-			logger.info(f"\tReading {pdsc_file}...")
+			logger.info(f"Reading {pdsc_file}...")
 			mapping_stm2svd.append(PDSCFile(pdsc_file))
 
 		for svd_file in FileListing:
@@ -314,16 +269,6 @@ if __name__ == "__main__" :
 					output_groups[name].inter_svd_merge(data)
 			i += 1
 		del i
-
-
-		# logger.info("Iterative merging...")
-		# for name, group in output_groups.items() :
-		# 	while group.has_been_edited :
-		# 		group.validate_edit()
-		# 		logger.info(f"Re-merging {group.name}")
-		# 		group.finalize()
-		# 		for periph in group.peripherals :
-		# 			periph.self_merge()
 
 		for name, group in output_groups.items() :
 			logger.info(f"Finalizing {name}")
