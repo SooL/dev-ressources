@@ -22,7 +22,6 @@ class PDSCFile :
 		"""
 		
 		self.file = filepath
-		self.define_to_chip_mapping: T.Dict[str, T.List[str]] = dict()
 		self.define_to_svd: T.Dict[str, str] = dict()
 		self.svd_to_define: T.Dict[str,T.Set[str]] = dict()
 
@@ -46,68 +45,88 @@ class PDSCFile :
 				logger.warning("No xmlns found")
 		
 		return ET.fromstring(cached)
-	
+
 	def process(self, root: ET.Element):
-		
-		for family in root.findall("devices/family/subFamily") :
+
+		for family in root.findall("devices/family/subFamily"):
 			# For each recognized "meaningful" family
 			# Debug and compile tag can be found at subFamily... or might not !
-			svd = family.find("debug[@svd]")
-			define = family.find("compile")
-			
-			# Compile tag might not contain the define attrib at subFamily level.
-			# In this case, skip it.
-			if define is not None and "define" not in define.attrib.keys():
-				define = None
-			
+			logger.info(f"Analyzing family {family.attrib['DsubFamily']}...")
+			svd = family.findall("debug[@svd]")
+			define = family.findall("compile[@define]")
+			# SVD -> Define
+			define_svd_map : T.Dict[str,str] = dict()
+
+			if len(svd) > 0 and len(define) > 0:
+				#For multicore CPU
+				if len(svd) > 1 and len(define) > 1:
+					svd_spec : ET.Element
+					for svd_spec in svd :
+						PnameSVD = svd_spec.attrib["Pname"]
+						PnameDef = ""
+
+						for define_spec in define :
+							PnameDef = define_spec.attrib["Pname"]
+							if PnameDef == PnameSVD :
+								define_name = f"{define_spec.attrib['define']}_{PnameDef}"
+								svd_name = os.path.basename(svd_spec.attrib['svd'])
+
+								define_svd_map[define_name] = svd_name
+								logger.info(f"Multi-processor found : {svd_name} mapped to {define_name}")
+								break
+
+					if len(svd) != len(define_svd_map) :
+						logger.error(f"Multiprocessor mismatch in chip {family.attrib['DsubFamily']}")
+				else:
+					define_svd_map[define[0].attrib['define']] =  os.path.basename(svd[0].attrib['svd'])
+
 			for chip in family.findall("device") :
-				logger.debug(f'Checking {chip.attrib["Dname"]}')
-				
-				# If the debug tag wasn't previously found, that's because it is within the chip
-				# Or because it is not even here.
-				if svd is None :
-					# If nowhere to be found, skip the whole definition
-					if chip.find("debug") is None :
-						logger.warning(f'\tNo association for {chip.attrib["Dname"]:12s}')
+				logger.debug(f'\tChecking {chip.attrib["Dname"]}')
+				debug_infos : T.List[ET.Element] = chip.findall("debug[@svd]")
+				compile_infos: T.List[ET.Element]= chip.findall("compile[@define]")
+				svd_name : str = None
+				define_name	: str = None
+
+				if len(define_svd_map) == 0 and len(debug_infos) == 0:
+					if len(svd) == 1 :
+						svd_name = os.path.basename(svd[0].attrib['svd'])
+					else :
+						logger.warning(f'\t\tNo SVD association for {chip.attrib["Dname"]:12s}')
 						continue
-					# Else, take the definition from the device.
-					svd_name = chip.find("debug").attrib["svd"]
-				else :
-					svd_name = svd.attrib["svd"]
-				
-				svd_name = os.path.basename(svd_name)
-				# If the chip define wasn't found, we will try to have it from the chip
-				if define is None :
-					# If nowhere to be found, skip the whole definition
-					if chip.find("compile") is None :
-						logger.warning(f'\tNo header declaration for {chip.attrib["Dname"]:12s}')
+				elif len(debug_infos) > 1 :
+					raise NotImplementedError()
+
+				if len(debug_infos) > 0 :
+					svd_name = os.path.basename(debug_infos[0].attrib['svd'])
+
+				if len(define_svd_map) == 0 and len(compile_infos) == 0:
+					if len(define) == 1 :
+						define_name = define[0]
+					else:
+						logger.warning(f'\t\tNo Header association for {chip.attrib["Dname"]:12s}')
 						continue
-					define_name = chip.find("compile").attrib["define"]
-				else :
-					define_name = define.attrib["define"]
-					
-				chip_name = chip.attrib["Dname"]
-				ChipSet.reference_chips_name_list.add(define_name)
-				# Compute the mapping
-				# First : add the chip to the list of defines. Therefore define -> list[chip]
-				if define_name not in self.define_to_chip_mapping :
-					self.define_to_chip_mapping[define_name] = list()
-				self.define_to_chip_mapping[define_name].append(chip_name)
-				
-				# Second : map SVD to define name.
-				if define_name in self.define_to_svd and svd_name != self.define_to_svd[define_name] :
-					logger.error(f"\tMultiple SVD for {define_name}. "
+				elif len(debug_infos) > 1 :
+					raise NotImplementedError()
+
+				if len(compile_infos) > 0 :
+					define_name = compile_infos[0].attrib['define']
+
+				if svd_name is not None and define is not None :
+					define_svd_map[define_name] = svd_name
+					ChipSet.reference_chips_name_list.add(define_name)
+
+			for define_name, svd_name in define_svd_map.items():
+
+				if define_name in self.define_to_svd and svd_name != self.define_to_svd[define_name]:
+					logger.error(f"\t\tMultiple SVD for {define_name}. "
 								 f"Replacing {self.define_to_svd[define_name]} by {svd_name}.")
 				self.define_to_svd[define_name] = svd_name
-				
-				if define_name is not None :
-					if svd_name in self.svd_to_define :
-						self.svd_to_define[svd_name].add(define_name)
-					else :
-						self.svd_to_define[svd_name] = {define_name}
-				
-				logger.info(f'\tFound association {define_name:12s} -> {svd_name}')
 
-	def svd_to_chip(self,svd : str):
-		return self.define_to_chip_mapping[self.svd_to_define[svd]]
+				if define_name is not None:
+					if svd_name in self.svd_to_define:
+						self.svd_to_define[svd_name].add(define_name)
+					else:
+						self.svd_to_define[svd_name] = {define_name}
+
+				logger.info(f'\t\tFound association {define_name:12s} -> {svd_name}')
 		
