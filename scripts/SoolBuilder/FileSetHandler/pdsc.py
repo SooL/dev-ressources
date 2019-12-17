@@ -24,6 +24,7 @@ class PDSCFile :
 		self.file = filepath
 		self.define_to_svd: T.Dict[str, str] = dict()
 		self.svd_to_define: T.Dict[str,T.Set[str]] = dict()
+		self.define_to_cmsis : T.Dict[str,str] = dict()
 
 		if filepath is not None:
 			root : ET.Element = self.cache_and_remove_ns(filepath)
