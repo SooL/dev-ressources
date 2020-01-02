@@ -100,6 +100,7 @@ base_root_corrector = Corrector({
 
 	"ADC"       : { "*" : ADC_periph_cleaner },
 	"AES?"      : lambda group : change_name(group, "AES"),
+	"CAN"       : { "*" : CAN_periph_base_cleaner },
 	"CRC"       : {
 		"*"         : {
 			"DR"        : { "*" : {"Data_register" : lambda f : change_name(f, "DR") }},
@@ -143,5 +144,5 @@ base_root_corrector = Corrector({
 })
 
 advanced_root_corrector = Corrector({
-	"CAN"       : { "*" : CAN_periph_cleaner },
+	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
 })
