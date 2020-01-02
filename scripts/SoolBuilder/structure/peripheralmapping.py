@@ -164,24 +164,24 @@ class PeripheralMapping(Component) :
 
 		self.elements.sort()
 		for elmt in self.elements :
-			if last_register is None or (elmt.address + elmt.size) > (last_register.address + last_register.size) :
+			if last_register is None or (elmt.address + elmt.byte_size) > (last_register.address + last_register.byte_size) :
 				last_register = elmt
 			if elmt.address > pos :
 				# add filler
 				out += fill_periph_hole(size=elmt.address - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 				pos += elmt.address - pos
 			out += elmt.declare(indent)
-			pos += int(elmt.size/8)
+			pos += elmt.byte_size
 		if not only_mapping :
-			parent_size = self.parent.size
-			if parent_size > pos *8 + last_register.size :
+			parent_size = self.parent.byte_size
+			if parent_size > pos:
 				# add filler
-				out += fill_periph_hole(size=int(parent_size/8) - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
+				out += fill_periph_hole(size=parent_size - pos, prefix=f"{indent}", sep=f";\n{indent}", suffix=";\n")
 			indent.decrement()
 			out += f"{indent}}};\n"
 
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n" \
 			      f"{out}" \
-			       f"{indent}#endif\n"
+			      f"{indent}#endif\n"
 		return out
