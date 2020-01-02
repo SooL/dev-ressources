@@ -115,7 +115,16 @@ class PeripheralMapping(Component) :
 		element.set_parent(self)
 		self.edited = True
 
-	def remove_elements_for(self, reg: Register) :
+	def get_elements_for(self, reg: T.Union[Register, "Peripheral"]) :
+		return filter(lambda elmt : elmt.component is reg, self.elements)
+
+	def has_elements_for(self, reg : T.Union[Register, "Peripheral"]) :
+		for elmt in self.elements :
+			if elmt.component is reg :
+				return True
+		return False
+
+	def remove_elements_for(self, reg: T.Union[Register, "Peripheral"]) :
 		i = 0
 		while i < len(self.elements) :
 			if self.elements[i].component is reg :

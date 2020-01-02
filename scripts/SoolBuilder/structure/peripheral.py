@@ -286,6 +286,20 @@ class Peripheral(Component) :
 	def after_svd_compile(self, parent_corrector):
 		super().after_svd_compile(parent_corrector)
 
+		# remove unused registers
+		i = 0
+		while i < len(self.registers) :
+			used = False
+			for m in self.mappings :
+				if m.has_elements_for(self.registers[i]) :
+					used = True
+					break
+			if used :
+				i+= 1
+			else :
+				self.registers.pop(i)
+
+
 	def intra_svd_merge(self, other: "Peripheral") :
 		super().intra_svd_merge(other)
 		for r in other.registers : self.add_register(r)
