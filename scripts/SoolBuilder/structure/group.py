@@ -3,7 +3,7 @@ import typing as T
 from structure import Peripheral, Component
 from structure import ChipSet
 from structure import default_tabmanager
-from cleaners import root_corrector
+from cleaners import base_root_corrector, advanced_root_corrector
 from structure.utils import DefinesHandler
 
 import logging
@@ -25,8 +25,8 @@ class Group(Component) :
 		:return:
 		"""
 		group = Group(group_name)
-		if group.name in root_corrector :
-			root_corrector(group) # changes only the group name (if necessary)
+		if group.name in base_root_corrector :
+			base_root_corrector(group) # changes only the group name (if necessary)
 
 		if group.name in group_dict :
 			return group_dict[group_name]
@@ -173,7 +173,7 @@ class Group(Component) :
 				             f" for chipset {repr(list(unnamed)[0].chips.chips)}"
 				             f" cannot be named.")
 
-	def before_svd_compile(self, parent_corrector=root_corrector):
+	def before_svd_compile(self, parent_corrector=base_root_corrector):
 		super().before_svd_compile(parent_corrector)
 		self.__struct_based_periph_merge() # merge equal structures
 
@@ -183,8 +183,8 @@ class Group(Component) :
 			self.__identify_unnamed(final=False)
 			self.__name_base_periph_merge()
 
-	def after_svd_compile(self):
-		super().after_svd_compile()
+	def after_svd_compile(self, parent_corrector=advanced_root_corrector):
+		super().after_svd_compile(parent_corrector)
 		self.__identify_unnamed(final=True)
 		for i in range(0, len(self.peripherals)-1) :
 			for j in range(i+1, len(self.peripherals)) :

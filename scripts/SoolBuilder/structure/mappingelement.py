@@ -15,7 +15,7 @@ class MappingElement(Component) :
 
 	# noinspection PyUnresolvedReferences
 	def __init__(self, chips: ChipSet, name: T.Union[str, None],
-	             component: T.Union[Register, "Peripheral"], address: int, array_size: int = 0) :
+	             component: T.Union[Register, "Peripheral"], address: int, array_size: int = 0, array_space: int = 0) :
 
 		from structure import Peripheral
 		if not(isinstance(component, Register) or isinstance(component, Peripheral)) :
@@ -26,6 +26,7 @@ class MappingElement(Component) :
 		self.component : T.Union[Register, Peripheral] = component
 		self.address: int  = address
 		self.array_size : int = array_size
+		self.array_space : int = array_space
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -36,6 +37,7 @@ class MappingElement(Component) :
 			return self.name == other.name and\
 			       self.address == other.address and\
 			       self.array_size == other.array_size and\
+			       self.array_space == other.array_space and\
 			       self.component.name == other.component.name and\
 			       self.component.size == other.component.size
 		else :
@@ -66,7 +68,10 @@ class MappingElement(Component) :
 
 	@property
 	def size(self) -> int :
-		return self.component.size * (1 if self.array_size == 0 else self.array_size)
+		if self.array_size == 0:
+			return self.component.size
+		else :
+			return ((self.component.size + self.array_space) * self.array_size) - self.array_space
 
 	@property
 	def register(self) -> Register :
@@ -94,6 +99,8 @@ class MappingElement(Component) :
 			template += "_t"
 		template += " {1.name}"
 		if self.array_size > 0 :
+			if self.array_space > 0 :
+				"" # TODO array of registers with space between them
 			template += "[{1.array_size}]"
 		return template.format(self.component, self)
 

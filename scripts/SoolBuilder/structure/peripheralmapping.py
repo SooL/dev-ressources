@@ -1,4 +1,4 @@
-from structure import Component, ChipSet, MappingElement, fill_periph_hole, TabManager
+from structure import Component, ChipSet, MappingElement, fill_periph_hole, TabManager, Register
 import typing as T
 import xml.etree.ElementTree as ET
 
@@ -114,6 +114,36 @@ class PeripheralMapping(Component) :
 		self.elements.append(element)
 		element.set_parent(self)
 		self.edited = True
+
+	def remove_elements_for(self, reg: Register) :
+		i = 0
+		while i < len(self.elements) :
+			if self.elements[i].component == reg :
+				self.elements.pop(i)
+			else :
+				i+=1
+
+
+
+	def after_svd_compile(self, parent_corrector):
+		super().after_svd_compile(parent_corrector)
+		reg_dict: T.Dict[str, T.List[MappingElement]] = dict()
+		for reg in self.parent :
+			reg_dict[reg.name] = list()
+
+		for elmt in self :
+			reg_dict[elmt.component.name].append(elmt)
+
+		for reg_name in reg_dict :
+			elmts = reg_dict[reg_name]
+			if len(elmts) > 1 :
+				""
+				# array might be possible
+				# TODO create array
+
+	def finalize(self):
+		self.chips = self.computed_chips
+
 
 ################################################################################
 #                          DEFINE, UNDEFINE & DECLARE                          #

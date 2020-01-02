@@ -91,27 +91,7 @@ class Register(Component) :
 				return var[item]
 		raise KeyError()
 
-	def mergeable_with(self, other: "Register") :
-		if isinstance(other, Register) :
-			for var in self :
-				if var.for_template :
-					continue
-				for field in var :
-					if field not in other :
-						return False
-			for var in other :
-				if var.for_template :
-					continue
-				for field in var :
-					if field not in self :
-						return False
-			return True
-		raise TypeError(f"Provided type {type(other)}")
-
 	def __eq__(self, other) :
-		raise AssertionError("reg == reg")
-
-	def equals(self, other: "Register") :
 		if isinstance(other, Register) :
 			for var in self :
 				for field in var :
@@ -122,7 +102,8 @@ class Register(Component) :
 					if field not in self :
 						return False
 			return True
-		raise TypeError(f"Provided type {type(other)}")
+		else :
+			return False
 
 	@property
 	def has_template(self) -> bool :
@@ -167,6 +148,21 @@ class Register(Component) :
 		self.variants.append(variant)
 		variant.set_parent(self)
 		self.edited = True
+
+	def get_linked_variants(self, instance) -> T.List[RegisterVariant]:
+		linked_variants: T.List[RegisterVariant] = list()
+		for var in self :
+			if var.for_template and instance in var.linked_instances :
+				linked_variants.append(var)
+		return linked_variants
+
+	def needs_template(self, instance) -> bool :
+		for var in self :
+			if var.for_template :
+				for inst in var.linked_instances :
+					if inst.name == instance.name :
+						return True
+		return False
 
 	def intra_svd_merge(self, other: "Register") :
 		for v in other :

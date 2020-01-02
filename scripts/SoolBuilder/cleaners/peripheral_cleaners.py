@@ -111,6 +111,39 @@ def ETHERNET_periph_cleaner(periph: "Peripheral") :
 		periph.name = "ETHERNET_GENERIC"
 	pass
 
+def CAN_periph_cleaner(periph: "Peripheral") :
+	from structure import Peripheral, MappingElement
+	for m in periph.mappings :
+		if "F0R1" in m and not "sFilterRegister" in periph :
+			F0R1 = m["F0R1"]; FR1 = F0R1.component
+			F0R2 = m["F0R2"]; FR2 = F0R2.component
+			if FR1 is not FR2 :
+				FR1.name = "FR1"; FR2.name = "FR2"
+			else :
+				FR1.name = "FRx"
+
+			array_size = len(list(filter(lambda elmt : re.match("F\d+R1", elmt.name), m.elements)))
+			address = F0R1.address
+			filter_register_sub_periph = Peripheral(FR1.chips, "FilterRegister", "CAN Filter Register")
+			filter_register_sub_periph.add_register(FR1)
+			if FR1 is not FR2 :
+				filter_register_sub_periph.add_register(FR2)
+			placement_FR1 = MappingElement(F0R1.chips, name = "FR1", component = FR1, address = 0)
+			placement_FR2 = MappingElement(F0R2.chips, name = "FR2", component = FR2,
+			                               address = F0R2.address - F0R1.address)
+			filter_register_sub_periph.add_placement(placement_FR1)
+			filter_register_sub_periph.add_placement(placement_FR2)
+			filter_placement = MappingElement(periph.chips, name = "sFilterRegister",
+			                                 component = filter_register_sub_periph, address = address,
+			                                 array_size = array_size, array_space = 0)
+			for reg in periph :
+				if re.match("F[x\d]*R[x12]", reg.name) is not None :
+					periph.remove_register(reg)
+
+			periph.add_register(filter_register_sub_periph)
+			periph.add_placement(filter_placement)
+
+
 def FDCAN_periph_cleaner(periph: "Peripheral") :
 	if re.match(r"^fdcan\d?", periph.brief) :
 		periph.name = "FDCAN"

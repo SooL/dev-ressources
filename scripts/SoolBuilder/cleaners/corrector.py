@@ -35,8 +35,8 @@ def remove_periph_prefix(obj : Component) :
 
 class Corrector:
 	def __init__(self,
-	             arg1: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None,
-	             arg2: T.Union[T.Callable, T.Dict[T.Optional[str], "Corrector"]] = None) :
+	             arg1: T.Union[T.Callable, T.Dict[str, T.Any]] = None,
+	             arg2: T.Union[T.Callable, T.Dict[str, T.Any]] = None) :
 		if isinstance(arg1, T.Callable) :
 			self.function: T.Optional[T.Callable] = arg1
 			self.child_correctors: T.Optional[T.Dict[T.Optional[str], Corrector]] = arg2
@@ -96,7 +96,7 @@ class Corrector:
 
 
 
-root_corrector = Corrector({
+base_root_corrector = Corrector({
 
 	"ADC"       : { "*" : ADC_periph_cleaner },
 	"AES?"      : lambda group : change_name(group, "AES"),
@@ -140,4 +140,8 @@ root_corrector = Corrector({
 			"*_*"       : remove_periph_prefix,
 			"*"         : {"*" : {"*_*" : remove_periph_prefix }}
 	}},
+})
+
+advanced_root_corrector = Corrector({
+	"CAN"       : { "*" : CAN_periph_cleaner },
 })

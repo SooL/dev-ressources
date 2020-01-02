@@ -222,13 +222,24 @@ class Component:
 			for child in self :
 				child.svd_compile()
 
-	def after_svd_compile(self) :
+	def after_svd_compile(self, parent_corrector) :
 		"""
-		Cleans the component and its children, checks for potential errors
+		Cleans the component and its children, checks for potential errors, applies advanced corrections
 		:return:
 		"""
 		self.edited = False
-		if hasattr(self, '__iter__') :
-			# noinspection PyTypeChecker
-			for child in self :
-				child.after_svd_compile()
+
+		correctors = None if (parent_corrector is None) else parent_corrector[self]
+
+		if (correctors is not None) and (len(correctors) > 0) :
+			for corrector in correctors :
+				if hasattr(self, '__iter__') :
+					# noinspection PyTypeChecker
+					for child in self :
+						child.after_svd_compile(corrector)
+				corrector(self)
+		else :
+			if hasattr(self, '__iter__') :
+				# noinspection PyTypeChecker
+				for child in self :
+					child.after_svd_compile(None)
