@@ -64,7 +64,7 @@ class PeripheralMapping(Component) :
 	def size(self):
 		self.elements.sort()
 		last = self.elements[-1]
-		return last.address + last.size
+		return last.address*8 + last.size
 
 ################################################################################
 #                        REGISTER PLACEMENTS MANAGEMENT                        #
