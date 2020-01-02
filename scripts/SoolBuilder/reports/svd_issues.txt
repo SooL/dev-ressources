@@ -4,3 +4,6 @@ STM32F303x.svd : 18162
 
 most svd
     xUSARTy.CR2.DATAINV renamed TAINV
+
+svd to determine :
+    CAN.RDLxR, CAN.RDTxR, CAN.RIxR : wrong brief description : "mailbox data high register"
