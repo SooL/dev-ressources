@@ -1,0 +1,6 @@
+STM32F303x.svd : 18162
+    missing registers F3R1 to F13R2
+    non-existant registers F27R1 and F27R2
+
+most svd
+    xUSARTy.CR2.DATAINV renamed TAINV
