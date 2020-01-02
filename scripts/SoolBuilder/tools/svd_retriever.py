@@ -15,9 +15,10 @@ import glob
 
 
 logger = logging.getLogger()
-file_path = "./.data/svd"
+svd_path = "./.data/svd"
 fileset_path = "./.data/fileset"
 packs_path = "./.data/packs"
+cmsis_path = "./.data/cmsis"
 config_file = "./.data/versions.ini"
 
 defined_archives_st = {
@@ -67,15 +68,20 @@ def init():
 	:return:
 	"""
 	logger.info("Re-init data folder")
-	if os.path.exists(file_path) :
-		logger.warning("Delete" + os.path.realpath(file_path))
-		shutil.rmtree(file_path)
-	os.makedirs(file_path)
+	if os.path.exists(svd_path) :
+		logger.warning("Delete" + os.path.realpath(svd_path))
+		shutil.rmtree(svd_path)
+	os.makedirs(svd_path)
 	
 	if os.path.exists(fileset_path) :
 		logger.warning("Delete" + os.path.realpath(fileset_path))
 		shutil.rmtree(fileset_path)
 	os.makedirs(fileset_path)
+
+	if os.path.exists(cmsis_path) :
+		logger.warning("Delete" + os.path.realpath(cmsis_path))
+		shutil.rmtree(cmsis_path)
+	os.makedirs(cmsis_path)
 
 	if not os.path.exists(packs_path) :
 		os.makedirs(packs_path)
@@ -285,7 +291,6 @@ def handle_keil_pack(path) -> T.List[str]:
 	file_name= os.path.basename(path)
 	archive	 = str(file_name.rsplit(".",4)[0]) + "."
 	version_string = ".".join(file_name.rsplit(".",4)[-4:-1])
-	destination = file_path
 	
 	shutil.rmtree(temp_dir,True)
 	os.mkdir(temp_dir)
@@ -297,15 +302,26 @@ def handle_keil_pack(path) -> T.List[str]:
 
 	# Look for SVD files in the file tree
 	svd_files = []
+	cmsis_files = []
+	is_cmsis_path = False
 	for root, dirs, files in os.walk(temp_dir):
+		is_cmsis_path = fnmatch.fnmatch(root,"*/Drivers/CMSIS/Device/*/Include*")
 		for name in files:
-			if fnmatch.fnmatch(name, "*.svd"):
+			if not is_cmsis_path and fnmatch.fnmatch(name, "*.svd"):
 				svd_files.append(os.path.join(root, name))
-	logger.info("Found " + str(len(svd_files)) + " SVD file(s)")
+			elif is_cmsis_path and fnmatch.fnmatch(name, "*.h"):
+				cmsis_files.append(os.path.join(root,name))
+
+	logger.info(f"Found {len(svd_files)} SVD file(s)")
+	logger.info(f"Found {len(cmsis_files)} CMSIS file(s)")
 
 	for file in svd_files:
 		logger.info("\tRetrieving " + os.path.basename(file))
-		shutil.copy(file, destination)
+		shutil.copy(file, svd_path)
+
+	for file in cmsis_files:
+		logger.info("\tRetrieving " + os.path.basename(file))
+		shutil.copy(file, cmsis_path)
 
 	logger.info(f"Looking for {temp_dir}/{archive}pdsc")
 	if os.path.exists(temp_dir + "/" + archive + "pdsc"):
@@ -321,108 +337,3 @@ def handle_keil_pack(path) -> T.List[str]:
 	version_handler.write(open(config_file, "w"))
 	shutil.rmtree(temp_dir,True)
 	return [os.path.basename(f) for f in svd_files]
-
-
-# TODO Add documentation
-def download_and_handle_keil(archive_arg : str, destination : str = file_path, versions_path : str = config_file, force = False):
-	version_handler = configparser.ConfigParser()
-	version_handler.read(versions_path)
-	
-	if "GENERAL" not in version_handler:
-		version_handler["GENERAL"] = {"EnforceVersion":"0"}
-		version_handler["PackagesVersion"] = {}
-
-	enforce_version : bool = version_handler["GENERAL"].getboolean("EnforceVersion",False)
-	base_url_check = "http://pack.keil.com/api/pack/check?pack="
-	local_version = (0,0,0)
-	if archive_arg in version_handler["PackagesVersion"] :
-		local_version = version_cmp(version_handler["PackagesVersion"][archive_arg])
-		logger.info(f"Found local version {version_cmp(version_handler['PackagesVersion'][archive_arg])}")
-	else:
-		logger.info(f"Creating record for {archive_arg}")
-		version_handler["PackagesVersion"][archive_arg] = "0.0.0"
-		
-	if archive_arg.upper() in defined_archives_keil :
-		archive = defined_archives_keil[archive_arg.upper()]
-	
-	url_check = base_url_check + archive + "1.0.0.pack"
-	check_ok = False
-	
-	if not enforce_version :
-		logger.info(f"Getting version for {archive}")
-		try :
-			with urllib.request.urlopen(url_check) as response :
-				t = json.loads(response.read().decode())
-				check_ok = t["Success"]
-				new_version = t["LatestVersion"]
-				
-				version_handler["GENERAL"]["VersionHash"] = str(hash(tuple([version_handler["PackagesVersion"][x] for x in version_handler[f"PackagesVersion"]])))
-				if not check_ok :
-					logger.error(f"\tUnable to retrieve {archive}'s version value")
-					
-		except urllib.error.HTTPError as err:
-			logger.error(f"HTTP Error {err.code} : {err.reason}")
-	else:
-		logger.warning(f"\tEnforced version due to {versions_path}")
-	
-	if not check_ok and local_version != (0,0,0) :
-		new_version = ".".join([str(x) for x in local_version])
-		logger.warning(f"\tUsing previous version {new_version}")
-		check_ok = True
-	
-	if not check_ok and archive_arg.upper() in default_version_keil :
-		new_version = default_version_keil[archive_arg]
-		logger.warning(f"\tUsing provided fallback version {new_version}")
-		check_ok = True
-	
-	if not check_ok :
-		version_handler.write(open(versions_path, "w"))
-		return list()
-			
-	url = "https://keilpack.azureedge.net/pack/" + archive + new_version + ".pack"
-	
-	if not force and local_version >= version_cmp(new_version) :
-		logger.info(f"\tLocal version {'.'.join([str(x) for x in local_version])} is higher or equal to distant {new_version}.")
-		version_handler.write(open(versions_path, "w"))
-		return list()
-	
-	with tempfile.TemporaryDirectory(prefix=f"SVD_RETR_Keil_{archive[:-1]}_") as temp_dir :
-		with open(temp_dir + "/archive.zip","wb") as temp_archive :
-			logger.info("Trying to download " + url + " ...")
-			logger.debug("Temp path is " + temp_archive.name)
-			with urllib.request.urlopen(url) as response :
-				shutil.copyfileobj(response,temp_archive)
-				logger.info("Download complete !")
-		
-		logger.info("Unzipping archive...")
-		with zipfile.ZipFile(temp_archive.name) as zip_handler :
-			zip_handler.extractall(temp_dir)
-		logger.info("Done !")
-		
-		#Look for SVD files in the file tree
-		svd_files = []
-		for root,dirs,files in os.walk(temp_dir) :
-			for name in files :
-				if fnmatch.fnmatch(name,"*.svd") :
-					svd_files.append(os.path.join(root,name))
-		logger.info("Found " + str(len(svd_files)) + " SVD file(s)")
-		
-		for file in svd_files :
-			logger.info("\tRetrieving " + os.path.basename(file))
-			shutil.copy(file,destination)
-			
-		logger.info(f"Looking for {temp_dir}/{archive}pdsc")
-		if os.path.exists(temp_dir + "/"+archive + "pdsc") :
-			logger.info("\tFileset found !")
-			shutil.copy(temp_dir + "/"+archive + "pdsc",fileset_path)
-		else :
-			logger.warning("Fileset not found")
-
-		version_handler["PackagesVersion"][archive_arg] = new_version
-		version_handler["GENERAL"]["VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in sorted(version_handler[f"PackagesVersion"])])):X}'
-		
-		version_handler.write(open(versions_path,"w"))
-		return [os.path.basename(f) for f in svd_files]
-
-
-

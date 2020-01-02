@@ -175,7 +175,7 @@ if __name__ == "__main__" :
 		logger.warning("The library will be generated with non-physical capabilities.")
 
 	if not skip_analysis :
-		if not os.path.exists(svd.file_path) :
+		if not os.path.exists(svd.svd_path) :
 			logger.info("First initialization")
 			svd.init()
 
@@ -229,7 +229,7 @@ if __name__ == "__main__" :
 			else:
 				logger.info("All families retrieved")
 
-		FileListing = sorted(glob.glob(svd.file_path + "/*.svd"))
+		FileListing = sorted(glob.glob(svd.svd_path + "/*.svd"))
 
 		periph_list : T.List[Peripheral] = list()
 		mapping_stm2svd: T.List[PDSCFile] = list()
