@@ -118,12 +118,15 @@ class PeripheralMapping(Component) :
 	def remove_elements_for(self, reg: Register) :
 		i = 0
 		while i < len(self.elements) :
-			if self.elements[i].component == reg :
+			if self.elements[i].component is reg :
 				self.elements.pop(i)
 			else :
 				i+=1
 
-
+	def remove_element(self, element: MappingElement):
+		idx = self.elements.index(element)
+		if idx >= 0 :
+			self.elements.pop(idx)
 
 	def after_svd_compile(self, parent_corrector):
 		super().after_svd_compile(parent_corrector)

@@ -123,7 +123,14 @@ class Peripheral(Component) :
 			self.edited = True
 	def remove_register(self, reg: T.Union["Peripheral", Register]):
 		if reg.name is not None and reg.name in self :
-			self.registers.remove(self[reg.name])
+			reg = self[reg.name]
+			idx = self.registers.index(reg)
+			while idx >= 0 and self.registers[idx].name != reg.name :
+				idx = self.registers.index(reg, idx+1)
+			if idx >= 0:
+				self.registers.pop(idx)
+			else :
+				raise KeyError(f"{reg} is not in {self}")
 			for m in self.mappings :
 				m.remove_elements_for(reg)
 		self.edited = True
