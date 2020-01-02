@@ -258,7 +258,7 @@ class Peripheral(Component) :
 
 			while m_idx + m_offset < len(self.mappings) :
 				if self.mappings[m_idx].compatible(self.mappings[m_idx + m_offset]) :
-					self.mappings[m_idx].merge(self.mappings[m_idx + m_offset])
+					self.mappings[m_idx].intra_svd_merge(self.mappings[m_idx + m_offset])
 					self.mappings.pop(m_idx + m_offset)
 					self.edited = True
 					continue
