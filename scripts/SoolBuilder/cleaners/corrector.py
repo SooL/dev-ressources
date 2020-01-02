@@ -128,7 +128,13 @@ base_root_corrector = Corrector({
 	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
 	"TIM?*"     : lambda group: change_name(group, "TIM"),
 	"TIM"       : { "*" : TIM_periph_cleaner },
-	"USART"     : {"*" : USART_periph_cleaner },
+	"USART"     : {
+		"*"         : (USART_periph_cleaner, {
+			"CR2"       : { "*" : {
+				"TAINV" : lambda field : change_name(field, "DATAINV")
+			}}
+		}),
+    },
 	"USB_*"     : lambda group: change_name(group, "USB"),
 	"USB"       : { "*" : USB_periph_cleaner },
 	"SERIAL_CONTROL" : (SERIAL_CONTROL_group_cleaner, {
