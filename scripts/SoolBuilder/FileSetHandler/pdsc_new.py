@@ -89,8 +89,9 @@ class PDSCHandler:
 	def process(self):
 		proc_list : T.List[ET.Element] = self.root.findall("devices/family/processor")
 		family : ET.Element
+		proc_ok = len(proc_list) > 0
 		for family in self.root.findall("devices/family/subFamily") :
-			if proc_list is None or len(proc_list) == 0:
+			if not proc_ok:
 				proc_list = family.findall("processor")
 
 			for processor in proc_list :
