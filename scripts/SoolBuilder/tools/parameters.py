@@ -20,6 +20,7 @@ class ParametersHandler :
 		self.update_requested 	: bool = False
 		self.force_pack_version	: bool = False
 
+		self.group_filter		: T.List[str] = list()
 		self.family_update_request : T.List[str] = list()
 		self.family_upgrade_request: T.List[str] = list()
 		self.fileset_reinit		: bool = False
@@ -59,6 +60,9 @@ class ParametersHandler :
 		self.store_packs		= args.store_packs
 		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
+
+		if args.group_filter is not None :
+			self.group_filter = args.group_filter.split(",")
 		if self.update_requested :
 			if 'all' in args.update_svd :
 				self.fileset_reinit = True

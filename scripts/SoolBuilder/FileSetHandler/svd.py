@@ -83,7 +83,7 @@ class SVDFile :
 			group_name : str =  get_node_text(svd_periph, "groupName").upper()
 			if "derivedFrom" not in svd_periph.attrib:  # new peripheral
 				# return the group associated with the name, and creates it if necessary
-				if filter_grp_name is not None and group_name not in filter_grp_name :
+				if filter_grp_name is not None and len(filter_grp_name) > 0 and group_name not in filter_grp_name :
 					continue
 		
 				group = Group.get_group(self.groups, group_name)

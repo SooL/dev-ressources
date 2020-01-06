@@ -272,7 +272,7 @@ if __name__ == "__main__" :
 
 		logger.info("SVD list done, begin processing")
 		for name, handler in svd_list.items():
-			handler.process()
+			handler.process(global_parameters.group_filter)
 		#TO BE DELETED - START
 		# for svd_file in FileListing:
 		# 	handler = None
