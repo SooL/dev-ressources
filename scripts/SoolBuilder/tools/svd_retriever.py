@@ -12,7 +12,7 @@ import typing as T
 import json
 import configparser
 import glob
-
+from FileSetHandler import PDSCHandler
 
 logger = logging.getLogger()
 svd_path = "./.data/svd"
@@ -273,67 +273,46 @@ def retrieve_keil_pack(family : str,
 	return temp_dir + f"/{pack_filename}"
 
 
-def handle_keil_pack(path) -> T.List[str]:
+def handle_keil_pack(path) -> PDSCHandler:
 	"""
-	Extract the relevant files from the pack provided by path.
+	Extract the relevant files from the pack provided by path and return the handler.
 	:param path: Path to the pack to be handled. /path/to/data.pack
-	:return: List of the SVD files extracted
+	:return: Handler for the PDSC
 	"""
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
-	
+
 	if "GENERAL" not in version_handler:
 		version_handler["GENERAL"] = {}
 		version_handler["PackagesVersion"] = {}
-	
+
 	family = file_to_family(path)
-	temp_dir = os.path.dirname(path)+ "/zip"
-	file_name= os.path.basename(path)
-	archive	 = str(file_name.rsplit(".",4)[0]) + "."
-	version_string = ".".join(file_name.rsplit(".",4)[-4:-1])
-	
-	shutil.rmtree(temp_dir,True)
+	temp_dir = os.path.dirname(path) + "/zip"
+	file_name = os.path.basename(path)
+	archive = str(file_name.rsplit(".", 4)[0]) + "."
+	version_string = ".".join(file_name.rsplit(".", 4)[-4:-1])
+
+	shutil.rmtree(temp_dir, True)
 	os.mkdir(temp_dir)
 	logger.info("Unzipping archive...")
-	shutil.copy(path,f"{temp_dir}/{os.path.basename(path)}.zip")
+	shutil.copy(path, f"{temp_dir}/{os.path.basename(path)}.zip")
 	with zipfile.ZipFile(f"{temp_dir}/{os.path.basename(path)}.zip") as zip_handler:
 		zip_handler.extractall(temp_dir)
 	logger.info("Done !")
 
-	# Look for SVD files in the file tree
-	svd_files = []
-	cmsis_files = []
-	is_cmsis_path = False
-	for root, dirs, files in os.walk(temp_dir):
-		is_cmsis_path = fnmatch.fnmatch(root,"*/Drivers/CMSIS/Device/*/Include*")
-		for name in files:
-			if not is_cmsis_path and fnmatch.fnmatch(name, "*.svd"):
-				svd_files.append(os.path.join(root, name))
-			elif is_cmsis_path and fnmatch.fnmatch(name, "*.h"):
-				cmsis_files.append(os.path.join(root,name))
+	fileset_path = temp_dir + "/" + archive + "pdsc"
+	if not os.path.exists(fileset_path):
+		raise FileNotFoundError()
+	logger.info("Fileset found !")
 
-	logger.info(f"Found {len(svd_files)} SVD file(s)")
-	logger.info(f"Found {len(cmsis_files)} CMSIS file(s)")
+	handler = PDSCHandler(fileset_path)
+	handler.process()
+	handler.extract_to("./.data")
 
-	for file in svd_files:
-		logger.info("\tRetrieving " + os.path.basename(file))
-		shutil.copy(file, svd_path)
-
-	for file in cmsis_files:
-		logger.info("\tRetrieving " + os.path.basename(file))
-		shutil.copy(file, cmsis_path)
-
-	logger.info(f"Looking for {temp_dir}/{archive}pdsc")
-	if os.path.exists(temp_dir + "/" + archive + "pdsc"):
-		logger.info("\tFileset found !")
-		shutil.copy(temp_dir + "/" + archive + "pdsc", fileset_path)
-	else:
-		logger.warning("Fileset not found")
-	
 	version_handler["PackagesVersion"][family] = version_string
 	version_handler["GENERAL"][
 		"VersionHash"] = f'{hash(tuple([version_handler["PackagesVersion"][x] for x in sorted(version_handler[f"PackagesVersion"])])):X}'
 
 	version_handler.write(open(config_file, "w"))
-	shutil.rmtree(temp_dir,True)
-	return [os.path.basename(f) for f in svd_files]
+	shutil.rmtree(temp_dir, True)
+	return handler

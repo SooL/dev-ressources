@@ -1,39 +1,48 @@
 import logging
 import typing as T
 import xml.etree.ElementTree as ET
-import os
+import os, shutil
+
 
 logger = logging.getLogger()
 
 
 class FilesAssociations:
-	def __init__(self,define = None,header = None ,svd = None ):
+	def __init__(self,define = None,header = None ,svd = None, processor = None ):
 		self.define : str = define
 		self.header : str = header
 		self.svd 	: str = svd
+		self.processor: str = processor
 
 	def __hash__(self):
-		return hash((self.define,self.header,self.svd))
+		return hash((self.define,self.header,self.svd,self.processor))
 
 	def __eq__(self, other):
 		if isinstance(other,FilesAssociations) :
-			return self.define == other.define and self.header == other.header and self.svd == other.svd
+			return self.define == other.define and self.header == other.header and self.svd == other.svd and \
+				   self.processor == other.processor
+
+	def __str__(self):
+		return f'{self.define}{"" if self.processor is None else "_" + self.processor:<5s} : H = {self.header} S = {self.svd}'
 
 	@property
 	def is_full(self):
 		return self.define is not None and self.header is not None and self.svd is not None
 
 	def from_node(self,element : ET.Element):
-		header_node = element.find("compile[@header]")
-		define_node = element.find("compile[@define]")
-		svd_node = element.find("debug[@svd]")
+		headers = element.findall("compile[@header]")
+		defines = element.findall("compile[@define]")
+		svds = element.findall("debug[@svd]")
 
-		if header_node is not None:
-			self.header = header_node.attrib["header"]
-		if define_node is not None:
-			self.define = define_node.attrib["define"]
-		if svd_node is not None:
-			self.svd = svd_node.attrib["svd"]
+		for header_node in headers:
+			if self.processor is None or ("Pname" in header_node.attrib and header_node.attrib["Pname"] == self.processor) :
+				self.header = header_node.attrib["header"]
+		for define_node in defines :
+			if self.processor is None or ("Pname" in define_node.attrib and define_node.attrib["Pname"] == self.processor):
+				self.define = define_node.attrib["define"]
+		for svd_node in svds:
+			if self.processor is None or ("Pname" in svd_node.attrib and svd_node.attrib["Pname"] == self.processor):
+				self.svd = svd_node.attrib["svd"]
 
 
 
@@ -45,7 +54,9 @@ class PDSCHandler:
 		self.root : ET.Element = self.cache_and_remove_ns(self.path)
 
 		self.associations : T.Set[FilesAssociations] = set()
-
+		self.dest_paths : T.Dict[str,str] = {"svd" : "svd",
+											 "header" : "cmsis",
+											 "pdsc" : "fileset"}
 
 	@staticmethod
 	def cache_and_remove_ns(filepath):
@@ -64,24 +75,44 @@ class PDSCHandler:
 
 		return ET.fromstring(cached)
 
+	@property
+	def svd_names(self) -> T.List[str]:
+		return sorted([os.path.basename(x.svd) for x in self.associations])
+
 	def process(self):
 		family : ET.Element
 		for family in self.root.findall("devices/family/subFamily") :
+			processor : ET.Element
+			for processor in family.findall("processor") :
+				current_assoc = FilesAssociations()
+				# Can store Dcore if required
+				if "Pname" in processor.attrib and processor.attrib["Pname"] :
+					current_assoc.processor = processor.attrib["Pname"]
 
-			family_files = FilesAssociations()
-			family_files.from_node(family)
-			# If all required data is found, we just stop here.
-			if family_files.is_full :
-				self.associations.add(family_files)
-				continue
+				current_assoc.from_node(family)
+				# If all required data is found, we just stop here.
+				if current_assoc.is_full :
+					self.associations.add(current_assoc)
+					continue
 
-			for device in family.findall("device") :
-				device_files = family_files
-				device_files.from_node(device)
+				for device in family.findall("device") :
+					current_assoc.from_node(device)
 
-				if not device_files.is_full :
-					logger.error(f"Incomplete fileset for chip {device.attrib['Dname']}.")
-				else:
-					self.associations.add(device_files)
+					if not current_assoc.is_full :
+						logger.error(f"Incomplete fileset for chip {device.attrib['Dname']}.")
+					else:
+						self.associations.add(current_assoc)
 
+	def extract_to(self,root_destination :  str):
+		destination_paths = self.dest_paths
+		base_path = os.path.dirname(self.path) + "/"
+		for key in destination_paths :
+			destination_paths[key] = f"{root_destination}/{destination_paths[key]}"
+			if not os.path.exists(destination_paths[key]) :
+				os.makedirs(destination_paths[key])
 
+		shutil.copy(self.path,destination_paths["pdsc"])
+		for assoc in self.associations :
+			shutil.copy(base_path + assoc.svd,destination_paths["svd"])
+			shutil.copy(base_path + assoc.header, destination_paths["header"])
+		logger.info(f"Files from {os.path.basename(self.path)} extracted to {root_destination}.")
