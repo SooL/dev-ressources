@@ -1,0 +1,9 @@
+STM32F303x.svd : 18162
+    missing registers CAN.F3R1 to CAN.F13R2
+    non-existant registers CAN.F27R1 and CAN.F27R2
+
+most svd
+    xUSARTy.CR2.DATAINV renamed TAINV
+
+svd to determine :
+    CAN.RDLxR, CAN.RDTxR, CAN.RIxR : wrong brief description : "mailbox data high register"

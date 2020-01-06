@@ -96,12 +96,16 @@ class RegisterVariant(Component) :
 		if self.linked_instances is None :
 			self.linked_instances = copy(self.parent.parent.instances)
 
-	def after_svd_compile(self):
-		super().after_svd_compile()
+	def after_svd_compile(self, parent_corrector):
+		from structure import Peripheral
+		super().after_svd_compile(parent_corrector)
 		self.sort_fields()
 		if self.linked_instances is not None :
 			self.linked_instances.sort()
-			if sorted(self.linked_instances) == sorted(self.parent.parent.instances) :
+			periph = self.parent.parent
+			if isinstance(periph.parent, Peripheral) :
+				periph = periph.parent
+			if sorted(self.linked_instances) == sorted(periph.instances) :
 				self.linked_instances = None
 				self.edited = True
 

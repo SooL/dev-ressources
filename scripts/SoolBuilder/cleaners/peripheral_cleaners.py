@@ -111,6 +111,33 @@ def ETHERNET_periph_cleaner(periph: "Peripheral") :
 		periph.name = "ETHERNET_GENERIC"
 	pass
 
+def CAN_periph_base_cleaner(periph: "Peripheral") :
+	from structure import MappingElement
+	for m in periph.mappings :
+		if "F0R1" in m and "F27R1" in m and not "F26R1" in m :
+			F0R1 = m["F0R1"]; F0R2 = m["F0R2"]
+			F27R1 = m["F27R1"]; F27R2 = m["F27R2"]
+
+			if F27R1.component is F0R1.component :
+				m.remove_element(F27R1)
+			else :
+				periph.remove_register(F27R1.component)
+			if F27R2.component is F0R2.component :
+				m.remove_element(F27R2)
+			elif F27R2.component is not F0R1.component :
+				periph.remove_register(F27R2.component)
+
+			step = F0R1.byte_size + F0R2.byte_size
+			for i in range(0, 14) :
+				if f"F{i}R1" not in m :
+					FiR1 = MappingElement(F0R1.chips, name = f"F{i}R1", component = F0R1.component,
+					                      address = F0R1.address + i * step)
+					periph.add_placement(FiR1)
+				if f"F{i}R2" not in m :
+					FiR2 = MappingElement(F0R2.chips, name=f"F{i}R2", component=F0R2.component,
+					                      address=F0R2.address + i * step)
+					periph.add_placement(FiR2)
+
 def FDCAN_periph_cleaner(periph: "Peripheral") :
 	if re.match(r"^fdcan\d?", periph.brief) :
 		periph.name = "FDCAN"

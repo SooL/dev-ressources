@@ -3,7 +3,8 @@ import xml.etree.ElementTree as ET
 import logging
 #from structure import Group
 
-from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping, PeripheralTemplate
+from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping, PeripheralTemplate, \
+	RegisterVariant
 from structure import get_node_text, TabManager
 from structure import ChipSet
 from structure import Component
@@ -41,7 +42,7 @@ class Peripheral(Component) :
 	             brief: T.Union[str, None] = None) :
 		super().__init__(chips=chips, name=name, brief=brief)
 
-		self.registers: T.List[Register] = list()
+		self.registers: T.List[T.Union[Peripheral, Register]] = list()
 		self.mappings: T.List[PeripheralMapping] = list()
 		self.instances: T.List[PeripheralInstance] = list()
 		self.templates: T.List[PeripheralTemplate] = list()
@@ -68,7 +69,7 @@ class Peripheral(Component) :
 	def __contains__(self, item) -> bool:
 		if isinstance(item,PeripheralMapping) :
 			return item in self.mappings
-		elif isinstance(item, Register) :
+		elif isinstance(item, Register) or isinstance(item, Peripheral):
 			return item in self.registers
 		elif isinstance(item, str) :
 			for r in self.registers :
@@ -77,8 +78,8 @@ class Peripheral(Component) :
 			return False
 		raise ValueError()
 
-	def __getitem__(self, item) -> Register:
-		if isinstance(item,Register) :
+	def __getitem__(self, item) -> T.Union["Peripheral", Register]:
+		if isinstance(item,Register) or isinstance(item, Peripheral):
 			for reg in self :
 				if reg == item :
 					return reg
@@ -113,14 +114,26 @@ class Peripheral(Component) :
 ################################################################################
 #                             REGISTERS MANAGEMENT                             #
 ################################################################################
-
-	def add_register(self, reg: Register):
+	def add_register(self, reg: T.Union["Peripheral", Register]):
 		if reg.name is not None and reg.name in self :
 			self[reg.name].inter_svd_merge(reg)
 		else :
 			self.registers.append(reg)
 			reg.set_parent(self)
 			self.edited = True
+	def remove_register(self, reg: T.Union["Peripheral", Register]):
+		if reg.name is not None and reg.name in self :
+			reg = self[reg.name]
+			idx = self.registers.index(reg)
+			while idx >= 0 and self.registers[idx].name != reg.name :
+				idx = self.registers.index(reg, idx+1)
+			if idx >= 0:
+				self.registers.pop(idx)
+			else :
+				raise KeyError(f"{reg} is not in {self}")
+			for m in self.mappings :
+				m.remove_elements_for(reg)
+		self.edited = True
 
 ################################################################################
 #                             INSTANCES MANAGEMENT                             #
@@ -149,6 +162,20 @@ class Peripheral(Component) :
 				self.add_instance(inst)
 		else :
 			raise TypeError(f"Expected a peripheral instances list or peripheral. Got {type(other)}.")
+
+	def get_linked_variants(self, instance) -> T.List[RegisterVariant]:
+		linked_variances: T.List[RegisterVariant] = list()
+		for child in self :
+			linked_variances.extend(child.get_linked_variants(instance))
+		return linked_variances
+
+	def needs_template(self, instance) -> bool :
+		for child in self :
+			if child.needs_template(instance) :
+				return True
+		return False
+
+
 
 ################################################################################
 #                              MAPPING MANAGEMENT                              #
@@ -214,6 +241,10 @@ class Peripheral(Component) :
 			self.edited = True
 		mapping.add_element(element)
 
+	def remove_placements_for(self, reg: T.Union["Peripheral", Register]):
+		for m in self.mappings :
+			m.remove_placements_for(reg)
+
 ################################################################################
 #                             COMPILATION, MERGING                             #
 ################################################################################
@@ -222,13 +253,12 @@ class Peripheral(Component) :
 		super().svd_compile()
 
 		m_idx = 0
-
 		while m_idx < len(self.mappings) :
 			m_offset = 1
 
 			while m_idx + m_offset < len(self.mappings) :
 				if self.mappings[m_idx].compatible(self.mappings[m_idx + m_offset]) :
-					self.mappings[m_idx].merge(self.mappings[m_idx + m_offset])
+					self.mappings[m_idx].intra_svd_merge(self.mappings[m_idx + m_offset])
 					self.mappings.pop(m_idx + m_offset)
 					self.edited = True
 					continue
@@ -237,12 +267,10 @@ class Peripheral(Component) :
 			m_idx += 1
 
 		r_idx = 0
-		r_offset = 0
-
 		while r_idx < len(self.registers) :
 			r_offset = 1
 			while r_idx + r_offset < len(self.registers) :
-				if self.registers[r_idx].equals(self.registers[r_idx + r_offset]):
+				if self.registers[r_idx] == self.registers[r_idx + r_offset]:
 					self.registers[r_idx].inter_svd_merge(self.registers[r_idx + r_offset])
 					for mapping in self.mappings :
 						for elmt in mapping :
@@ -255,8 +283,22 @@ class Peripheral(Component) :
 					r_offset += 1
 			r_idx += 1
 
-	def after_svd_compile(self):
-		super().after_svd_compile()
+	def after_svd_compile(self, parent_corrector):
+		super().after_svd_compile(parent_corrector)
+
+		# remove unused registers
+		i = 0
+		while i < len(self.registers) :
+			used = False
+			for m in self.mappings :
+				if m.has_elements_for(self.registers[i]) :
+					used = True
+					break
+			if used :
+				i+= 1
+			else :
+				self.registers.pop(i)
+
 
 	def intra_svd_merge(self, other: "Peripheral") :
 		super().intra_svd_merge(other)
@@ -265,7 +307,7 @@ class Peripheral(Component) :
 		for m in other.mappings  : self.add_mapping(m)
 
 	def inter_svd_merge(self, other: "Peripheral") :
-		super().intra_svd_merge(other)
+		super().inter_svd_merge(other)
 		for r in other.registers : self.add_register(r)
 		for i in other.instances : self.add_instance(i)
 		for m in other.mappings  : self.add_mapping(m)
@@ -312,13 +354,12 @@ class Peripheral(Component) :
 		return out
 
 	def declare(self, indent: TabManager = TabManager()) -> str :
-		# TODO consider templates
 		out =""
 		if self.needs_define :
 			out += f"{indent}#if {self.defined_name}\n"
-		if self.has_template :
+		if self.has_template and not isinstance(self.parent, Peripheral):
 			out += f"{indent}template<typename tmpl={self.templates[-1].name}>\n"
-		out += f"{indent}class {self.name}\n" \
+		out += f"{indent}class {self.name} /// {self.brief}\n" \
 		       f"{indent}{{\n"
 		indent.increment()
 		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES\n"
@@ -345,6 +386,10 @@ class Peripheral(Component) :
 
 		indent.decrement()
 		out += f"{indent}}};\n"
+
+		if isinstance(self.parent, Peripheral) and self.needs_define :
+			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
+		return out
 
 		# Instances are declared after all classes of the group.
 		# Instances declaration is handled in the 'cpp_output' method fo the class Group

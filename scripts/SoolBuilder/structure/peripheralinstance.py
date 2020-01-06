@@ -52,32 +52,16 @@ class PeripheralInstance(Component) :
 
 	@property
 	def template_reg_variants(self) -> T.List[RegisterVariant] :
-		result: T.List[RegisterVariant] = list()
-		for reg in self.parent :
-			for var in reg :
-				if var.for_template :
-					if self in var.linked_instances :
-						result.append(var)
-		return result
+		return self.parent.get_linked_variants(self)
 
 	@property
 	def needs_template(self) -> bool :
-		for reg in self.parent :
-			for var in reg :
-				if var.for_template :
-					for instance in var.linked_instances :
-						if instance.name == self.name :
-							return True
-		return False
+		return self.parent.needs_template(self)
 
 	@property
 	def has_template(self) -> bool :
-		for reg in self.parent :
-			for var in reg :
-				if var.for_template :
-					if self in var.linked_instances :
-						return True
-		return False
+		from structure import Peripheral
+		return len(self.template_reg_variants) > 0
 
 	def define(self, defines: T.Dict[ChipSet, DefinesHandler]) :
 		# defines the address
