@@ -43,15 +43,18 @@ class FilesAssociations:
 		for svd_node in svds:
 			if self.processor is None or ("Pname" in svd_node.attrib and svd_node.attrib["Pname"] == self.processor):
 				self.svd = svd_node.attrib["svd"]
+	@property
+	def computed_define(self):
+		return f'{self.define}{"_" + self.processor if self.processor is not None else ""}'
 
 
 
 
 class PDSCHandler:
-	def __init__(self,path):
+	def __init__(self,path, analyze = True):
 		self.path = path
 
-		self.root : ET.Element = self.cache_and_remove_ns(self.path)
+		self.root : ET.Element = self.cache_and_remove_ns(self.path) if analyze else None
 
 		self.associations : T.Set[FilesAssociations] = set()
 		self.dest_paths : T.Dict[str,str] = {"svd" : "svd",
@@ -79,6 +82,10 @@ class PDSCHandler:
 	def svd_names(self) -> T.List[str]:
 		return sorted([os.path.basename(x.svd) for x in self.associations])
 
+	@property
+	def svd_to_define(self) -> T.Dict[str,str]:
+		return dict([(os.path.basename(x.svd),x.computed_define) for x in self.associations])
+
 	def process(self):
 		family : ET.Element
 		for family in self.root.findall("devices/family/subFamily") :
@@ -103,7 +110,8 @@ class PDSCHandler:
 					else:
 						self.associations.add(current_assoc)
 
-	def extract_to(self,root_destination :  str):
+	def extract_to(self,root_destination :  str) -> "PDSCHandler":
+
 		destination_paths = self.dest_paths
 		base_path = os.path.dirname(self.path) + "/"
 		for key in destination_paths :
@@ -111,8 +119,17 @@ class PDSCHandler:
 			if not os.path.exists(destination_paths[key]) :
 				os.makedirs(destination_paths[key])
 
+		ret = PDSCHandler(destination_paths["pdsc"] + "/" + os.path.basename(self.path), analyze=False)
+
 		shutil.copy(self.path,destination_paths["pdsc"])
 		for assoc in self.associations :
+			if not assoc.is_full :
+				logger.warning(f"Ignored not full association for define {assoc.computed_define}")
+				continue
+			ret.associations.add(FilesAssociations(svd=f'{destination_paths["svd"]}/{os.path.basename(assoc.svd)}',
+												   header=f'{destination_paths["header"]}/{os.path.basename(assoc.header)}',
+												   define=assoc.computed_define))
 			shutil.copy(base_path + assoc.svd,destination_paths["svd"])
 			shutil.copy(base_path + assoc.header, destination_paths["header"])
 		logger.info(f"Files from {os.path.basename(self.path)} extracted to {root_destination}.")
+		return ret

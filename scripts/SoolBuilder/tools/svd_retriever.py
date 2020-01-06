@@ -277,7 +277,7 @@ def handle_keil_pack(path) -> PDSCHandler:
 	"""
 	Extract the relevant files from the pack provided by path and return the handler.
 	:param path: Path to the pack to be handled. /path/to/data.pack
-	:return: Handler for the PDSC
+	:return: Handler for the PDSC, matching extracted files
 	"""
 	version_handler = configparser.ConfigParser()
 	version_handler.read(config_file)
@@ -307,7 +307,7 @@ def handle_keil_pack(path) -> PDSCHandler:
 
 	handler = PDSCHandler(fileset_path)
 	handler.process()
-	handler.extract_to("./.data")
+	ret = handler.extract_to("./.data")
 
 	version_handler["PackagesVersion"][family] = version_string
 	version_handler["GENERAL"][
@@ -315,4 +315,4 @@ def handle_keil_pack(path) -> PDSCHandler:
 
 	version_handler.write(open(config_file, "w"))
 	shutil.rmtree(temp_dir, True)
-	return handler
+	return ret
