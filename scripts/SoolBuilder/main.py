@@ -28,6 +28,7 @@ import glob
 
 import argparse
 import shutil
+
 from structure import *
 
 from tools import svd_retriever as svd
@@ -38,7 +39,7 @@ from FileSetHandler import PDSCHandler
 from FileSetHandler.svd import SVDFile
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
-
+from dispatchers import SVDDispatcher
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
 ########################################################################################################################
@@ -141,6 +142,10 @@ if __name__ == "__main__" :
 						action="store_false",
 						dest="refresh_output",
 						help="Keeps all non-refreshed output files")
+	parser.add_argument("--jobs","-j",
+						help="Job ammount, be careful of RAM usage...",
+						default=1,
+						type=int)
 	# parser.add_argument("--dump",
 	# 					action="store_true",
 	# 					help="Generate a SooL.dat file which might be used by other scripts")
@@ -271,8 +276,12 @@ if __name__ == "__main__" :
 			i += 1
 
 		logger.info("SVD list done, begin processing")
-		for name, handler in svd_list.items():
-			handler.process(global_parameters.group_filter)
+		
+		svd_para = SVDDispatcher([svd_list[x] for x in svd_list],global_parameters.jobs)
+		svd_para.dispatch()
+		svd_list = svd_para.launch()
+		# for name, handler in svd_list.items():
+		# 	handler.process(global_parameters.group_filter)
 		#TO BE DELETED - START
 		# for svd_file in FileListing:
 		# 	handler = None

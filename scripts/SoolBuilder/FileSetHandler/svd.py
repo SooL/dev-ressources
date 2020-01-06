@@ -53,9 +53,9 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 class SVDFile :
 	def __init__(self,path : str, chips: T.Set[str] = None):
-		path = os.path.abspath(path)
-		self.base_path = os.path.dirname(path)
-		self.file_name = os.path.basename(path)
+		self.path = os.path.abspath(path)
+		self.base_path = os.path.dirname(self.path)
+		self.file_name = os.path.basename(self.path)
 		
 		self.root = ET.parse(path).getroot()
 		
@@ -67,7 +67,6 @@ class SVDFile :
 			# for chip in chips :
 			# 	self.chipset.add(Chip(chip,self.file_name))
 
-				
 		self.groups : T.Dict[str,Group] = dict()
 		
 	def __repr__(self):

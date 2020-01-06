@@ -26,6 +26,8 @@ class ParametersHandler :
 		self.fileset_reinit		: bool = False
 
 		self.enforce_versions	: bool = False
+		
+		self.jobs : int = 1
 
 
 	@property
@@ -60,7 +62,7 @@ class ParametersHandler :
 		self.store_packs		= args.store_packs
 		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
-
+		self.jobs				= args.jobs
 		if args.group_filter is not None :
 			self.group_filter = args.group_filter.split(",")
 		if self.update_requested :
