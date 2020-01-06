@@ -66,7 +66,7 @@ class PDSCHandler:
 		"""
 		Put the XML content into cache and remove the default namespace if relevant.
 		"""
-		logger.info("Removing namespace and caching XML file.")
+		#logger.info("Removing namespace and caching XML file.")
 		with open(filepath, "r", encoding='utf-8') as init_file:
 			cached = init_file.read()
 			start = cached.find("<package")
@@ -110,6 +110,16 @@ class PDSCHandler:
 					else:
 						self.associations.add(current_assoc)
 
+	def rebuild_extracted_associations(self,root_destination : str):
+		destination_paths = self.dest_paths
+		base_path = os.path.dirname(self.path) + "/"
+		for key in destination_paths:
+			destination_paths[key] = f"{root_destination}/{destination_paths[key]}"
+
+		for assoc in self.associations :
+			assoc.header = f'{destination_paths["header"]}/{os.path.basename(assoc.header)}'
+			assoc.svd = f'{destination_paths["svd"]}/{os.path.basename(assoc.svd)}'
+
 	def extract_to(self,root_destination :  str) -> "PDSCHandler":
 
 		destination_paths = self.dest_paths
@@ -126,10 +136,11 @@ class PDSCHandler:
 			if not assoc.is_full :
 				logger.warning(f"Ignored not full association for define {assoc.computed_define}")
 				continue
-			ret.associations.add(FilesAssociations(svd=f'{destination_paths["svd"]}/{os.path.basename(assoc.svd)}',
-												   header=f'{destination_paths["header"]}/{os.path.basename(assoc.header)}',
+			ret.associations.add(FilesAssociations(svd=assoc.svd,
+												   header=assoc.header,
 												   define=assoc.computed_define))
 			shutil.copy(base_path + assoc.svd,destination_paths["svd"])
 			shutil.copy(base_path + assoc.header, destination_paths["header"])
 		logger.info(f"Files from {os.path.basename(self.path)} extracted to {root_destination}.")
+		ret.rebuild_extracted_associations(root_destination)
 		return ret

@@ -34,6 +34,7 @@ from tools import svd_retriever as svd
 from tools import global_parameters
 import pickle
 from FileSetHandler.pdsc import *
+from FileSetHandler import PDSCHandler
 from FileSetHandler.svd import SVDFile
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
@@ -215,7 +216,7 @@ if __name__ == "__main__" :
 						temp_folder = os.path.dirname(local_pack)
 
 				if local_pack is not None :
-					svd.handle_keil_pack(local_pack)
+					t = svd.handle_keil_pack(local_pack)
 				else:
 					not_retrieved.append(chip)
 					continue
@@ -232,35 +233,66 @@ if __name__ == "__main__" :
 		FileListing = sorted(glob.glob(svd.svd_path + "/*.svd"))
 
 		periph_list : T.List[Peripheral] = list()
-		mapping_stm2svd: T.List[PDSCFile] = list()
+		pdsc_handlers: T.List[PDSCHandler] = list()
 		group_dict : T.Dict[str, Group] = dict()
-		svd_list : T.List[SVDFile] = list()
+		svd_list : T.Dict[str,SVDFile] = dict()
 
 		register_forbid_autonamefix.setup()
 
 		logger.info("Reading .pdsc files to map STM number to svd...")
 		for pdsc_file in glob.glob(pdsc_path_model):
 			logger.info(f"Reading {pdsc_file}...")
-			mapping_stm2svd.append(PDSCFile(pdsc_file))
+			pdsc_handlers.append(PDSCHandler(pdsc_file))
+			pdsc_handlers[-1].process()
+			pdsc_handlers[-1].rebuild_extracted_associations("./.data")
 
-		for svd_file in FileListing:
-			handler = None
-			for pdsc in mapping_stm2svd :
-				if os.path.basename(svd_file) in pdsc.svd_to_define :
-					handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
-					break
-			if handler is None :
-				logger.warning(f"No define found for svd file {svd_file}")
-				continue
-				# To add a default define based upon SVD name, uncomment
-				# handler = SVDFile(svd_file)
+		define_done_set = set()
+		i = 1
+		logger.info("Build SVD list...")
+		for pdsc in pdsc_handlers :
+			j = 1
+			logger.info(f"Read PDSC {pdsc.path}")
+			for assoc in pdsc.associations :
+				logger.debug(f"Handling PDSC {i:2d}/{len(pdsc_handlers)} - Assoc {j:3d}/{len(pdsc.associations)}.")
+				j += 1
+				if not assoc.is_full :
+					logger.error("Skip not full association.")
+					continue
 
-			handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
-			#handler.cleanup()
-			svd_list.append(handler)
+				if os.path.exists(assoc.svd) :
+					if assoc.computed_define in define_done_set :
+						logger.error(f"\tSkipped due to define {assoc.computed_define} already read")
+						continue
+					define_done_set.add(assoc.computed_define)
+					if assoc.svd not in svd_list :
+						svd_list[assoc.svd] = SVDFile(assoc.svd,{assoc.computed_define})
+					else :
+						svd_list[assoc.svd].chipset.add(Chip(assoc.computed_define,assoc.svd))
+			i += 1
+
+		logger.info("SVD list done, begin processing")
+		for name, handler in svd_list.items():
+			handler.process()
+		#TO BE DELETED - START
+		# for svd_file in FileListing:
+		# 	handler = None
+		# 	for pdsc in pdsc_handlers :
+		# 		if os.path.basename(svd_file) in pdsc.svd_to_define :
+		# 			handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
+		# 			break
+		# 	if handler is None :
+		# 		logger.warning(f"No define found for svd file {svd_file}")
+		# 		continue
+		# 		# To add a default define based upon SVD name, uncomment
+		# 		# handler = SVDFile(svd_file)
+		#
+		# 	handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
+		# 	#handler.cleanup()
+		# 	svd_list.append(handler)
+		# TO BE DELETED - END
 
 		i = 1
-		for svd in svd_list :
+		for name, svd in svd_list.items() :
 			logger.info(f"Final merge {i:2d}/{len(svd_list)} of SVD {svd.file_name} ")
 			for name, data in svd.groups.items() :
 				if name not in output_groups :

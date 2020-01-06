@@ -228,7 +228,7 @@ class Register(Component) :
 				elif 'x' in new_name :
 					new_name = new_name.replace('x', 'y')
 			self.name = new_name
-			logger.info(f"merged registers {name_1} and {name_2} : {self.name}")
+			#logger.info(f"merged registers {name_1} and {name_2} : {self.name}")
 
 		if other.size > self.size :
 			self.size = other.size
