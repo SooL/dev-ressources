@@ -87,10 +87,13 @@ class PDSCHandler:
 		return dict([(os.path.basename(x.svd),x.computed_define) for x in self.associations])
 
 	def process(self):
+		proc_list : T.List[ET.Element] = self.root.findall("devices/family/processor")
 		family : ET.Element
 		for family in self.root.findall("devices/family/subFamily") :
-			processor : ET.Element
-			for processor in family.findall("processor") :
+			if proc_list is None or len(proc_list) == 0:
+				proc_list = family.findall("processor")
+
+			for processor in proc_list :
 				current_assoc = FilesAssociations()
 				# Can store Dcore if required
 				if "Pname" in processor.attrib and processor.attrib["Pname"] :
