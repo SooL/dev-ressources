@@ -41,13 +41,14 @@ class FilesAssociations:
 			if self.processor is None or ("Pname" in define_node.attrib and define_node.attrib["Pname"] == self.processor):
 				self.define = define_node.attrib["define"]
 		for svd_node in svds:
-			if self.processor is None or ("Pname" in svd_node.attrib and svd_node.attrib["Pname"] == self.processor):
-				self.svd = svd_node.attrib["svd"]
+			self.svd = svd_node.attrib["svd"]
 	@property
 	def computed_define(self):
 		return f'{self.define}{"_" + self.processor if self.processor is not None else ""}'
 
-
+	def legalize(self):
+		self.header = self.header.replace("\\","/")
+		self.svd = self.svd.replace("\\", "/")
 
 
 class PDSCHandler:
@@ -103,6 +104,7 @@ class PDSCHandler:
 				current_assoc.from_node(family)
 				# If all required data is found, we just stop here.
 				if current_assoc.is_full :
+					current_assoc.legalize()
 					self.associations.add(current_assoc)
 					continue
 
@@ -112,6 +114,7 @@ class PDSCHandler:
 					if not current_assoc.is_full :
 						logger.error(f"Incomplete fileset for chip {device.attrib['Dname']}.")
 					else:
+						current_assoc.legalize()
 						self.associations.add(current_assoc)
 
 	def rebuild_extracted_associations(self,root_destination : str):
