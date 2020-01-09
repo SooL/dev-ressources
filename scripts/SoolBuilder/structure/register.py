@@ -212,7 +212,7 @@ class Register(Component) :
 					if (filler_length > 0 and abs(len(name_1) - len(name_2)) > 0) or \
 							filler_length > 2 or \
 							(len(prefix) + len(suffix)) < 2 :
-						logger.warning(f"cannot decide name when merging {self.name} with {other.name}. Keeping {self.name}.")
+						logger.warning(f"\tCan't decide name when merging {self.name} with {other.name}. Keeping {self.name}.")
 						new_name = self.name
 					else :
 						filler = "x"
@@ -220,7 +220,7 @@ class Register(Component) :
 			while self.name != new_name and other.name != new_name and new_name in self.parent : # name already taken
 
 				if 'n' in new_name :
-					raise AssertionError("replacement name already taken")
+					raise AssertionError("Replacement name already taken")
 				elif 'z' in new_name :
 					new_name = new_name.replace('z', 'n')
 				elif 'y' in new_name :
