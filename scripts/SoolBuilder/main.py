@@ -269,35 +269,13 @@ if __name__ == "__main__" :
 						continue
 					define_done_set.add(assoc.computed_define)
 					if assoc.svd not in svd_list :
-						svd_list[assoc.svd] = SVDFile(assoc.svd,{assoc.computed_define})
+						svd_list[assoc.svd] = SVDFile(assoc.svd,{assoc})
 					else :
-						svd_list[assoc.svd].chipset.add(Chip(assoc.computed_define,assoc.svd))
+						svd_list[assoc.svd].chipset.add(assoc)
 			i += 1
 
 		logger.info("SVD list done, begin processing")
-		
-		# svd_para = SVDDispatcher([svd_list[x] for x in svd_list],global_parameters.jobs)
-		# svd_para.dispatch()
 		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
-		# for name, handler in svd_list.items():
-		# 	handler.process(global_parameters.group_filter)
-		#TO BE DELETED - START
-		# for svd_file in FileListing:
-		# 	handler = None
-		# 	for pdsc in pdsc_handlers :
-		# 		if os.path.basename(svd_file) in pdsc.svd_to_define :
-		# 			handler = SVDFile(svd_file,pdsc.svd_to_define[os.path.basename(svd_file)])
-		# 			break
-		# 	if handler is None :
-		# 		logger.warning(f"No define found for svd file {svd_file}")
-		# 		continue
-		# 		# To add a default define based upon SVD name, uncomment
-		# 		# handler = SVDFile(svd_file)
-		#
-		# 	handler.process(args.group_filter.split(",") if args.group_filter is not None else None)
-		# 	#handler.cleanup()
-		# 	svd_list.append(handler)
-		# TO BE DELETED - END
 
 		i = 1
 		for name, svd in svd_list.items() :

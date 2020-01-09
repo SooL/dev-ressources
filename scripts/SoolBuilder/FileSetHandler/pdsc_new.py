@@ -2,53 +2,11 @@ import logging
 import typing as T
 import xml.etree.ElementTree as ET
 import os, shutil
-
+from copy import copy
+import glob
+from structure import Chip
 
 logger = logging.getLogger()
-
-
-class FilesAssociations:
-	def __init__(self,define = None,header = None ,svd = None, processor = None ):
-		self.define : str = define
-		self.header : str = header
-		self.svd 	: str = svd
-		self.processor: str = processor
-
-	def __hash__(self):
-		return hash((self.define,self.header,self.svd,self.processor))
-
-	def __eq__(self, other):
-		if isinstance(other,FilesAssociations) :
-			return self.define == other.define and self.header == other.header and self.svd == other.svd and \
-				   self.processor == other.processor
-
-	def __str__(self):
-		return f'{self.define}{"" if self.processor is None else "_" + self.processor:<5s} : H = {self.header} S = {self.svd}'
-
-	@property
-	def is_full(self):
-		return self.define is not None and self.header is not None and self.svd is not None
-
-	def from_node(self,element : ET.Element):
-		headers = element.findall("compile[@header]")
-		defines = element.findall("compile[@define]")
-		svds = element.findall("debug[@svd]")
-
-		for header_node in headers:
-			if self.processor is None or ("Pname" in header_node.attrib and header_node.attrib["Pname"] == self.processor) :
-				self.header = header_node.attrib["header"]
-		for define_node in defines :
-			if self.processor is None or ("Pname" in define_node.attrib and define_node.attrib["Pname"] == self.processor):
-				self.define = define_node.attrib["define"]
-		for svd_node in svds:
-			self.svd = svd_node.attrib["svd"]
-	@property
-	def computed_define(self):
-		return f'{self.define}{"_" + self.processor if self.processor is not None else ""}'
-
-	def legalize(self):
-		self.header = self.header.replace("\\","/")
-		self.svd = self.svd.replace("\\", "/")
 
 
 class PDSCHandler:
@@ -57,9 +15,13 @@ class PDSCHandler:
 
 		self.root : ET.Element = self.cache_and_remove_ns(self.path) if analyze else None
 
-		self.associations : T.Set[FilesAssociations] = set()
+		self.associations : T.Set[Chip] = set()
+
+		self.file_name : str = os.path.basename(self.path)
+		self.family = self.file_name[5:self.file_name.rfind("_")]
+
 		self.dest_paths : T.Dict[str,str] = {"svd" : "svd",
-											 "header" : "cmsis",
+											 "header" : f"cmsis/{self.family}",
 											 "pdsc" : "fileset"}
 
 	@staticmethod
@@ -96,7 +58,7 @@ class PDSCHandler:
 				proc_list = family.findall("processor")
 
 			for processor in proc_list :
-				current_assoc = FilesAssociations()
+				current_assoc = Chip()
 				# Can store Dcore if required
 				if "Pname" in processor.attrib and processor.attrib["Pname"] :
 					current_assoc.processor = processor.attrib["Pname"]
@@ -115,7 +77,7 @@ class PDSCHandler:
 						logger.error(f"Incomplete fileset for chip {device.attrib['Dname']}.")
 					else:
 						current_assoc.legalize()
-						self.associations.add(current_assoc)
+						self.associations.add(copy(current_assoc))
 
 	def rebuild_extracted_associations(self,root_destination : str):
 		destination_paths = self.dest_paths
@@ -130,6 +92,7 @@ class PDSCHandler:
 	def extract_to(self,root_destination :  str) -> "PDSCHandler":
 
 		destination_paths = self.dest_paths
+		shutil.rmtree(destination_paths["header"],True)
 		base_path = os.path.dirname(self.path) + "/"
 		for key in destination_paths :
 			destination_paths[key] = f"{root_destination}/{destination_paths[key]}"
@@ -139,15 +102,24 @@ class PDSCHandler:
 		ret = PDSCHandler(destination_paths["pdsc"] + "/" + os.path.basename(self.path), analyze=False)
 
 		shutil.copy(self.path,destination_paths["pdsc"])
+
+		header_src_done : T.Set[str] = set()
+
 		for assoc in self.associations :
 			if not assoc.is_full :
 				logger.warning(f"Ignored not full association for define {assoc.computed_define}")
 				continue
-			ret.associations.add(FilesAssociations(svd=assoc.svd,
+			ret.associations.add(Chip(svd=assoc.svd,
 												   header=assoc.header,
 												   define=assoc.computed_define))
 			shutil.copy(base_path + assoc.svd,destination_paths["svd"])
-			shutil.copy(base_path + assoc.header, destination_paths["header"])
+
+			header_src =  base_path + assoc.header
+			if header_src not in header_src_done :
+				header_src_done.add(header_src)
+				for file in glob.glob(f"{os.path.dirname(base_path + assoc.header)}/*.h"):
+					logger.info(f"\tBatch retrieving header file {self.family}/{os.path.basename(file)}")
+					shutil.copy(file, destination_paths["header"])
 		logger.info(f"Files from {os.path.basename(self.path)} extracted to {root_destination}.")
 		ret.rebuild_extracted_associations(root_destination)
 		return ret

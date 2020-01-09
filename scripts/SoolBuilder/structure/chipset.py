@@ -1,27 +1,71 @@
 from fnmatch import fnmatch
+import xml.etree.ElementTree as ET
 import typing as T
 import logging
 
 logger = logging.getLogger()
 
 
-class Chip :
-	def __init__(self, name: str, svd: str, families: T.List[str] = list()):
-		self.name = name
-		if self.name == "STM32g484xx" :
-			self.name = "STM32G484xx"
-			logger.warning("Manual fix of STM32G484xx name")
-		self.svd = svd
-		self.families : T.List[str] = families
+class Chip:
+	def __init__(self,define = None,header = None ,svd = None, processor = None, pdefine = None ):
+		self.define : str = define
+		self.header : str = header
+		self.svd 	: str = svd
+		self.processor: str = processor
+		self.processor_define : str = pdefine
+
+	def __hash__(self):
+		return hash((self.define,self.header,self.svd,self.processor))
+
+	def __eq__(self, other):
+		if isinstance(other,Chip) :
+			return self.define == other.define and self.header == other.header and self.svd == other.svd and \
+				   self.processor == other.processor
+
+	def __repr__(self):
+		return f'{self.define}{"" if self.processor is None else "_" + self.processor:<5s} : H = {self.header} S = {self.svd}'
 
 	def __str__(self):
 		return self.name
 
-	def __repr__(self):
-		return str(self.name)
-
 	def match(self, pattern):
 		return fnmatch(self.name, pattern)
+
+	@property
+	def is_full(self):
+		return self.define is not None and self.header is not None and self.svd is not None
+
+	def from_node(self,element : ET.Element):
+		headers = element.findall("compile[@header]")
+		defines = element.findall("compile[@define]")
+		svds = element.findall("debug[@svd]")
+
+		for header_node in headers:
+			if self.processor is None or ("Pname" in header_node.attrib and header_node.attrib["Pname"] == self.processor) :
+				self.header = header_node.attrib["header"]
+		for define_node in defines :
+			if self.processor is None or ("Pname" in define_node.attrib and define_node.attrib["Pname"] == self.processor):
+				self.define = define_node.attrib["define"]
+		for svd_node in svds:
+			self.svd = svd_node.attrib["svd"]
+
+		if self.processor is not None :
+			pdefs = element.findall("compile[@Pdefine]")
+			for pdef_node in pdefs:
+				if "Pname" in pdef_node.attrib and pdef_node.attrib["Pname"] == self.processor:
+					self.processor_define = pdef_node.attrib["Pdefine"]
+
+	@property
+	def computed_define(self):
+		return f'{self.define}{"_" + self.processor_define if self.processor_define is not None else ""}'
+
+	@property
+	def name(self):
+		return self.computed_define
+
+	def legalize(self):
+		self.header = self.header.replace("\\","/")
+		self.svd = self.svd.replace("\\", "/")
 
 
 class ChipSet :
@@ -75,6 +119,8 @@ class ChipSet :
 
 	def __add__(self, other: T.Union[T.List[Chip], 'ChipSet', Chip]) -> 'ChipSet':
 		ret: ChipSet = ChipSet(self.chips)
+		if not isinstance(other, Chip):
+			raise TypeError
 		ret.add(other)
 		return ret
 
@@ -118,7 +164,7 @@ class ChipSet :
 	def update_families(self):
 		self._families.clear()
 		for chip in self.chips :
-			family = ChipSet.get_family(str(chip))
+			family = ChipSet.get_family(str(chip)).upper()
 			if family not in self._families :
 				self._families[family] = set()
 			self._families[family].add(chip)

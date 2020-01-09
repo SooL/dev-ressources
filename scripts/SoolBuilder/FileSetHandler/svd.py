@@ -52,7 +52,7 @@ def get_node_text(root : ET.Element, node : str) -> str :
 
 
 class SVDFile :
-	def __init__(self,path : str, chips: T.Set[str] = None):
+	def __init__(self,path : str, chips: T.Set[Chip] = None):
 		self.path = os.path.abspath(path)
 		self.base_path = os.path.dirname(self.path)
 		self.file_name = os.path.basename(self.path)
@@ -63,7 +63,7 @@ class SVDFile :
 			chip : Chip = Chip(get_node_text(self.root, "name"),self.file_name)
 			self.chipset : ChipSet = ChipSet(chip)
 		else :
-			self.chipset = ChipSet([Chip(x,self.file_name) for x in chips])
+			self.chipset = ChipSet(chips)
 			# for chip in chips :
 			# 	self.chipset.add(Chip(chip,self.file_name))
 
