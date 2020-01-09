@@ -39,7 +39,8 @@ from FileSetHandler import PDSCHandler
 from FileSetHandler.svd import SVDFile
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
-from dispatchers import SVDDispatcher
+from dispatchers import svd_process_handler
+
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
 ########################################################################################################################
@@ -64,9 +65,6 @@ log_file_handler = logging.FileHandler("run.issues.log", "w")
 log_file_handler.setLevel(logging.WARNING)
 log_file_handler.setFormatter(formatter)
 logger.addHandler(log_file_handler)
-
-logger.info("Tool startup")
-
 
 ########################################################################################################################
 #                                            GLOBAL VARIABLES INITIALIZATION                                           #
@@ -109,6 +107,7 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 	
 if __name__ == "__main__" :
+	logger.info("Tool startup")
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
 	parser.add_argument("--update",
 						nargs="+",
@@ -277,9 +276,9 @@ if __name__ == "__main__" :
 
 		logger.info("SVD list done, begin processing")
 		
-		svd_para = SVDDispatcher([svd_list[x] for x in svd_list],global_parameters.jobs)
-		svd_para.dispatch()
-		svd_list = svd_para.launch()
+		# svd_para = SVDDispatcher([svd_list[x] for x in svd_list],global_parameters.jobs)
+		# svd_para.dispatch()
+		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
 		# for name, handler in svd_list.items():
 		# 	handler.process(global_parameters.group_filter)
 		#TO BE DELETED - START

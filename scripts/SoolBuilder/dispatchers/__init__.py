@@ -1,1 +1,1 @@
-from dispatchers.svd_dispatcher import SVDDispatcher
+from dispatchers.svd_dispatcher import svd_process_handler
