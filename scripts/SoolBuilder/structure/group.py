@@ -26,12 +26,13 @@ class Group(Component) :
 		"""
 		group = Group(group_name)
 		if group.name in base_root_corrector :
-			base_root_corrector(group) # changes only the group name (if necessary)
+			for corrector in base_root_corrector[group] :
+				corrector(group) # changes only the group name (if necessary)
 
 		if group.name in group_dict :
-			return group_dict[group_name]
+			return group_dict[group.name]
 		else :
-			group_dict[group_name] = group
+			group_dict[group.name] = group
 			return group
 
 	def __init__(self, name: str) :
