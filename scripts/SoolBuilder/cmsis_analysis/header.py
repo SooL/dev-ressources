@@ -1,10 +1,10 @@
 import typing as T
 import re
-
+from copy import copy
 
 
 class CMSISRegister:
-	def __init__(self,name : str, type : str, array_size : int ):
+	def __init__(self):
 		self.name : str 		= None
 		self.array_size : int 	= 1
 		self.element_size : int = 32
@@ -28,7 +28,7 @@ class CMSISHeader:
 
 	def read(self):
 		data = ""
-		with open(self.path,"r") as f :
+		with open(self.path,"r",encoding="latin-1") as f :
 			data = f.read()
 		end = data.rfind("IRQn_Type;")
 		start = data.rfind("enum",0,end)
@@ -40,8 +40,8 @@ class CMSISHeader:
 			start = data.find("typedef struct",start+1)
 			if start == -1 :
 				break
-
-			end = data.find("_TypeDef",start)
+			end = data.find("}", start)
+			end = data.find("_TypeDef",end)
 			self.peripheral_definitions.append(data[start:end])
 
 	def read_irq_table(self):
@@ -65,8 +65,9 @@ class CMSISHeader:
 			return
 		if self.periph_table is None :
 			self.periph_table = dict()
-		periph_rexp = re.compile(f"(?:__(?P<io>[IO]{1,2}))?\s+(?P<type>uint(?P<int_size>\d+)_t|\S+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:/\*(?:!<)?(?P<com>.+)\*/)?")
-
+		periph_rexp = re.compile(r"(?:__(?P<io>[IO]{1,2}))?\s+(?P<type>uint(?P<int_size>\d+)_t|\S+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:/\*(?:!<)?(?P<com>.+)\*/)?")
+		periph_name_rexp = re.compile(r"\\}\s*(?P<name>\w+)_TypeDef")
+		
 		for raw in self.peripheral_definitions :
 			new_peripheral = CMSISPeripheral()
 			for line in [x.strip() for x in raw.split("\n")]:
@@ -74,8 +75,8 @@ class CMSISHeader:
 					continue
 
 				result = periph_rexp.search(line)
-				if line :
-					new_register = CMSISRegister
+				if result :
+					new_register = CMSISRegister()
 					data = result.groupdict()
 					new_register.access_type = data["io"]
 					new_register.name		 = data["name"]
@@ -85,7 +86,7 @@ class CMSISHeader:
 					new_register.comment	 = data["com"]
 
 					new_peripheral.registers.append(new_register)
-				elif line[0] == "{" :
+				elif line[0] == "}":
 					new_peripheral.name = line[1:].strip(None)
 
 			self.periph_table[new_peripheral.name] = new_peripheral
