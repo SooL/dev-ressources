@@ -25,13 +25,15 @@ class CMSISHeader:
 		self.content_cmsis_data : bool = False
 		self.path = path
 		
-		self.irq_table : T.Dict[str,int] = None
-		self.periph_table: T.Dicr[str,CMSISPeripheral] = None
-		self.include_table: T.Dict[str, str] = None
+		self.irq_table 		: T.Dict[str,int] 			  = None
+		self.periph_table	: T.Dicr[str,CMSISPeripheral] = None
+		self.include_table	: T.Dict[str, str] 			  = None
+		self.memory_table	: T.Dict[str,int] 			  = None
 		
-		self.raw_irq_table : str = None
-		self.raw_includes: str = None
-		self.raw_peripheral : T.List[str] = None
+		self.raw_irq_table 	: str 			= None
+		self.raw_includes	: str 			= None
+		self.raw_peripheral : T.List[str] 	= None
+		self.raw_memory 	: str 			= None
 		
 	@property
 	def is_structural(self):
@@ -69,11 +71,17 @@ class CMSISHeader:
 		if start != -1 :
 			end = data.find("@}",start)
 			self.raw_includes = data[start:end]
+		
+		start = data.find("@addtogroup Peripheral_memory_map")
+		if start != -1 :
+			end = data.find("@}", start)
+			self.raw_memory = data[start:end]
 
 	def clean(self):
-		self.raw_irq_table = None
+		self.raw_irq_table 	= None
 		self.raw_peripheral = None
-		self.raw_includes = None
+		self.raw_includes 	= None
+		self.raw_memory 	= None
 
 	def read_include_table(self):
 		if self.raw_includes is None :
@@ -99,7 +107,33 @@ class CMSISHeader:
 					filename = result["file"]
 					self.include_table[define] = f"{os.path.dirname(self.path)}/{filename}"
 					define = None
-					
+	
+	def read_memory_table(self):
+		if self.raw_memory is None :
+			return
+		self.memory_table = dict()
+		irq_mem = re.compile(r"\#define\s+(?P<name>\w+)\s+\(?(?P<uint>\(uint32_t\))?(?P<val>[^)\n]+)\)?")
+		
+		for line in [x.strip() for x in self.raw_memory.split("\n")]:
+			if line == str():
+				continue
+			
+			result = irq_mem.search(line)
+			if result :
+				data = result.groupdict()
+				name = data["name"]
+				value= data["val"]
+				interpreted_values = list()
+				val_fields = [x for x in value.split(None) if x != "+"]
+				for f in val_fields :
+					if f in self.memory_table :
+						interpreted_values.append(self.memory_table[f])
+					else :
+						#Should be an integer
+						interpreted_values.append(int(f.strip("L").strip("U"),0))
+						
+				self.memory_table[name] = sum(interpreted_values)
+	
 	def read_irq_table(self):
 		if self.raw_irq_table is None:
 			return
