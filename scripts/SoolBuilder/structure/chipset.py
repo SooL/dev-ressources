@@ -2,7 +2,7 @@ from fnmatch import fnmatch
 import xml.etree.ElementTree as ET
 import typing as T
 import logging
-
+from cmsis_analysis import CMSISHeader
 logger = logging.getLogger()
 
 
@@ -13,6 +13,8 @@ class Chip:
 		self.svd 	: str = svd
 		self.processor: str = processor
 		self.processor_define : str = pdefine
+
+		self.header_handler : CMSISHeader = None
 
 	def __hash__(self):
 		return hash((self.define,self.header,self.svd,self.processor))
@@ -66,6 +68,8 @@ class Chip:
 	def legalize(self):
 		self.header = self.header.replace("\\","/")
 		self.svd = self.svd.replace("\\", "/")
+		if 'g' in self.define:
+			self.define = self.define.replace("g", "G")
 
 
 class ChipSet :
