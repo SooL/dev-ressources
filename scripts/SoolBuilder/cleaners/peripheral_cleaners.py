@@ -160,10 +160,6 @@ def ADC_periph_cleaner(periph: "Peripheral") :
 	else :
 		periph.name = "ADC"
 
-def DEFAULT_create_cleaner(periph : "Peripheral") :
-	
-	periph.name = periph.group_name
-
 def I2C_periph_cleaner(periph: "Peripheral") :
 
 	if "TIMINGR" in periph and "TIMEOUTR" in periph and "PECR" in periph:
@@ -183,15 +179,3 @@ def SERIAL_CONTROL_periph_cleaner(periph) :
 	# TODO split SC1 and SC2 peripherals into 2 peripherals so that the parts of SC1 and SC2 can be merged together
 	#else :
 	#	periph.name = "SC"
-
-# For a given group, provide a proper cleaner function. None is the default one.
-create_association_table : T.Dict[str,T.Callable] = {
-	"TIM"       : TIM_periph_cleaner,
-	"HRTIM"     : HRTIM_periph_cleaner,
-	"USB"       : USB_periph_cleaner,
-	"ETHERNET"  : ETHERNET_periph_cleaner,
-	"ADC"       : ADC_periph_cleaner,
-	"I2C"       : I2C_periph_cleaner,
-	"GPIO"		: GPIO_periph_cleaner,
-	None        : DEFAULT_create_cleaner
-}
