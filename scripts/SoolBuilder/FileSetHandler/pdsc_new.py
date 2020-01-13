@@ -5,7 +5,7 @@ import os, shutil
 from copy import copy
 import glob
 from structure import Chip
-
+from cmsis_analysis import CMSISHeader
 logger = logging.getLogger()
 
 
@@ -123,3 +123,29 @@ class PDSCHandler:
 		logger.info(f"Files from {os.path.basename(self.path)} extracted to {root_destination}.")
 		ret.rebuild_extracted_associations(root_destination)
 		return ret
+
+	def compute_cmsis_handlers(self):
+		cmsis_handlers : T.Dict[str,CMSISHeader] = dict()
+
+		for assoc in self.associations :
+			if assoc.header not in cmsis_handlers :
+				cmsis_handlers[assoc.header] = CMSISHeader(assoc.header)
+				new_handler = cmsis_handlers[assoc.header]
+				new_handler.read()
+				new_handler.process_include_table()
+				if not new_handler.is_include_map :
+					new_handler.process_structural()
+				new_handler.clean()
+
+			curr_handler = cmsis_handlers[assoc.header]
+			if curr_handler.is_include_map :
+				if curr_handler.include_table[assoc.define] not in cmsis_handlers :
+					cmsis_handlers[curr_handler.include_table[assoc.define]] = CMSISHeader(curr_handler.include_table[assoc.define])
+					curr_handler = cmsis_handlers[curr_handler.include_table[assoc.define]]
+					curr_handler.read()
+					curr_handler.process_structural()
+					curr_handler.clean()
+			#Now the right handler is selected.
+			assoc.header = curr_handler.path
+			assoc.header_handler = curr_handler
+

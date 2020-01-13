@@ -249,6 +249,7 @@ if __name__ == "__main__" :
 			pdsc_handlers.append(PDSCHandler(pdsc_file))
 			pdsc_handlers[-1].process()
 			pdsc_handlers[-1].rebuild_extracted_associations("./.data")
+			pdsc_handlers[-1].compute_cmsis_handlers()
 
 		define_done_set = set()
 		i = 1

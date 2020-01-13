@@ -2,7 +2,9 @@ import typing as T
 import re
 import os
 from copy import copy
+import logging
 
+logger = logging.getLogger()
 
 class CMSISRegister:
 	def __init__(self):
@@ -61,21 +63,21 @@ class CMSISHeader:
 		"""
 		:return: Return the fact that this CMSIS header contains a raw definition of the structure of peripherals.
 		"""
-		return self.raw_peripheral is not None
+		return self.raw_peripheral is not None or self.periph_table is not None
 	
 	@property
 	def is_irq(self):
 		"""
 		:return: Return the fact that this CMSIS header contains a raw definition of the IRQ table.
 		"""
-		return self.raw_irq_table is not None
+		return self.raw_irq_table is not None or self.irq_table is not None
 	
 	@property
 	def is_include_map(self):
 		"""
 		:return: Return the fact that this CMSIS header contains a raw Include list that points to other stuff.
 		"""
-		return self.raw_includes is not None
+		return self.raw_includes is not None or self.include_table is not None
 
 	def read(self):
 		"""
@@ -162,7 +164,7 @@ class CMSISHeader:
 		if self.raw_memory is None :
 			return
 		self.memory_table = dict()
-		irq_mem = re.compile(r"\#define\s+(?P<name>\w+)\s+\(?(?P<uint>\(uint32_t\))?(?P<val>[^)\n]+)\)?")
+		irq_mem = re.compile(r"\#define\s+(?P<name>\w+)\s+\(?(?P<type>\(\s*[^()]+\s*\)\s*)?\(?(?P<val>(?:[^ )\n]+\s*\+\s*)*[^ )\n]+)\)?")
 		
 		for line in [x.strip() for x in self.raw_memory.split("\n")]:
 			if line == str():
@@ -180,7 +182,10 @@ class CMSISHeader:
 						interpreted_values.append(self.memory_table[f])
 					else :
 						#Should be an integer
-						interpreted_values.append(int(f.strip("L").strip("U"),0))
+						try :
+							interpreted_values.append(int(f.strip("L").strip("U"),0))
+						except ValueError :
+							logger.error(f"Failed to interpret memory field named {name} for file {os.path.basename(self.path)}.")
 						
 				self.memory_table[name] = sum(interpreted_values)
 	
@@ -239,3 +244,8 @@ class CMSISHeader:
 					new_peripheral.name = line[1:].strip(None)
 
 			self.periph_table[new_peripheral.name] = new_peripheral
+
+	def process_structural(self):
+		self.process_memory_table()
+		self.process_irq_table()
+		self.process_peripheral_definition()
