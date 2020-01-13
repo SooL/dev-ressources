@@ -21,14 +21,35 @@ class CMSISPeripheral:
 
 
 class CMSISHeader:
+	"""This object provides a handler for CMSIS headers.
+
+	You might use read, process functions and then directly access processed data though direct access members.
+
+	Examples
+	=======
+	The typical use example would be
+	::
+		h = CMSISHeader("path/to/cmsis_header.h")
+		h.read()
+		h.process_irq_table()
+		h.process_memory_table()
+		h.process_peripheral()
+		h.clean()
+
+		some_stuff(h.irq_table)
+	"""
 	def __init__(self,path : str ):
 		self.content_cmsis_data : bool = False
 		self.path = path
 		
 		self.irq_table 		: T.Dict[str,int] 			  = None
+		"""Processed IRQ table, name to value mapping"""
 		self.periph_table	: T.Dicr[str,CMSISPeripheral] = None
+		"""Processed peripheral table, name to CMSIS peripheral mapping."""
 		self.include_table	: T.Dict[str, str] 			  = None
+		"""Processed include table, chip define to valid file path"""
 		self.memory_table	: T.Dict[str,int] 			  = None
+		"""Processed memory table, memory define to integer memory address."""
 		
 		self.raw_irq_table 	: str 			= None
 		self.raw_includes	: str 			= None
@@ -36,19 +57,33 @@ class CMSISHeader:
 		self.raw_memory 	: str 			= None
 		
 	@property
-	def is_structural(self):
+	def is_structural(self) -> bool:
+		"""
+		:return: Return the fact that this CMSIS header contains a raw definition of the structure of peripherals.
+		"""
 		return self.raw_peripheral is not None
 	
 	@property
 	def is_irq(self):
-		return self.irq_table is not None
+		"""
+		:return: Return the fact that this CMSIS header contains a raw definition of the IRQ table.
+		"""
+		return self.raw_irq_table is not None
 	
 	@property
 	def is_include_map(self):
-		return self.include_table is not None
+		"""
+		:return: Return the fact that this CMSIS header contains a raw Include list that points to other stuff.
+		"""
+		return self.raw_includes is not None
 
 	def read(self):
-		data = ""
+		"""
+		This function will read the provided file and extract if possible the raw data sections.
+		In order to use those values, an explicit call to processing functions must be done.
+
+		.. seealso:: clean
+		"""
 		with open(self.path,"r",encoding="latin-1") as f :
 			data = f.read()
 		end = data.rfind("IRQn_Type;")
@@ -78,12 +113,22 @@ class CMSISHeader:
 			self.raw_memory = data[start:end]
 
 	def clean(self):
+		"""
+		Remove all raw data to gain memory space and eventually ease data transfer.
+
+		This function will *not* empty processed data structures.
+		"""
 		self.raw_irq_table 	= None
 		self.raw_peripheral = None
 		self.raw_includes 	= None
 		self.raw_memory 	= None
 
-	def read_include_table(self):
+	def process_include_table(self):
+		"""
+		This function process the include data in order to fill the include_table.
+
+		If the raw data have not been processed already, this function will have no effect.
+		"""
 		if self.raw_includes is None :
 			return
 		
@@ -108,7 +153,12 @@ class CMSISHeader:
 					self.include_table[define] = f"{os.path.dirname(self.path)}/{filename}"
 					define = None
 	
-	def read_memory_table(self):
+	def process_memory_table(self):
+		"""
+		This function process the memory definition data in order to fill the memory_table.
+
+		If the raw data have not been processed already, this function will have no effect.
+		"""
 		if self.raw_memory is None :
 			return
 		self.memory_table = dict()
@@ -134,7 +184,12 @@ class CMSISHeader:
 						
 				self.memory_table[name] = sum(interpreted_values)
 	
-	def read_irq_table(self):
+	def process_irq_table(self):
+		"""
+		This function process the IRQ table data in order to fill the irq_table.
+
+		If the raw data have not been processed already, this function will have no effect.
+		"""
 		if self.raw_irq_table is None:
 			return
 		self.irq_table = dict()
@@ -150,13 +205,17 @@ class CMSISHeader:
 				data = result.groupdict()
 				self.irq_table[data["id"]] = int(data["val"])
 
-	def read_peripheral_definition(self):
+	def process_peripheral_definition(self):
+		"""
+		This function process the peripheral definitions data in order to fill the peripheral_table.
+
+		If the raw data have not been processed already, this function will have no effect.
+		"""
 		if self.raw_peripheral is None or len(self.raw_peripheral) == 0:
 			return
 		if self.periph_table is None :
 			self.periph_table = dict()
 		periph_rexp = re.compile(r"(?:__(?P<io>[IO]{1,2}))?\s+(?P<type>uint(?P<int_size>\d+)_t|\S+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:/\*(?:!<)?(?P<com>.+)\*/)?")
-		periph_name_rexp = re.compile(r"\\}\s*(?P<name>\w+)_TypeDef")
 		
 		for raw in self.raw_peripheral :
 			new_peripheral = CMSISPeripheral()
