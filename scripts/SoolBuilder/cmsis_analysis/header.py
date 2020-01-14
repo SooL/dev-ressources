@@ -64,7 +64,7 @@ class CMSISHeader:
 		
 		self.irq_table 		: T.Dict[str,int] 			  = None
 		"""Processed IRQ table, name to value mapping"""
-		self.periph_table	: T.Dicr[str,CMSISPeripheral] = None
+		self.periph_table	: T.Dict[str,CMSISPeripheral] = None
 		"""Processed peripheral table, name to CMSIS peripheral mapping."""
 		self.include_table	: T.Dict[str, str] 			  = None
 		"""Processed include table, chip define to valid file path"""
