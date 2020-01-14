@@ -23,7 +23,7 @@ def svd_process_handler(svd_set : T.Dict[str,SVDFile], filter : T.List[str] = No
 		logger.info(f"Dispatching SVD analysis in a pool of {global_parameters.jobs} workers.")
 		handlers = map(svd_processor, [(x, filter) for x in svd_set.values()])
 		with Pool(global_parameters.jobs) as pool :
-			handlers = pool.starmap(svd_processor,[(x,filter) for x in svd_set.values()])
+			handlers = pool.starmap(svd_processor,[(x,filter) for x in sorted(svd_set.values(),reverse=True, key=lambda y : y.file_size)])
 			pool.close()
 			pool.join()
 			ret = {i.path: i for i in handlers}

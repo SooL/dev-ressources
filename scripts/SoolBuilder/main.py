@@ -107,6 +107,11 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 	
 if __name__ == "__main__" :
+
+	from time import time
+
+	start_time = time()
+
 	logger.info("Tool startup")
 	parser = argparse.ArgumentParser(description="A tool to pre-build SooL")
 	parser.add_argument("--update",
@@ -315,5 +320,7 @@ if __name__ == "__main__" :
 	with open(f"out/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
 
+	end_time = time()
 	print("End of process.")
+	print(f"Elapsed time : {end_time - start_time:.2f}s")
 

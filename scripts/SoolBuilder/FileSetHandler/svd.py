@@ -56,7 +56,7 @@ class SVDFile :
 		self.path = os.path.abspath(path)
 		self.base_path = os.path.dirname(self.path)
 		self.file_name = os.path.basename(self.path)
-		
+		self.file_size : int = os.path.getsize(self.path)
 		self.root = ET.parse(path).getroot()
 		
 		if chips is None :
