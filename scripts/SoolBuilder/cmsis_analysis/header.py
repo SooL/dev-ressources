@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger()
 
+
 class CMSISRegister:
 	def __init__(self):
 		self.name : str 		= None
@@ -14,12 +15,29 @@ class CMSISRegister:
 		self.comment : str = None
 		self.type : str = None
 		self.access_type= "IO"
+		
+		self.bit_offset = 0
+		"""Register bit_offset, in bits"""
+
+	@property
+	def byte_offset(self):
+		return int(self.bit_offset / 8)
 
 
 class CMSISPeripheral:
 	def __init__(self, name : str= None):
 		self.registers : T.List[CMSISRegister] = list()
-		self.name : str= name
+		self.name : str = name
+
+	@property
+	def bit_size(self):
+		return sum([x.array_size * x.element_size for x in self.registers])
+	
+	def compute_offset(self):
+		i = 0
+		for reg in self.registers :
+			reg.bit_offset = i
+			i += reg.array_size * reg.element_size
 
 
 class CMSISHeader:
@@ -220,7 +238,7 @@ class CMSISHeader:
 			return
 		if self.periph_table is None :
 			self.periph_table = dict()
-		periph_rexp = re.compile(r"(?:__(?P<io>[IO]{1,2}))?\s+(?P<type>uint(?P<int_size>\d+)_t|\S+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:/\*(?:!<)?(?P<com>.+)\*/)?")
+		periph_rexp = re.compile(r"(?:__(?P<io>[IO]{1,2})\s+)?(?P<type>u?int(?P<int_size>\d+)_t|\w+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:\*(?:!<)?(?P<com>.+)\*)?")
 		
 		for raw in self.raw_peripheral :
 			new_peripheral = CMSISPeripheral()
@@ -234,15 +252,16 @@ class CMSISHeader:
 					data = result.groupdict()
 					new_register.access_type = data["io"]
 					new_register.name		 = data["name"]
-					new_register.array_size	 = data["arr_size"] if data["arr_size"] is not None else 1
+					new_register.array_size	 = int(data["arr_size"]) if data["arr_size"] is not None else 1
 					new_register.type		 = data["type"]
-					new_register.element_size= data["int_size"]
 					new_register.comment	 = data["com"]
-
+					
+					new_register.element_size = int(data["int_size"]) if data["int_size"] is not None else self.periph_table[data["type"].strip("_TypeDef")].bit_size
 					new_peripheral.registers.append(new_register)
 				elif line[0] == "}":
 					new_peripheral.name = line[1:].strip(None)
 
+			new_peripheral.compute_offset()
 			self.periph_table[new_peripheral.name] = new_peripheral
 
 	def process_structural(self):
