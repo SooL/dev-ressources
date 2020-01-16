@@ -170,7 +170,7 @@ class Group(Component) :
 			# if there is still unnamed peripherals in the group, their name cannot be chosen.
 			#  A name helper must be created for them
 			if len(unnamed) != 0:
-				logger.error(f"Peripherals {str(list(p.brief for p in list(unnamed)))}"
+				logger.error(f"Peripherals in group {self.name} with brief {str(list(p.brief for p in list(unnamed)))}"
 				             f" for chipset {repr(list(unnamed)[0].chips.chips)}"
 				             f" cannot be named.")
 

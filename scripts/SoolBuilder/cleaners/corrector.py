@@ -101,6 +101,7 @@ base_root_corrector = Corrector({
 	"ADC"       : { "*" : ADC_periph_cleaner },
 	"AES?"      : lambda group : change_name(group, "AES"),
 	"CAN"       : { "*" : CAN_periph_base_cleaner },
+	"COMP?"      : lambda group : change_name(group, "COMP"),
 	"CRC"       : {
 		"*"         : {
 			"DR"        : { "*" : {"Data_register" : lambda f : change_name(f, "DR") }},
@@ -111,6 +112,7 @@ base_root_corrector = Corrector({
 	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
+	"GIC*"    : lambda group: change_name(group, "GIC"),
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
 			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),
@@ -121,6 +123,8 @@ base_root_corrector = Corrector({
 			},
 		})
 	},
+	# "GTZC"		: ((lambda group: change_name(group, "TZC")),{"*" : GTZC_periph_cleaner}),
+	"GTZC"		: {"*" : GTZC_periph_cleaner},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"LPUART"    : lambda group: change_name(group, "USART"),
@@ -134,14 +138,16 @@ base_root_corrector = Corrector({
 				"TAINV" : lambda field : change_name(field, "DATAINV")
 			}}
 		}),
-    },
+	},
 	"USB_*"     : lambda group: change_name(group, "USB"),
 	"USB"       : { "*" : USB_periph_cleaner },
+	"RNG1"     : lambda group: change_name(group, "RNG"),
 	"SERIAL_CONTROL" : (SERIAL_CONTROL_group_cleaner, {
 		"*"         : (SERIAL_CONTROL_periph_cleaner, {
 			"SC?_*"     : lambda reg : change_name(reg, reg.name[4:])
 		}),
 	}),
+	"STGENR" : lambda group : change_name(group,"STGEN"),
 	"*"	        : {
 		"*"         : {
 			"*_*"       : remove_periph_prefix,

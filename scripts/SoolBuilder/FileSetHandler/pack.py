@@ -25,6 +25,7 @@ class KeilPack:
 		"STM32L0": "Keil.STM32L0xx_DFP.",
 		"STM32L1": "Keil.STM32L1xx_DFP.",
 		"STM32L4": "Keil.STM32L4xx_DFP.",
+		"STM32L5": "Keil.STM32L5xx_DFP.",
 		"STM32MP1": "Keil.STM32MP1xx_DFP.",
 		"STM32G0": "Keil.STM32G0xx_DFP.",
 		"STM32G4": "Keil.STM32G4xx_DFP.",
