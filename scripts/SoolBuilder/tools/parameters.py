@@ -1,6 +1,6 @@
 import typing as T
 import logging
-from tools.svd_retriever import defined_archives_keil
+
 
 logger = logging.getLogger()
 
@@ -29,6 +29,8 @@ class ParametersHandler :
 		
 		self.jobs : int = 1
 
+		self.archives = dict()
+
 
 	@property
 	def need_update(self):
@@ -51,7 +53,8 @@ class ParametersHandler :
 			else :
 				logger.error(f"Unrecognized option provided to generate : {token} will be ignored.")
 
-	def read_args(self,args):
+	def read_args(self,args,archive_list):
+		self.archives = archive_list
 		self.reuse_db 			= args.reuse
 
 		self.process_generate(args.generate)
@@ -68,10 +71,10 @@ class ParametersHandler :
 		if self.update_requested :
 			if 'all' in args.update_svd :
 				self.fileset_reinit = True
-				self.family_update_request = list(defined_archives_keil.keys())
+				self.family_update_request = list(self.archives.keys())
 			elif 'all' in args.upgrade_svd :
 				self.family_update_request.extend(args.update_svd)
-				self.family_upgrade_request= list(defined_archives_keil.keys())
+				self.family_upgrade_request= list(self.archives.keys())
 			else :
 				self.family_update_request.extend(args.update_svd)
 				self.family_upgrade_request.extend(args.upgrade_svd)

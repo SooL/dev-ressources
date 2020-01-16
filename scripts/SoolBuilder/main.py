@@ -161,7 +161,7 @@ if __name__ == "__main__" :
 						help="Force packs versions as specified in .data/version.ini")
 
 	args = parser.parse_args()
-	global_parameters.read_args(args)
+	global_parameters.read_args(args,svd.defined_archives_keil)
 
 	skip_analysis = False
 	output_groups: T.Dict[str, Group] = dict()
@@ -266,12 +266,14 @@ if __name__ == "__main__" :
 				logger.debug(f"Handling PDSC {i:2d}/{len(pdsc_handlers)} - Assoc {j:3d}/{len(pdsc.associations)}.")
 				j += 1
 				if not assoc.is_full :
-					logger.error("Skip not full association.")
+					logger.error("\tSkip not full association.")
 					continue
 
 				if os.path.exists(assoc.svd) :
 					if assoc.computed_define in define_done_set :
 						logger.error(f"\tSkipped due to define {assoc.computed_define} already read")
+						if assoc.svd not in svd_list :
+							logger.error(f"\t\tSVD File {assoc.svd} skipped !")
 						continue
 					define_done_set.add(assoc.computed_define)
 					if assoc.svd not in svd_list :
