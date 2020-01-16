@@ -281,9 +281,32 @@ if __name__ == "__main__" :
 					else :
 						svd_list[assoc.svd].chipset.add(assoc)
 			i += 1
+		used_svd = set()
+		with open("reports/used_svd.txt","w") as report :
+			data = ""
+			for f in sorted(svd_list.keys()) :
+				handler = svd_list[f]
+				data += f"{os.path.basename(f):20s} - {handler.chipset}\n"
+				used_svd.add(os.path.basename(f))
+			existing_svd = {os.path.basename(x) for x in glob.glob(".data/svd/*.svd")}
+			unused_svd = sorted(list(existing_svd - {os.path.basename(x) for x in svd_list.keys()}))
+
+			data += f"\n{' UNUSED FILES ':=^80s}\n"
+			for f in unused_svd :
+				data += f"{f}\n"
+			report.write(data)
 
 		logger.info("SVD list done, begin processing")
 		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
+
+		with open("reports/used_svd.txt","a") as report :
+			data = ""
+			delta_svd = sorted(list(used_svd - {os.path.basename(x.path) for x in svd_list.values()}))
+			if len(delta_svd) > 0 :
+				data += f"\n{' UNPROCESSED FILES ':=^80s}\n"
+				for f in delta_svd :
+					data += f"{f}\n"
+
 
 		i = 1
 		for name, svd in svd_list.items() :

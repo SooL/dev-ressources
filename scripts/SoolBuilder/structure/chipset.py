@@ -4,7 +4,7 @@ import typing as T
 import logging
 from cmsis_analysis import CMSISHeader
 logger = logging.getLogger()
-
+import os
 
 class Chip:
 	def __init__(self,define = None,header = None ,svd = None, processor = None, pdefine = None ):
@@ -70,6 +70,15 @@ class Chip:
 		self.svd = self.svd.replace("\\", "/")
 		if 'g' in self.define:
 			self.define = self.define.replace("g", "G")
+
+	def fix(self,chip_name : str) -> bool:
+		if fnmatch(chip_name,"STM32F401?[BCDE]*"):
+			self.svd = os.path.dirname(self.svd) + "/STM32F401xE.svd"
+		elif fnmatch(chip_name,"STM32F401?[!BCDE]*"):
+			self.svd = os.path.dirname(self.svd) + "/STM32F401x.svd"
+		elif fnmatch(chip_name,"STM32G483*"):
+			return False
+		return True
 
 
 class ChipSet :

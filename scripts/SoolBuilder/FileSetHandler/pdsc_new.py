@@ -6,6 +6,7 @@ from copy import copy
 import glob
 from structure import Chip
 from cmsis_analysis import CMSISHeader
+from fnmatch import fnmatch
 logger = logging.getLogger()
 
 
@@ -64,11 +65,6 @@ class PDSCHandler:
 					current_assoc.processor = processor.attrib["Pname"]
 
 				current_assoc.from_node(family)
-				# If all required data is found, we just stop here.
-				if current_assoc.is_full :
-					current_assoc.legalize()
-					self.associations.add(current_assoc)
-					continue
 
 				for device in family.findall("device") :
 					current_assoc.from_node(device)
@@ -77,7 +73,10 @@ class PDSCHandler:
 						logger.error(f"Incomplete fileset for chip {device.attrib['Dname']}.")
 					else:
 						current_assoc.legalize()
-						self.associations.add(copy(current_assoc))
+						if current_assoc.fix(device.attrib["Dname"]) :
+							# if not "STM32F1" in current_assoc.define and not fnmatch(device.attrib["Dname"],current_assoc.define.replace("x","?") + "*") :
+							# 	logger.warning(f"\tChip/Define mismatch {device.attrib['Dname']} got {current_assoc.define}")
+							self.associations.add(copy(current_assoc))
 
 	def rebuild_extracted_associations(self,root_destination : str):
 		destination_paths = self.dest_paths
@@ -148,4 +147,3 @@ class PDSCHandler:
 			#Now the right handler is selected.
 			assoc.header = curr_handler.path
 			assoc.header_handler = curr_handler
-

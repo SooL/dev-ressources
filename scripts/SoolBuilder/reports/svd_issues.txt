@@ -7,3 +7,9 @@ most svd
 
 svd to determine :
     CAN.RDLxR, CAN.RDTxR, CAN.RIxR : wrong brief description : "mailbox data high register"
+
+F4.pdsc :
+	Few wrong svd assignation (F401xB/C/D/E should go to F401xE svd, never F401x) -> Fixed
+
+G4.pdsc :
+	G483 mapped onto SVD G483 and define G484. -> Removed
