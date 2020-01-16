@@ -4,11 +4,13 @@ from FileSetHandler.svd import SVDFile
 from tools import global_parameters
 import os
 import logging
+import xml.etree.ElementTree as ET
 logger = logging.getLogger()
 
 
 def svd_processor(handler : SVDFile, filter : T.List[str] = None):
 	logger.debug(f"{handler.file_name} - Start Process")
+	handler.root = ET.parse(handler.path).getroot()
 	handler.process(filter)
 	del handler.root
 	logger.debug(f"{handler.file_name} - Done")
@@ -21,7 +23,9 @@ def svd_process_handler(svd_set : T.Dict[str,SVDFile], filter : T.List[str] = No
 		ret = {i.path:svd_processor(i) for i in svd_set.values()}
 	else:
 		logger.info(f"Dispatching SVD analysis in a pool of {global_parameters.jobs} workers.")
-		handlers = map(svd_processor, [(x, filter) for x in svd_set.values()])
+		for svd in svd_set.values() :
+			del svd.root
+		#handlers = map(svd_processor, [(x, filter) for x in svd_set.values()])
 		with Pool(global_parameters.jobs) as pool :
 			handlers = pool.starmap(svd_processor,[(x,filter) for x in sorted(svd_set.values(),reverse=True, key=lambda y : y.file_size)])
 			pool.close()

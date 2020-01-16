@@ -41,9 +41,10 @@ class Field(Component) :
 
 	def __eq__(self, other):
 		return isinstance(other, Field) and \
-		       self.name == other.name and \
 		       self.position == other.position and \
-			   self.size == other.size
+			   self.size == other.size and \
+			   self.name == other.name
+			   
 
 	def __cmp__(self, other) -> int :
 		if isinstance(other, Field) :

@@ -34,12 +34,12 @@ class MappingElement(Component) :
 
 	def __eq__(self, other) -> bool:
 		if isinstance(other, MappingElement) :
-			return self.name == other.name and\
-			       self.address == other.address and\
-			       self.array_size == other.array_size and\
-			       self.array_space == other.array_space and\
-			       self.component.name == other.component.name and\
-			       self.component.size == other.component.size
+			return self.address == other.address and \
+				   self.name == other.name and \
+				   self.array_size == other.array_size and\
+			       self.array_space == other.array_space and \
+			       self.component.size == other.component.size and \
+				   self.component.name == other.component.name
 		else :
 			return False
 
