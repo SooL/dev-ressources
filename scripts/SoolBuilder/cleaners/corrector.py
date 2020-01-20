@@ -95,6 +95,9 @@ class Corrector:
 
 
 
+# /!\ Group name correctors are used before peripherals are added.
+# So when a corrector is used to change the group name,
+# the corrector cannot be used to change peripherals or registers
 
 base_root_corrector = Corrector({
 
@@ -123,8 +126,8 @@ base_root_corrector = Corrector({
 			},
 		})
 	},
-	# "GTZC"		: ((lambda group: change_name(group, "TZC")),{"*" : GTZC_periph_cleaner}),
-	"GTZC"		: {"*" : GTZC_periph_cleaner},
+	"GTZC"		: lambda group: change_name(group, "TZC"),
+	"TZC"		: {"*" : TZC_periph_cleaner},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"LPUART"    : lambda group: change_name(group, "USART"),

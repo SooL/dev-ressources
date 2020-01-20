@@ -104,11 +104,12 @@ def USB_periph_cleaner(periph: "Peripheral") :
 	pass
 
 
-def GTZC_periph_cleaner(periph : "Peripheral") :
-	logger.error("Fix GTZC")
+def TZC_periph_cleaner(periph : "Peripheral") :
 	if periph.brief.upper() == "GTZC_TZIC" :
+		logger.error("Fix GTZC")
 		periph.name = "TZIC"
 	elif periph.brief.upper() == "GTZC_TZSC" :
+		logger.error("Fix GTZC")
 		periph.name = "TZSC"
 
 def ETHERNET_periph_cleaner(periph: "Peripheral") :
