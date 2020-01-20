@@ -40,7 +40,7 @@ class PeripheralInstance(Component) :
 
 	@property
 	def defined_value(self) -> T.Union[str, None] :
-		return f"((uint32_t){self.address:#08x}U"
+		return f"((uint32_t){self.address:#08x}U)"
 
 	@property
 	def define_not(self) -> T.Union[bool, str] :
