@@ -66,7 +66,7 @@ class SVDFile :
 			self.chipset = ChipSet(chips)
 			# for chip in chips :
 			# 	self.chipset.add(Chip(chip,self.file_name))
-
+		del self.root
 		self.groups : T.Dict[str,Group] = dict()
 		
 	def __repr__(self):
@@ -76,7 +76,7 @@ class SVDFile :
 		logger.info(f"Processing SVD file {self.file_name}")
 	
 		periph_instances_dict : T.Dict[str,PeripheralInstance] = dict()
-		
+		self.root = ET.parse(self.path).getroot()
 		for svd_periph in self.root.findall("peripherals/peripheral"):
 			#periph : Peripheral = None
 			group_name : str =  get_node_text(svd_periph, "groupName").upper()
@@ -121,5 +121,7 @@ class SVDFile :
 			grp.edited = True
 			while grp.has_been_edited :
 				grp.after_svd_compile()
+
+		del self.root
 		
 	
