@@ -57,16 +57,18 @@ class SVDFile :
 		self.base_path = os.path.dirname(self.path)
 		self.file_name = os.path.basename(self.path)
 		self.file_size : int = os.path.getsize(self.path)
-		self.root = ET.parse(path).getroot()
+		
+		# Systematically reparse to avoid huge memory overhead.
+		# Performance cost negligible, therefore do not store in self.root.
+		root = ET.parse(path).getroot()
 		
 		if chips is None :
-			chip : Chip = Chip(get_node_text(self.root, "name"),self.file_name)
+			chip : Chip = Chip(get_node_text(root, "name"),self.file_name)
 			self.chipset : ChipSet = ChipSet(chip)
 		else :
 			self.chipset = ChipSet(chips)
 			# for chip in chips :
 			# 	self.chipset.add(Chip(chip,self.file_name))
-		del self.root
 		self.groups : T.Dict[str,Group] = dict()
 		
 	def __repr__(self):
@@ -76,8 +78,8 @@ class SVDFile :
 		logger.info(f"Processing SVD file {self.file_name}")
 	
 		periph_instances_dict : T.Dict[str,PeripheralInstance] = dict()
-		self.root = ET.parse(self.path).getroot()
-		for svd_periph in self.root.findall("peripherals/peripheral"):
+		root = ET.parse(self.path).getroot()
+		for svd_periph in root.findall("peripherals/peripheral"):
 			#periph : Peripheral = None
 			group_name : str =  get_node_text(svd_periph, "groupName").upper()
 			if "derivedFrom" not in svd_periph.attrib:  # new peripheral
@@ -121,7 +123,5 @@ class SVDFile :
 			grp.edited = True
 			while grp.has_been_edited :
 				grp.after_svd_compile()
-
-		del self.root
 		
 	
