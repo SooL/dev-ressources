@@ -18,7 +18,7 @@ def remove_periph_prefix(obj : Component) :
 	if periph.name is None :
 		periph = periph.parent # use group name instead
 
-	if periph.name in ["HASH", "DFSDM"] :
+	if periph.name in ["DFSDM"] :
 		return # shitty peripherals
 
 	pattern = f"^{periph.name}[A-Za-z\d]*_\w+$"

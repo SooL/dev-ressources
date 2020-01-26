@@ -123,6 +123,10 @@ class ChipSet :
 			self.update_families()
 		return self._families
 
+	@property
+	def empty(self) -> bool:
+		return len(self.chips) == 0
+	
 	def __str__(self):
 		return "\t".join(sorted([str(x) for x in self.chips]))
 

@@ -282,6 +282,10 @@ if __name__ == "__main__" :
 						svd_list[assoc.svd].chipset.add(assoc)
 			i += 1
 		used_svd = set()
+
+		logger.info("SVD list done, begin processing")
+		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
+
 		with open("reports/used_svd.txt","w") as report :
 			data = ""
 			for f in sorted(svd_list.keys()) :
@@ -296,8 +300,6 @@ if __name__ == "__main__" :
 				data += f"{f}\n"
 			report.write(data)
 
-		logger.info("SVD list done, begin processing")
-		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
 
 		with open("reports/used_svd.txt","a") as report :
 			data = ""
