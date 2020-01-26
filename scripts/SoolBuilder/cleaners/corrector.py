@@ -33,6 +33,25 @@ def remove_periph_prefix(obj : Component) :
 		else :
 			obj.name = obj_name
 
+def cmsis_remove_reg_prefix(reg) :
+	parent_name = reg.parent.name
+	if reg.name.startswith(parent_name+"_") :
+		reg.name = reg.name[len(parent_name)+1:]
+
+def create_array(periph, component, name = None, keep_originals = False) :
+	if isinstance(component, str) :
+		component = periph[component]
+
+	if name is None :
+		name = component.name
+
+	for m in periph.mappings :
+		if name in m and m[name].array_size != 0 :
+			return
+	for m in periph.mappings :
+		if component in m :
+			m.create_array_for_component(component, name, keep_originals)
+
 class Corrector:
 	def __init__(self,
 	             arg1: T.Union[T.Callable, T.Dict[str, T.Any]] = None,
@@ -127,7 +146,13 @@ base_root_corrector = Corrector({
 		})
 	},
 	"GTZC"		: lambda group: change_name(group, "TZC"),
-	"TZC"		: {"*" : TZC_periph_cleaner},
+	"HASH"     : {
+		"*"         : {
+			"HR?"       : ({ "*" : {
+				"H*"        : lambda field : change_name(field, "H")
+			}}),
+		},
+	},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"LPUART"    : lambda group: change_name(group, "USART"),
@@ -135,6 +160,7 @@ base_root_corrector = Corrector({
 	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
 	"TIM?*"     : lambda group: change_name(group, "TIM"),
 	"TIM"       : { "*" : TIM_periph_cleaner },
+	"TZC"		: {"*" : TZC_periph_cleaner},
 	"USART"     : {
 		"*"         : (USART_periph_cleaner, {
 			"CR2"       : { "*" : {
@@ -151,6 +177,7 @@ base_root_corrector = Corrector({
 		}),
 	}),
 	"STGENR" : lambda group : change_name(group,"STGEN"),
+
 	"*"	        : {
 		"*"         : {
 			"*_*"       : remove_periph_prefix,
@@ -160,4 +187,12 @@ base_root_corrector = Corrector({
 
 advanced_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
+	"HASH"      : { "*" : lambda periph :
+	create_array(periph, component="HRx", name="HR") },
+})
+
+cmsis_root_corrector = Corrector({
+	"*"	        : {
+		"*_*"       : cmsis_remove_reg_prefix
+	},
 })

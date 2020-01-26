@@ -118,7 +118,7 @@ class Component:
 ################################################################################
 
 	def __str__(self) -> T.Union[None, str]:
-		return self.name
+		return self.name if self.name is not None else f"{self.parent}.???"
 
 	def __repr__(self):
 		return str(self)

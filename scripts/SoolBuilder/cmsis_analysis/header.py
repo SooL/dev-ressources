@@ -15,6 +15,7 @@ class CMSISRegister:
 		self.comment : str = None
 		self.type : str = None
 		self.access_type= "IO"
+		self.parent = None
 		
 		self.bit_offset = 0
 		"""Register bit_offset, in bits"""
@@ -22,6 +23,11 @@ class CMSISRegister:
 	@property
 	def byte_offset(self):
 		return int(self.bit_offset / 8)
+
+	def apply_corrector(self, parent_corrector) :
+		correctors = parent_corrector[self.name]
+		for corrector in correctors :
+			corrector(self)
 
 
 class CMSISPeripheral:
@@ -38,6 +44,13 @@ class CMSISPeripheral:
 		for reg in self.registers :
 			reg.bit_offset = i
 			i += reg.array_size * reg.element_size
+
+	def apply_corrector(self, root_corrector) :
+		correctors = root_corrector[self.name]
+		for corrector in correctors :
+			for reg in self.registers :
+				reg.apply_corrector(corrector)
+			corrector(self)
 
 
 class CMSISHeader:
@@ -255,6 +268,7 @@ class CMSISHeader:
 					new_register.array_size	 = int(data["arr_size"]) if data["arr_size"] is not None else 1
 					new_register.type		 = data["type"]
 					new_register.comment	 = data["com"]
+					new_register.parent = new_peripheral
 					
 					new_register.element_size = int(data["int_size"]) if data["int_size"] is not None else self.periph_table[data["type"].strip("_TypeDef")].bit_size
 					new_peripheral.registers.append(new_register)
@@ -268,3 +282,7 @@ class CMSISHeader:
 		self.process_memory_table()
 		self.process_irq_table()
 		self.process_peripheral_definition()
+
+	def apply_corrector(self, root_corrector):
+		for periph in self.periph_table.values() :
+			periph.apply_corrector(root_corrector)

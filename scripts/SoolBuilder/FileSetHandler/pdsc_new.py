@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 import os, shutil
 from copy import copy
 import glob
+
+from cleaners.corrector import cmsis_root_corrector
 from structure import Chip
 from cmsis_analysis import CMSISHeader
 from fnmatch import fnmatch
@@ -143,6 +145,7 @@ class PDSCHandler:
 					curr_handler = cmsis_handlers[curr_handler.include_table[assoc.define]]
 					curr_handler.read()
 					curr_handler.process_structural()
+					curr_handler.apply_corrector(cmsis_root_corrector)
 					curr_handler.clean()
 			#Now the right handler is selected.
 			assoc.header = curr_handler.path

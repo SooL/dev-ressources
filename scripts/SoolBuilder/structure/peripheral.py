@@ -1,8 +1,9 @@
+import re
 import typing as T
 import xml.etree.ElementTree as ET
 import logging
 #from structure import Group
-
+from cmsis_analysis.header import CMSISPeripheral, CMSISHeader
 from structure import Register, MappingElement, PeripheralInstance, PeripheralMapping, PeripheralTemplate, \
 	RegisterVariant
 from structure import get_node_text, TabManager
@@ -285,7 +286,6 @@ class Peripheral(Component) :
 
 	def after_svd_compile(self, parent_corrector):
 		super().after_svd_compile(parent_corrector)
-
 		# remove unused registers
 		i = 0
 		while i < len(self.registers) :
@@ -298,7 +298,19 @@ class Peripheral(Component) :
 				i+= 1
 			else :
 				self.registers.pop(i)
+		headers: T.List[CMSISHeader] = list()
+		for chip in self.chips.chips :
+			if chip.header_handler.is_structural and\
+					chip.header_handler not in headers and\
+					self.name in chip.header_handler.periph_table :
+				headers.append(chip.header_handler)
 
+		if len(headers) > 0 :
+			for header in headers :
+				cmsis_periph = header.periph_table[self.name]
+				self.check_cmsis_header(cmsis_periph)
+		else :
+			logger.warning(f"no header has a definition for peripheral {self}")
 
 	def intra_svd_merge(self, other: "Peripheral") :
 		super().intra_svd_merge(other)
@@ -311,6 +323,29 @@ class Peripheral(Component) :
 		for r in other.registers : self.add_register(r)
 		for i in other.instances : self.add_instance(i)
 		for m in other.mappings  : self.add_mapping(m)
+
+	def check_cmsis_header(self, cmsis_periph: CMSISPeripheral) :
+		for cmsis_reg in cmsis_periph.registers :
+			if re.match("^(RESERVED|reserved)[\d\w]?",  cmsis_reg.name) :
+				continue
+
+			match = False
+			for m in self.mappings :
+				if cmsis_reg.name in m :
+					elmt = m[cmsis_reg.name]
+					match = True
+					if (cmsis_reg.array_size != 1) if (elmt.array_size == 0) else (cmsis_reg.array_size != elmt.array_size) :
+						logger.warning(f"array size mismatch for {elmt} and header "
+						               f"{cmsis_periph.name}.{cmsis_reg.name}")
+					if re.match("^u?int\d+_t", cmsis_reg.type) :
+						if not isinstance(elmt.component, Register) :
+							logger.warning(f"header register {cmsis_reg.name} doesn't match subperipheral {elmt}")
+					else :
+						if isinstance(elmt, Register) :
+							logger.warning(f"header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
+			if not match :
+				logger.warning(f"missing header register {cmsis_reg.type} {cmsis_reg.name} in {self}");
+
 
 	def finalize(self):
 		super().finalize()

@@ -109,6 +109,11 @@ class RegisterVariant(Component) :
 				self.linked_instances = None
 				self.edited = True
 
+	def force_remove_template(self):
+		if self.linked_instances is not None :
+			self.edited = True
+			self.linked_instances = None
+
 	def has_room_for(self, field: Field) :
 		for f in self.fields :
 			if f.overlap(field) :
