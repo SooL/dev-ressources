@@ -4,7 +4,7 @@
 //SOOL-GPIO-INCLUDES-END
 class GPIO
 {
-//SOOL-GPIO-ENUMS-BEGIN
+//SOOL-GPIO-SUB-TYPES-BEGIN
 public:
 //##################################################################################################
 //#                                              Pin                                              #
@@ -148,9 +148,9 @@ public:
 #endif
 		uint8_t modif;
 	};
-//SOOL-GPIO-ENUMS-END
+//SOOL-GPIO-SUB-TYPES-END
 
-//SOOL-GPIO-DECLARATION-BEGIN
+//SOOL-GPIO-DECLARATIONS-BEGIN
 //##################################################################################################
 //#                                              methods                                           #
 //##################################################################################################
@@ -170,8 +170,8 @@ public:
 
 	bool set_locked(Pin pins, bool locked) volatile;
 
-//SOOL-GPIO-DECLARATION-END
-//SOOL-GPIO_ODR-DECLARATION-BEGIN
+//SOOL-GPIO-DECLARATIONS-END
+//SOOL-GPIO_ODR-DECLARATIONS-BEGIN
 	const GPIO::ODR_TypeDef &operator=(const Pin &p) volatile;
 
 	const GPIO::ODR_TypeDef &operator|=(const Pin &p) volatile;
@@ -183,9 +183,9 @@ public:
 	const GPIO::ODR_TypeDef &operator+=(const Pin &p) volatile;
 
 	const GPIO::ODR_TypeDef &operator-=(const Pin &p) volatile;
-//SOOL-GPIO_ODR-DECLARATION-END
+//SOOL-GPIO_ODR-DECLARATIONS-END
 };
-//SOOL-GPIO-DEFINITION-BEGIN
+//SOOL-GPIO-DEFINITIONS-BEGIN
 
 template<unsigned char num>
 struct StandAlone_Pin
@@ -857,7 +857,7 @@ extern volatile StandAlone_Pin<14>& PK14;
 extern volatile StandAlone_Pin<15>& PK15;
 #endif
 //endregion
-//SOOL-GPIO-DEFINITION-END
+//SOOL-GPIO-DEFINITIONS-END
 
 //SOOL-GPIO-DEFINES-BEGIN
 //SOOL-GPIO-DEFINES-END
