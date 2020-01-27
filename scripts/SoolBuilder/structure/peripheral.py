@@ -391,7 +391,7 @@ class Peripheral(Component) :
 	def declare(self, indent: TabManager = TabManager()) -> str :
 		out =""
 		if self.needs_define :
-			out += f"{indent}#if {self.defined_name}\n"
+			out += f"{indent}#ifdef {self.defined_name}\n"
 		if self.has_template and not isinstance(self.parent, Peripheral):
 			out += f"{indent}template<typename tmpl={self.templates[-1].name}>\n"
 		out += f"{indent}class {self.name} /// {self.brief}\n" \
@@ -422,13 +422,13 @@ class Peripheral(Component) :
 		indent.decrement()
 		out += f"{indent}}};\n"
 
+		if self.needs_define :
+			out += f"{indent}#endif\n"
 		if isinstance(self.parent, Peripheral) and self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
-
 		# Instances are declared after all classes of the group.
 		# Instances declaration is handled in the 'cpp_output' method fo the class Group
-		return out
 
 	@property
 	def defined_name(self) -> str :
