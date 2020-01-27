@@ -111,8 +111,10 @@ class PDSCHandler:
 				logger.warning(f"Ignored not full association for define {assoc.computed_define}")
 				continue
 			ret.associations.add(Chip(svd=assoc.svd,
-												   header=assoc.header,
-												   define=assoc.computed_define))
+										header=assoc.header,
+										define=assoc.define,
+									  	processor=assoc.processor,
+									  pdefine=assoc.processor_define))
 			shutil.copy(base_path + assoc.svd,destination_paths["svd"])
 
 			header_src =  base_path + assoc.header
