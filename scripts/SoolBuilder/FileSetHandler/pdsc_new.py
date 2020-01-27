@@ -149,6 +149,10 @@ class PDSCHandler:
 					curr_handler.process_structural()
 					curr_handler.apply_corrector(cmsis_root_corrector)
 					curr_handler.clean()
+				else :
+					curr_handler = cmsis_handlers[curr_handler.include_table[assoc.define]]
 			#Now the right handler is selected.
 			assoc.header = curr_handler.path
 			assoc.header_handler = curr_handler
+			if not assoc.header_handler.is_structural :
+				raise AssertionError(f"Chip header handler should be structural ! ({assoc.computed_define}")
