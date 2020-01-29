@@ -19,6 +19,7 @@ logger = logging.getLogger()
 REGISTER_DEFAULT_SIZE: int = 32
 REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: Reg{reg.size}_t /// {reg.brief}
 {indent}{{
+{indent}\tusing Reg{reg.size}_t::operator=;
 {variants}{indent}\t//SOOL-{reg.alias}-DECLARATIONS
 {indent}}};
 """
