@@ -341,7 +341,7 @@ if __name__ == "__main__" :
 	logger.info("Printing output files...")
 	for name, group in output_groups.items():
 		if args.group_filter is None or name in args.group_filter :
-			with open(f"out/{name}.h","w") as header :
+			with open(f"out/{name}_struct.h","w") as header :
 				header.write(group.cpp_output())
 
 	with open(f"out/sool_chip_setup.h", "w") as header:
