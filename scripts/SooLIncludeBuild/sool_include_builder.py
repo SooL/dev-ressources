@@ -19,8 +19,10 @@
 import os
 import shutil
 import argparse
-from pathlib import *
+#from pathlib import *
 from typing import *
+from fnmatch import fnmatch
+
 
 parser = argparse.ArgumentParser(description="Simple tool to build a virtual include tree")
 
@@ -39,48 +41,50 @@ parser.add_argument("-a","--accumulate",
 					action="store_true",
 					required=False,
 					help="Do not performs cleanup")
+parser.add_argument("-L","--absolute-paths",
+					action="store_true",
+					required=False,
+					help="Use absolute paths instead of relatives")
 
 
-
-
-def check_params(root : Path,dest : Path) :
+def check_params(root : str,dest : str) :
 	print("\n{:#^80s}".format(" PARAMETERS CHECK "))
 	
-	print("Root :",str(root.absolute()))
-	if not root.is_dir() :
+	print("Root :",os.path.abspath(root))
+	if not os.path.isdir(root):
 		raise FileNotFoundError("Root " + str(root) + " not found or not a directory.")
 	
-	print("Dest :",str(dest.absolute()))
-	if not dest.is_dir() and dest.parent.is_dir() :
-		print("\tCreating last level directory.")
-		os.mkdir(dest)
-	elif not dest.is_dir() and not dest.parent.is_dir() :
-		raise FileNotFoundError("Destination " + str(dest) + " do not exist, nor its parent")
-	
-	print("Done")
-	
-def retrieve_valid_folders(root_dir : Path,ref_root : Path, valid_names : List[str] = ["include"], exclude : List[str] = list()) :
+	print("Dest :",os.path.abspath(dest))
+	if not os.path.exists(dest):
+		print("\tDestination directory.")
+		os.makedirs(os.path.abspath(dest))
+	elif not os.path.isdir(dest):
+		raise FileExistsError(f"The path {dest} exists and is not a directory")
+
+
+
+def retrieve_valid_folders(root_dir : str,ref_root : str, valid_names : List[str] = ["include"], exclude : List[str] = list()) :
 	
 	ret = list()
-	root = Path(os.path.abspath(root_dir)).absolute()
-	print("Exploring ",str(root))
+	root = os.path.abspath(root_dir)
+	print("Exploring ",root)
 
-	
 	for f in os.listdir(root) :
-		file = Path(root/f)
+		file = f"{root}/{f}"
 		if file == ref_root :
 			continue
-		if file.name[0] == "." :
+		if os.path.basename(file)[0] == "." :
 			continue
-		if file.is_dir() and file.name in valid_names :
+		if os.path.isdir(file) and os.path.basename(file) in valid_names :
 			ret.append(file)
-		elif file.is_dir() and file.name not in exclude :
-			for sub_f in retrieve_valid_folders(root/file,ref_root,valid_names,exclude) :
-				ret.append(root/sub_f)
+		elif os.path.isdir(file) and os.path.basename(file) not in exclude :
+			for sub_f in retrieve_valid_folders(file,ref_root,valid_names,exclude) :
+				ret.append(sub_f)
 	
 	return ret
-	
-def retrive_files(paths : List[Path]) -> Dict[Path,List[Path]]:
+
+
+def retrive_files(paths : List[str]) -> Dict[str,List[str]]:
 	ret = dict()
 	
 	for p in paths :
@@ -89,32 +93,33 @@ def retrive_files(paths : List[Path]) -> Dict[Path,List[Path]]:
 			ret[p] = []
 		
 		for file in os.listdir(p) :
-			if (p/Path(file)).match("*.h") :
+			if fnmatch(file,"*.h"):
 				print("\tFound",file)
-				ret[p].append(p/Path(file))
+				ret[p].append(file)
 	
 	return ret
 
-def build_output_struct(new_root : Path,rel_paths : List[Path],build_hier =True,accumulate=True) :
+
+def build_output_struct(new_root : str,rel_paths : List[str],build_hier =True,accumulate=True) :
 	
 	if not accumulate :
-		print("Performing cleanup")
+		print("Performing cleanup\n")
 		shutil.rmtree(new_root,True)
 	else:
-		print("Accumulating")
+		print("Accumulating old files\n")
 		
 	if not os.path.exists(new_root) :
 		print("Creating",new_root)
-		os.mkdir(new_root)
+		os.makedirs(new_root)
 	
 	if build_hier :
 		for p in rel_paths :
 			if str(p) != "." :
-				if not os.path.exists(new_root/p.parent) :
-					print("Creating",str(p))
-					os.makedirs(new_root/p.parent)
+				if not os.path.exists(f"{new_root}/{os.path.dirname(p)}") :
+					print("Creating",f"{new_root}/{os.path.dirname(p)}")
+					os.makedirs(f"{new_root}/{os.path.dirname(p)}")
 				else :
-					print("Skipping",str(p))
+					print("Skipping",f"{new_root}/{p}")
 	
 	
 	
@@ -126,39 +131,45 @@ if __name__ == "__main__" :
 	#	runtime_args = ["testcase/TEST_struct.h", "testcase/output"]
 	args = parser.parse_args()
 	
-	root=Path(args.working_dir)
-	out_dir = Path(args.output)
+	root=args.working_dir
+	out_dir = args.output
 	
 	check_params(root,out_dir)
 	
 	valid = ["include","inc"]
-	forbid = ["dev","csl","cmake-build-debug"]
-	
-	get_path = retrieve_valid_folders(root,Path(os.path.abspath(out_dir)),valid,forbid)
-	get_path.append(Path(os.path.abspath(root)))
-	print("Found :")
+	forbid = ["dev","csl","cmake-build-debug","__pycache__","dev-ressources"]
+
+	print("\n{:#^80s}".format(" ROOT EXPLORATION "))
+	get_path = retrieve_valid_folders(root,os.path.abspath(out_dir),valid,forbid)
+	get_path.append(os.path.abspath(root))
+	print("\nFound :")
 	for p in get_path :
-		
 		print("\t",str(p))
-		
+
+	print("\n{:#^80s}".format(" FILE RETRIEVING "))
 	files_dict = retrive_files(get_path)
-	
-	build_output_struct(out_dir,[Path(os.path.relpath(p,root.absolute())) for p in get_path],args.hierarchy,args.accumulate)
-	
+
+	print("\n{:#^80s}".format(" REBUILDING STRUCTURE "))
+	build_output_struct(out_dir,[os.path.relpath(p,os.path.abspath(root)) for p in get_path],args.hierarchy,args.accumulate)
+
+	print("\n{:#^80s}".format(" WRITING FILES "))
 	for src_path in files_dict :
 		for src_file in files_dict[src_path] :
-			print("Writting",src_file.name)
-			dist_path = Path(os.path.abspath(src_file))
+			print("Writting",f"{src_path}/{src_file}")
+			dist_path = os.path.abspath(src_file)
 			if args.hierarchy :
-				local_path = out_dir/Path(os.path.relpath(src_path,root.absolute())).parent
+				local_path = f"{out_dir}/{os.path.dirname(os.path.relpath(src_path,os.path.abspath(root)))}"
 			else:
 				local_path = out_dir
 				
-			with open(local_path/src_file.name , "w") as file :
-				dist_relpath = os.path.relpath(dist_path,local_path.absolute())
+			with open(f"{local_path}/{src_file}" , "w") as file :
+				if args.absolute_paths :
+					dist_relpath = os.path.abspath(dist_path)
+				else :
+					dist_relpath = os.path.relpath(dist_path,os.path.abspath(local_path))
+				
 				
 				file.write("#include \"{}\"".format(dist_relpath))
-				
-				
-	
+
+	print("{:#^80s}".format(" DONE "))
 	exit(0)
