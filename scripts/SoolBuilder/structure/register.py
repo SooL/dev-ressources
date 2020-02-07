@@ -3,6 +3,7 @@ import typing as T
 import xml.etree.ElementTree as ET
 
 import logging
+from copy import copy
 
 from structure import Field
 from structure import RegisterVariant
@@ -83,7 +84,13 @@ class Register(Component) :
 				if item in var  :
 					return True
 			return False
-		raise TypeError()
+		elif isinstance(item, str) :
+			for var in self :
+				if item in var :
+					return True
+			return False
+		else :
+			raise TypeError()
 
 	def __getitem__(self, item: str) -> Field:
 		result: T.Union[Field, None] = None
@@ -105,6 +112,15 @@ class Register(Component) :
 			return True
 		else :
 			return False
+
+	def __copy__(self) :
+
+		result = Register(chips=self.chips, name=self.name, brief=self.brief, size=self.size, access=self.access)
+
+		for var in self :
+			result.add_variant(copy(var))
+
+		return result
 
 	@property
 	def has_template(self) -> bool :
@@ -271,6 +287,8 @@ class Register(Component) :
 				else :
 					var_offset += 1
 			var_index += 1
+
+
 
 ################################################################################
 #                          DEFINE, UNDEFINE & DECLARE                          #

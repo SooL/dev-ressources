@@ -1,6 +1,9 @@
 import re
 import typing as T
 import logging
+from copy import copy
+
+from structure import ChipSet
 
 logger = logging.getLogger()
 
@@ -147,6 +150,18 @@ def CAN_periph_base_cleaner(periph: "Peripheral") :
 					                      address=F0R2.address + i * step)
 					periph.add_placement(FiR2)
 
+def CRC_periph_cleaner(periph: "Peripheral") :
+	from structure import Register, Field, MappingElement
+	if "POL" in periph :
+		return
+	svd_name = list(periph.chips.chips)[0].svd
+	svd_name = svd_name[svd_name.rindex('STM32'):svd_name.rindex('.svd')]
+	if svd_name in ["STM32F0x1", "STM32F0x2", "STM32F0x8"] :
+		pol_reg = Register(periph.chips, "POL")
+		pol_reg.add_field(Field(periph.chips, "POL", position=0, size=32))
+		periph.add_register(pol_reg)
+		periph.place_component(pol_reg, 0x14)
+
 def FDCAN_periph_cleaner(periph: "Peripheral") :
 	if re.match(r"^fdcan\d?", periph.brief) :
 		periph.name = "FDCAN"
@@ -168,6 +183,73 @@ def ADC_periph_cleaner(periph: "Peripheral") :
 		periph.name = "ADC_Common"
 	else :
 		periph.name = "ADC"
+
+def DAC_periph_cleaner(periph: "Peripheral") :
+	from structure import Register, Field, MappingElement
+	if "DOR2" in periph :
+		return
+	if "DOR1" not in periph :
+		return
+	chips = ChipSet()
+	for chip in periph.chips.chips :
+		if "DAC" not in chip.header_handler.periph_table :
+			""# TODO delete peripheral
+		elif "DOR2" in chip.header_handler.periph_table["DAC"] :
+			chips.add(chip)
+
+	if not chips.empty :
+		DHR12R2, DHR12L2, DHR8R2, DOR2 = copy(periph["DHR12R1"]), copy(periph["DHR12L1"]),\
+		                                 copy(periph["DHR8R1"]), copy(periph["DOR1"])
+		DHR12R2.name, DHR12L2.name, DHR8R2.name, DOR2.name = "DHR12R2", "DHR12L2", "DHR8R2", "DOR2"
+		DHR8RD = copy(DHR8R2)
+		DHR12RD = copy(DHR12R2)
+		DHR12LD = copy(DHR12L2)
+
+		for reg in (DHR8RD, DHR12RD, DHR12LD) :
+			reg.name = reg.name[:-1] + 'D'
+			for var in reg :
+				if "DACC1DHRB" in var : var.remove_field("DACC1DHRB")
+				if len(var.fields) > 1 : raise AssertionError(f"1 field expected in DAC.{reg}. 2 found: {var.fields}")
+				DACC2DHR = copy(var.fields[0])
+				if DACC2DHR.size <= 8 : DACC2DHR.position += 8
+				else : DACC2DHR.position += 16
+				DACC2DHR.brief = DACC2DHR.brief.replace('channel1', 'channel2')
+				DACC2DHR.name = DACC2DHR.name.replace('1', '2')
+				var.add_field(DACC2DHR)
+			periph.add_register(reg)
+
+		for reg in (DHR12R2, DHR12L2, DHR8R2, DOR2) :
+			reg.name = reg.name[:-1] + '2'
+			reg.brief = reg.brief.replace('channel1', 'channel2')
+			for var in reg :
+				for f in var :
+					f.name = f.name.replace('1', '2')
+					f.brief = f.brief.replace('channel1', 'channel2')
+			periph.add_register(reg)
+
+		for reg in (DHR12R2, DHR12L2, DHR8R2, DOR2, DHR8RD, DHR12RD, DHR12LD) :
+			reg.chips = ChipSet(chips)
+			for var in reg :
+				var.chips = ChipSet(chips)
+				for f in var :
+					f.chips = ChipSet(chips)
+
+		pos_0 : int = -1
+		for m in periph.mappings :
+			if "DHR12R1" in m :
+				if pos_0 != -1 : raise AssertionError("Multiple mappings for incomplete DAC. expected only 1")
+				pos_0 = m["DHR12R1"].address
+		if pos_0 == -1 :
+			raise AssertionError("no DHR12R1 in DAC mappings")
+		periph.place_component(DHR12R2, pos_0 + 12)
+		periph.place_component(DHR12L2, pos_0 + 16)
+		periph.place_component(DHR8R2, pos_0 + 20)
+		periph.place_component(DHR12RD, pos_0 + 24)
+		periph.place_component(DHR12LD, pos_0 + 28)
+		periph.place_component(DHR8RD, pos_0 + 32)
+		periph.place_component(DOR2, pos_0 + 40)
+
+
 
 def I2C_periph_cleaner(periph: "Peripheral") :
 

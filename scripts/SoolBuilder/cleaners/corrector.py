@@ -125,12 +125,13 @@ base_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_base_cleaner },
 	"COMP?"      : lambda group : change_name(group, "COMP"),
 	"CRC"       : {
-		"*"         : {
+		"*"         : (CRC_periph_cleaner, {
 			"DR"        : { "*" : {"Data_register" : lambda f : change_name(f, "DR") }},
 			"IDR"       : { "*" : {"Independent_data_register" : lambda f : change_name(f, "IDR") }},
 			"POL"       : { "*" : {"Polynomialcoefficients" : lambda f : change_name(f, "POL") }},
-		}
+		})
 	},
+	"DAC"       : { "*" : DAC_periph_cleaner },
 	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },

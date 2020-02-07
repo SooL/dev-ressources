@@ -64,6 +64,11 @@ class Field(Component) :
 		else :
 			raise TypeError()
 
+
+	def __copy__(self) :
+
+		return Field(chips=self.chips, name=self.name, brief=self.brief, position=self.position, size=self.size)
+
 	@property
 	def size(self) -> int :
 		return self._size

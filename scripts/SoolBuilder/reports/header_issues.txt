@@ -1,0 +1,2 @@
+stm32f042x6.h, stm32f038xx.h, stm32f048xx.h, stm32f058xx.h :
+    missing CRC.POL (read-only) register declaration.

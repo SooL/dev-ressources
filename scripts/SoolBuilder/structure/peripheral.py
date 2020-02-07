@@ -225,6 +225,23 @@ class Peripheral(Component) :
 		for elmt in mapping :
 			self.add_placement(elmt)
 
+	def place_component(self, component: T.Union["Peripheral", Register], address: int, name: str = None, chips = None):
+		if chips is None :
+			chips = component.chips
+		if name is None :
+			name = component.name
+
+		self.add_placement(MappingElement(chips, name, component, address))
+
+	def place_array(self, component: T.Union["Peripheral", Register], address: int, array_size: int,
+	                array_space: int = 0, name: str = None, chips = None):
+		if chips is None :
+			chips = component.chips
+		if name is None :
+			name = component.name
+
+		self.add_placement(MappingElement(chips, name, component, address, array_size, array_space))
+
 	def add_placement(self, element: MappingElement) :
 		mapping: T.Union[PeripheralMapping, None] = None
 
@@ -300,8 +317,9 @@ class Peripheral(Component) :
 				self.registers.pop(i)
 		headers: T.List[CMSISHeader] = list()
 		for chip in self.chips.chips :
-			if chip.header_handler.is_structural and\
-					chip.header_handler not in headers and\
+			if not chip.header_handler.is_structural :
+				raise AssertionError(f"header {chip.header_handler.path} doesn't contain structures")
+			elif chip.header_handler not in headers and\
 					self.name in chip.header_handler.periph_table :
 				headers.append(chip.header_handler)
 
@@ -337,14 +355,14 @@ class Peripheral(Component) :
 					if (cmsis_reg.array_size != 1) if (elmt.array_size == 0) else (cmsis_reg.array_size != elmt.array_size) :
 						logger.warning(f"array size mismatch for {elmt} and header "
 						               f"{cmsis_periph.name}.{cmsis_reg.name}")
-					if re.match("^u?int\d+_t", cmsis_reg.type) :
+					elif re.match("^u?int\d+_t", cmsis_reg.type) :
 						if not isinstance(elmt.component, Register) :
 							logger.warning(f"header register {cmsis_reg.name} doesn't match subperipheral {elmt}")
 					else :
 						if isinstance(elmt, Register) :
 							logger.warning(f"header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
 			if not match :
-				logger.warning(f"missing header register {cmsis_reg.type} {cmsis_reg.name} in {self}");
+				logger.warning(f"missing header register {cmsis_reg.type} {cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} in {self}");
 
 
 	def finalize(self):

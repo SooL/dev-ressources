@@ -52,6 +52,25 @@ class CMSISPeripheral:
 				reg.apply_corrector(corrector)
 			corrector(self)
 
+	def __contains__(self, item:str):
+		if isinstance(item, str) :
+			for reg in self.registers :
+				if reg.name == item :
+					return True
+			return False
+		else :
+			raise TypeError()
+
+	def __getitem__(self, item: str):
+		if isinstance(item, str) :
+			for reg in self.registers :
+				if reg.name == item :
+					return reg
+			raise KeyError()
+		else :
+			raise TypeError()
+
+
 
 class CMSISHeader:
 	"""This object provides a handler for CMSIS headers.

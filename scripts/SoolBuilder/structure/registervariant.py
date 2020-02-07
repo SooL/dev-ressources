@@ -76,6 +76,12 @@ class RegisterVariant(Component) :
 
 		return True
 
+	def __copy__(self) :
+		result = RegisterVariant(chips=self.chips)
+		for field in self :
+			result.add_field(copy(field))
+		return result
+
 	@property
 	def for_template(self):
 		return self.linked_instances is not None and len(self.linked_instances) > 0
