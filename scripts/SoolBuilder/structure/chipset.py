@@ -117,6 +117,9 @@ class ChipSet :
 	def __hash__(self):
 		return hash(tuple(sorted([x.name for x in self.chips])))
 
+	def __iter__(self):
+		return iter(self.chips)
+
 	@property
 	def families(self) ->T.Dict[str, T.Set[Chip]]:
 		if not self._families_up_to_date :
@@ -187,7 +190,7 @@ class ChipSet :
 			self._families[family].add(chip)
 		self._families_up_to_date = True
 
-	def defined_list(self, chips_per_line = 5,reference_chipset = None):
+	def defined_list(self, chips_per_line = 5,reference_chipset = None, allow_reverse = False):
 		if reference_chipset is None :
 			reference_chipset = ChipSet.reference_chipset
 

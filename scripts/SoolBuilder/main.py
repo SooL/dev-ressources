@@ -347,6 +347,75 @@ if __name__ == "__main__" :
 	with open(f"out/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
 
+
+	with open(f"out/IRQn.h", "w") as irq_table :
+		out = """/**
+ * Copyright (c) 2018 FAUCHER Julien & FRANCE Loic
+ * This file is part of SooL core Library.
+ *
+ *  SooL core Library is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License
+ *  as published by the Free Software Foundation, either version 3
+ *  of the License, or (at your option) any later version.
+ *
+ *  SooL core Library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with SooL core Library. If not, see <https://www.gnu.org/licenses/>.
+ */
+#ifndef __SOOL_IRQN_H
+#define __SOOL_IRQN_H
+
+#include "../../sool_chip_setup.h"
+#include "system_stm32.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum
+{\n"""
+		irq_table.write(out)
+		synthesis : T.Dict[T.Tuple[str,int],ChipSet] = dict()
+		logger.info("Processing IRQn...")
+		for chip in ChipSet.reference_chipset :
+			for irqname, value in chip.header_handler.irq_table.items():
+				key = (irqname,value)
+				if key not in synthesis :
+					synthesis[key] = ChipSet()
+				synthesis[key].add(chip)
+
+		reverse_synthesis : T.Dict[ChipSet,T.List[T.Tuple[str,int]]] = dict()
+		for key in sorted(synthesis.keys(),key=lambda x:(x[1],x[0])) :
+			cs = synthesis[key]
+			if cs not in reverse_synthesis:
+				reverse_synthesis[cs] = list()
+			reverse_synthesis[cs].append(key)
+
+		for key in reverse_synthesis:
+			need_define = key != ChipSet.reference_chipset
+
+			out =  f"#if {key.defined_list(4)}\n" if need_define else ""
+			for irq in reverse_synthesis[key] :
+				out += f"\t{irq[0]} = {irq[1]},\n"
+			out += f"#endif\n" if need_define else ""
+			irq_table.write(out)
+
+		irq_table.write("""} IRQn_Type;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //__SOOL_IRQN_H""")
+
+		logger.info("\tDone.")
+
+
+		pass
 	end_time = time()
 	print("End of process.")
 	print(f"Elapsed time : {end_time - start_time:.2f}s")

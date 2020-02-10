@@ -259,6 +259,9 @@ class CMSISHeader:
 			if result :
 				data = result.groupdict()
 				self.irq_table[data["id"]] = int(data["val"])
+			else :
+				if not ( "enum" in line or "/*" in line or "{" in line or "}" in line or "MAX_IRQ_n" in line) :
+					logger.warning(f"IRQ line match failure: {line}")
 
 	def process_peripheral_definition(self):
 		"""
