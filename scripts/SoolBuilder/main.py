@@ -3,8 +3,8 @@
 
 """
 /**
- * Copyright (c) 2018-2019 FAUCHER Julien & FRANCE Loic
- * This file is part of SooL core library generator .
+ * Copyright (c) 2018-2020 FAUCHER Julien & FRANCE Loic
+ * This file is part of SooL core library generator.
  *
  *  SooL core library generator is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License
