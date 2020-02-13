@@ -11,7 +11,7 @@
  *  as published by the Free Software Foundation, either version 3
  *  of the License, or (at your option) any later version.
  *
- *  SooL core mibrary generator is distributed in the hope that it will be useful,
+ *  SooL core library generator is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  *  GNU Lesser General Public License for more details.
@@ -20,7 +20,7 @@
  *  along with SooL core Library generator. If not, see <https://www.gnu.org/licenses/>.
  */
 
-@package AnalyseHeaderST
+@package SoolBuilder
 """
 
 import glob
@@ -72,7 +72,10 @@ logger.addHandler(log_file_handler)
 
 # ________________________________________________________________________________________________________________ Paths
 
-OutputDirectory = "out/"
+main_out = "out"
+out_include = f"{main_out}/include"
+out_sys = f"{main_out}/system/include"
+
 pdsc_path_model = ".data/fileset/*.pdsc"
 pickle_data_path = ".data/SooL.dat"
 
@@ -336,48 +339,35 @@ if __name__ == "__main__" :
 	if args.refresh_output :
 		if os.path.exists("out/") :
 			shutil.rmtree("out")
-		os.mkdir("out")
+		os.makedirs(out_include)
+		os.makedirs(out_sys)
 
 	logger.info("Printing output files...")
 	for name, group in output_groups.items():
 		if args.group_filter is None or name in args.group_filter :
-			with open(f"out/{name}_struct.h","w") as header :
+			with open(f"{out_include}/{name}_struct.h","w") as header :
 				header.write(group.cpp_output())
 
-	with open(f"out/sool_chip_setup.h", "w") as header:
+	with open(f"{main_out}/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
 
 
-	with open(f"out/IRQn.h", "w") as irq_table :
-		out = """/**
- * Copyright (c) 2018 FAUCHER Julien & FRANCE Loic
- * This file is part of SooL core Library.
- *
- *  SooL core Library is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License
- *  as published by the Free Software Foundation, either version 3
- *  of the License, or (at your option) any later version.
- *
- *  SooL core Library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with SooL core Library. If not, see <https://www.gnu.org/licenses/>.
- */
-#ifndef __SOOL_IRQN_H
-#define __SOOL_IRQN_H
-
-#include "../../sool_chip_setup.h"
-#include "system_stm32.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef enum
-{\n"""
+	with open(f"{out_sys}/IRQn.h", "w") as irq_table :
+		out = ""
+		with open("license_header.txt","r") as lgpl :
+			out += lgpl.read()
+		out +=  '#ifndef SOOL_IRQ_H\n'
+		out +=	'#define SOOL_IRQ_H\n'
+		out +=	'\n'
+		out +=	'#include "../../sool_chip_setup.h"\n'
+		out +=	'#include "system_stm32.h"\n'
+		out +=	'\n'
+		out +=	'#ifdef __cplusplus\n'
+		out +=	'extern "C" {\n'
+		out +=	'#endif\n'
+		out +=	'\n'
+		out +=	'typedef enum\n'
+		out +=	'{\n'
 		irq_table.write(out)
 		synthesis : T.Dict[T.Tuple[str,int],ChipSet] = dict()
 		logger.info("Processing IRQn...")
