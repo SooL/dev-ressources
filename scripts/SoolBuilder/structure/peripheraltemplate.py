@@ -70,7 +70,7 @@ class PeripheralTemplate(Component) :
 					variants.append(var)
 			#if no variant for this register, still declare an empty struct
 			if len(variants) == 0 :
-				out += f"{indent}struct {reg.name}_t {{ }}\n"
+				out += f"{indent}struct {reg.name}_t {{ }};\n"
 			else :
 				out += f"{indent}struct {reg.name}_t\n{indent}{{\n"
 				indent.increment()
@@ -81,12 +81,12 @@ class PeripheralTemplate(Component) :
 					out += var.declare(indent)
 				if len(variants) > 1 :
 					indent.decrement()
-					out += f"{indent}}}\n"
+					out += f"{indent}}};\n"
 				indent.decrement()
-				out += f"{indent}}}\n"
+				out += f"{indent}}};\n"
 
 		indent.decrement()
-		out += f"{indent}}}\n"
+		out += f"{indent}}};\n"
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
