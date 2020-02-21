@@ -37,7 +37,7 @@ def generate_sool_chip_setup() :
 				f"    #define {family}\n"
 				f"#endif\n")
 
-	out += f"#define __SOOL__NB_TOT "
+	out += f"#define __SOOL_NB_TOT "
 	curr_line = 0
 	for family in family_list :
 			if curr_line == 0:
