@@ -164,6 +164,7 @@ base_root_corrector = Corrector({
 	"TZC"		: {"*" : TZC_periph_cleaner},
 	"USART"     : {
 		"*"         : (USART_periph_cleaner, {
+			"0x00000000": lambda reg : change_name(reg,"CR1"),
 			"CR2"       : { "*" : {
 				"TAINV" : lambda field : change_name(field, "DATAINV")
 			}}
