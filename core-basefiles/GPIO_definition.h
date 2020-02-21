@@ -172,17 +172,17 @@ public:
 
 //SOOL-GPIO-DECLARATIONS-END
 //SOOL-GPIO_ODR-DECLARATIONS-BEGIN
-	const GPIO::ODR_TypeDef &operator=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator=(const Pin &p) volatile;
 
-	const GPIO::ODR_TypeDef &operator|=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator|=(const Pin &p) volatile;
 
-	const GPIO::ODR_TypeDef &operator&=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator&=(const Pin &p) volatile;
 
-	const GPIO::ODR_TypeDef &operator^=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator^=(const Pin &p) volatile;
 
-	const GPIO::ODR_TypeDef &operator+=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator+=(const Pin &p) volatile;
 
-	const GPIO::ODR_TypeDef &operator-=(const Pin &p) volatile;
+	const GPIO::ODR_t &operator-=(const Pin &p) volatile;
 //SOOL-GPIO_ODR-DECLARATIONS-END
 };
 //SOOL-GPIO-DEFINITIONS-BEGIN
@@ -441,40 +441,40 @@ inline constexpr const uint64_t operator*(const GPIO::AF &af, const GPIO::Pin &p
 { return pins * af; }
 
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator=(const GPIO::Pin &p) volatile
 {
 	*this = static_cast<uint32_t>(p);
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator&=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator&=(const GPIO::Pin &p) volatile
 {
 	*this &= static_cast<uint32_t>(p);
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator|=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator|=(const GPIO::Pin &p) volatile
 {
 	*reinterpret_cast<volatile uint32_t *>(this) |= static_cast<uint32_t>(p);
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator^=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator^=(const GPIO::Pin &p) volatile
 {
 	*this ^= static_cast<uint32_t>(p);
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator+=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator+=(const GPIO::Pin &p) volatile
 {
 	*this |= p;
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
-inline const GPIO::ODR_TypeDef &GPIO::ODR_TypeDef::operator-=(const GPIO::Pin &p) volatile
+inline const GPIO::ODR_t &GPIO::ODR_t::operator-=(const GPIO::Pin &p) volatile
 {
 	*this &= ~p;
-	return *const_cast<const GPIO::ODR_TypeDef *>(this);
+	return *const_cast<const GPIO::ODR_t *>(this);
 }
 
 //region PinConfig operators
