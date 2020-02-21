@@ -177,6 +177,7 @@ base_root_corrector = Corrector({
 			"SC?_*"     : lambda reg : change_name(reg, reg.name[4:])
 		}),
 	}),
+
 	"STGENR" : lambda group : change_name(group,"STGEN"),
 
 	"*"	        : {
@@ -188,8 +189,14 @@ base_root_corrector = Corrector({
 
 advanced_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
-	"HASH"      : { "*" : lambda periph :
-	create_array(periph, component="HRx", name="HR") },
+	"HASH"      : {
+		"*" : lambda periph : create_array(periph, component="HRx", name="HR") },
+	"RCC" : {
+		"*" : {
+			"xA?B*EN*R*" : lambda reg : change_name(reg,reg.name[1:]),
+			"MxA?B*EN*R*" : lambda reg : change_name(reg,reg.name[2:])
+		}
+	},
 })
 
 cmsis_root_corrector = Corrector({
