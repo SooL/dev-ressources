@@ -7,6 +7,7 @@ from cleaners import base_root_corrector, advanced_root_corrector
 from structure.utils import DefinesHandler
 
 import logging
+from datetime import datetime
 
 logger = logging.getLogger()
 
@@ -272,6 +273,7 @@ class Group(Component) :
 
 		out += defines[self_chips].output_defines(self_chips, use_else=False)
 		out = (f"{licence_text}"
+			   f"//Generated {datetime.now().isoformat()}\n\n"
 		       f"#ifndef __SOOL_CORE_{self.name}_H\n"
 		       f"#define __SOOL_CORE_{self.name}_H\n"
 		       f"{includes_text}\n"
