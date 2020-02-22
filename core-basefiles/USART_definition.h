@@ -5,7 +5,7 @@
 //SOOL-USART-INCLUDES-END
 class USART
 {
-//SOOL-USART-DECLARATION-BEGIN
+//SOOL-USART-DECLARATIONS-BEGIN
 private:
 	static constexpr uint32_t get_clock_enable_bit(const uint32_t addr);
 
@@ -33,11 +33,11 @@ public:
 	USART& operator>>(uint8_t &variable);
 
 	USART& operator>>(uint16_t &variable);
-//SOOL-USART-DECLARATION-END
+//SOOL-USART-DECLARATIONS-END
 };
 
-//SOOL-USART-DEFINITION-BEGIN
-inline constexpr uint32_t USART::get_clock_enable_bit(const uint32_t addr)
+//SOOL-USART-DEFINITIONS-BEGIN
+inline constexpr uint32_t USART::get_clock_enable_bit(const uintptr_t addr)
 {
 	switch (addr) {
 #ifdef USART1_BASE_ADDR
@@ -90,7 +90,7 @@ inline constexpr uint32_t USART::get_clock_enable_bit(const uint32_t addr)
 	}
 }
 
-inline constexpr volatile Reg32_t& USART::get_clock_enable_reg(const uint32_t addr)
+inline constexpr volatile Reg32_t& USART::get_clock_enable_reg(const uintptr_t addr)
 {
 	switch (addr) {
 #ifdef USART1_BASE_ADDR
@@ -112,22 +112,21 @@ inline constexpr volatile Reg32_t& USART::get_clock_enable_reg(const uint32_t ad
 	}
 }
 
-inline void USART::enable_clock() volatile
+inline void USART::enable_clock() volatile 
 {
-	get_clock_enable_reg(reinterpret_cast<const uint32_t>(this))
-			|= get_clock_enable_bit(reinterpret_cast<const uint32_t>(this));
+	get_clock_enable_reg(get_addr()) |= get_clock_enable_bit(get_addr());
 }
 
 inline void USART::disable_clock() volatile
 {
-	get_clock_enable_reg(reinterpret_cast<const uint32_t>(this))
-			&= ~get_clock_enable_bit(reinterpret_cast<const uint32_t>(this));
+	get_clock_enable_reg(rget_addr())
+			&= ~get_clock_enable_bit(get_addr());
 }
 
 inline bool USART::is_clock_enabled() const volatile
 {
-	return (get_clock_enable_reg(reinterpret_cast<const uint32_t>(this)) & get_clock_enable_bit(reinterpret_cast<const uint32_t>(this)))
-	== get_clock_enable_bit(reinterpret_cast<const uint32_t>(this));
+	return (get_clock_enable_reg(get_addr()) & get_clock_enable_bit(get_addr()))
+	== get_clock_enable_bit(get_addr());
 }
 
 inline const bool USART::is_rx_not_empty() const
@@ -199,5 +198,5 @@ inline USART& USART::operator>>(uint16_t &variable)
 #endif
 	return *this;
 }
-//SOOL-USART-DEFINITION-END
+//SOOL-USART-DEFINITIONS-END
 

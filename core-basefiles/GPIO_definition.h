@@ -155,7 +155,7 @@ public:
 //#                                              methods                                           #
 //##################################################################################################
 private:
-	static constexpr uint32_t get_clock_enable_bit(const uint32_t addr);
+	static constexpr uint32_t get_clock_enable_bit(const uintptr_t addr);
 
 public:
 	static constexpr const Pin pin(unsigned int id);
@@ -267,7 +267,7 @@ inline constexpr const GPIO::Pin GPIO::pin(const unsigned int pin_num)
 	return static_cast<GPIO::Pin>(1 << pin_num);
 }
 
-inline constexpr uint32_t GPIO::get_clock_enable_bit(const uint32_t addr)
+inline constexpr uint32_t GPIO::get_clock_enable_bit(const uintptr_t addr)
 {
 #if defined(STM32F0     ) || defined(STM32F3     )
 	unsigned int offset = 17u;
@@ -315,7 +315,7 @@ inline constexpr uint32_t GPIO::get_clock_enable_bit(const uint32_t addr)
 
 inline void GPIO::enable_clock() volatile
 {
-	const unsigned int bit = GPIO::get_clock_enable_bit((unsigned int) reinterpret_cast<const std::size_t>(this));
+	const unsigned int bit = GPIO::get_clock_enable_bit(get_addr());
 
 #if defined(STM32F2     ) || defined(STM32F4     ) || defined(STM32F7     )
 	RCC->AHB1ENR |= bit;
