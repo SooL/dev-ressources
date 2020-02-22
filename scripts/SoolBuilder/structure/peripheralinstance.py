@@ -6,7 +6,6 @@ from tools import global_parameters
 
 class PeripheralInstance(Component) :
 	#TODO consider templates
-	generate_nophy : bool = False
 
 	def __init__(self, chips: T.Union[ChipSet, None] = None,
 	             name: T.Union[str, None] = None,
@@ -119,18 +118,18 @@ class PeripheralInstance(Component) :
 		normal_instance = str(indent + (
 			0 if global_parameters.physical_mapping else 1)) + \
 						  "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
-			              .format(class_name, self.name, self.defined_name)
+							  .format(class_name, self.name, self.defined_name)
 
-		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new {0}();\n" +
-		                  str(indent + 1) + "#undef {2}\n" +
-		                  str(indent + 1) + "#define {2} reinterpret_cast<uint32_t>({1})") \
+		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new class {0}({2});\n")\
 			.format(self.parent.name, self.name, self.defined_name)
+
+		out += f"{indent}#if __SOOL_DEBUG_NOPHY\n" \
+			   f"{nophy_instance}\n" \
+			   f"{indent}#else\n" \
+			   f"{normal_instance}\n" \
+			   f"{indent}#endif"
 		if not global_parameters.physical_mapping :
-			out += f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n" \
-				  f"{normal_instance}\n" \
-				  f"{indent}#else\n" \
-				  f"{nophy_instance}\n" \
-				  f"{indent}#endif"
+			pass
 		else :
 			out += normal_instance
 

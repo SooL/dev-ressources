@@ -413,7 +413,8 @@ class Peripheral(Component) :
 		if self.has_template and not isinstance(self.parent, Peripheral):
 			out += f"{indent}template<typename tmpl={self.templates[-1].name}>\n"
 		out += f"{indent}class {self.name} /// {self.brief}\n" \
-		       f"{indent}{{\n"
+		       f"{indent}{{\n"\
+			   f"{indent}public:\n"
 		indent.increment()
 		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES\n"
 		for reg in self.registers :
@@ -429,10 +430,18 @@ class Peripheral(Component) :
 			indent.decrement()
 			out += f"{indent}}};\n"
 
-		out += f"{indent}private:\n"
+
+
+
 		if not global_parameters.physical_mapping :
-			out += f"{indent}#ifndef __SOOL_DEBUG_NOPHY\n"
-		out += f"{indent +1 }{self.name}() = delete;\n"
+			out += f"\n{indent}#if __SOOL_DEBUG_NOPHY\n"
+			out += f"{indent + 1}{self.name}(uintptr_t addr) : myaddr(addr){{}};\n"
+			out += f"{indent + 1}const uintptr_t myaddr;\n"
+			out += f"{indent + 1}inline const uintptr_t get_addr() {{return myaddr;}};\n"
+			out += f"{indent}#else\n"
+		out += f"{indent + 1}inline const uintptr_t get_addr() {{return reinterpret_cast<uintptr_t>(this);}};\n"
+		out += f"{indent}private:\n"
+		out += f"{indent + 1}{self.name}() = delete;\n"
 		if not global_parameters.physical_mapping:
 			out += f"{indent}#endif\n"
 		out += f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
