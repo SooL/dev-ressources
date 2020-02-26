@@ -1,15 +1,16 @@
 import re
 import typing as T
+import sqlite3 as sql
 import xml.etree.ElementTree as ET
 
 import logging
 from copy import copy
 
-from structure import Field
-from structure import RegisterVariant
-from structure import get_node_text, TabManager
-from structure import ChipSet
-from structure import Component
+from . import Field
+from . import RegisterVariant
+from . import get_node_text, TabManager
+from . import ChipSet
+from . import Component
 from structure.utils import DefinesHandler, fill_periph_hole
 
 logger = logging.getLogger()
@@ -330,3 +331,9 @@ class Register(Component) :
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
+
+	def generate_sql(self,cursor : sql.Cursor):
+		cursor.execute("INSERT INTO registers (name,size,type) VALUES (:n,:s,:t)", {"n":self.name,"s":self.size,"t":self.type})
+		this_id = cursor.lastrowid
+		for variant in self.variants:
+			variant.generate_sql(cursor, this_id)

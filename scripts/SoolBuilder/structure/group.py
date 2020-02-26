@@ -8,6 +8,7 @@ from structure.utils import DefinesHandler
 
 import logging
 from datetime import datetime
+import sqlite3 as sql
 
 logger = logging.getLogger()
 
@@ -283,3 +284,8 @@ class Group(Component) :
 		# default_tabmanager -= 2
 
 		return out
+
+	def generate_sql(self,cursor : sql.Cursor):
+		cursor.execute("INSERT INTO groups (name) VALUES (?)",(self.name,))
+		for periph in self.peripherals :
+			periph.generate_sql(cursor,cursor.lastrowid)

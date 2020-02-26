@@ -1,10 +1,12 @@
 import typing as T
+import sqlite3 as sql
+
 from copy import copy
 
-from structure import TabManager
-from structure import Field
-from structure import ChipSet
-from structure import Component
+from . import TabManager
+from . import Field
+from . import ChipSet
+from . import Component
 
 from tools import global_parameters
 
@@ -216,3 +218,40 @@ class RegisterVariant(Component) :
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
+
+	def generate_sql(self,cursor : sql.Cursor, parent_id:int):
+
+		all_data = []
+		for f in self.fields :
+			if f.name is None :
+				continue
+			data = {"rid":parent_id,"n":f.name,"s":f.size,"p":f.position}
+			all_data.append(data)
+			cursor.execute("INSERT INTO fields(name,size,position) VALUES (:n,:s,:p)",data)
+			f_id = cursor.lastrowid
+			data = [{"fid":f_id,"cname":c.name} for c in f.chips]
+
+			cursor.executemany("""
+			WITH _temp_ AS (
+				SELECT id as cid FROM chips
+					WHERE name = :cname
+			)
+			INSERT INTO chip_field (chip_id,field_id)
+			SELECT cid,:fid FROM _temp_
+			""",data)
+
+
+		cursor.executemany("""
+		WITH _temp_ AS (
+			SELECT id AS fid FROM fields 
+				WHERE
+					name == :n AND
+					size == :s AND
+					position  == :p 
+		)
+		INSERT INTO field_reg_placement (field_id, reg_placement_id) 
+		SELECT fid,:rid FROM _temp_
+		""",all_data)
+
+
+

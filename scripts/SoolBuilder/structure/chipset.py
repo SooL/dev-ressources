@@ -1,10 +1,13 @@
-from fnmatch import fnmatch
-import xml.etree.ElementTree as ET
-import typing as T
-import logging
-from cmsis_analysis import CMSISHeader
-logger = logging.getLogger()
 import os
+import logging
+import typing as T
+import sqlite3 as sql
+import xml.etree.ElementTree as ET
+from fnmatch import fnmatch
+from cmsis_analysis import CMSISHeader
+
+logger = logging.getLogger()
+
 
 class Chip:
 	def __init__(self,define = None,header = None ,svd = None, processor = None, pdefine = None ):
@@ -240,3 +243,6 @@ class ChipSet :
 		if reference is None :
 			reference = ChipSet.reference_chipset
 		return reference - self
+
+	def generate_sql(self,cursor : sql.Cursor):
+		cursor.executemany("INSERT INTO chips (name) VALUES (?)",[(x.name,) for x in self.chips])

@@ -13,6 +13,7 @@ from structure import Component
 from structure.utils import DefinesHandler, fill_periph_hole
 
 from tools import global_parameters
+import sqlite3 as sql
 
 logger = logging.getLogger()
 
@@ -488,3 +489,20 @@ class Peripheral(Component) :
 			out += virtual_instances[i].declare(tab_manager)
 
 		return out
+
+	def generate_sql(self,cursor : sql.Cursor,group_id : int):
+		cursor.execute("INSERT INTO peripherals (name,grp_id) VALUES (:n,:g)", {"n":self.name,"g":group_id})
+		this_id = cursor.lastrowid
+
+		instance_map : T.Dict[PeripheralInstance,int] = dict()
+		register_map: T.Dict[Register, int] = dict()
+
+
+		for instance in self.instances:
+			instance_map[instance.name] = instance.generate_sql(cursor, this_id)
+		for register in self.registers:
+			if isinstance(register,Register) :
+				register.generate_sql(cursor)
+			if isinstance(register,Peripheral) :
+				register.generate_sql(cursor,group_id)
+
