@@ -353,16 +353,16 @@ class Peripheral(Component) :
 					elmt = m[cmsis_reg.name]
 					match = True
 					if (cmsis_reg.array_size != 1) if (elmt.array_size == 0) else (cmsis_reg.array_size != elmt.array_size) :
-						logger.warning(f"array size mismatch for {elmt} and header "
+						logger.warning(f"Array size mismatch for {elmt} and header "
 						               f"{cmsis_periph.name}.{cmsis_reg.name}")
 					elif re.match("^u?int\d+_t", cmsis_reg.type) :
 						if not isinstance(elmt.component, Register) :
-							logger.warning(f"header register {cmsis_reg.name} doesn't match subperipheral {elmt}")
+							logger.warning(f"Header register {cmsis_reg.name} doesn't match subperipheral {elmt}")
 					else :
 						if isinstance(elmt, Register) :
-							logger.warning(f"header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
+							logger.warning(f"Header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
 			if not match :
-				logger.warning(f"missing header register {cmsis_reg.type} {cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} in {self}");
+				logger.warning(f"Missing header register {cmsis_reg.type} {cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} in {self}");
 
 
 	def finalize(self):
