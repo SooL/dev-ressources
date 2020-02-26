@@ -8,6 +8,9 @@ from structure import Component
 def change_name(obj, name) :
 	obj.name = name
 
+def change_type(obj, new_type) :
+	obj.type = new_type
+
 def remove_periph_prefix(obj : Component) :
 	from structure import Peripheral
 	periph = obj.parent
@@ -190,12 +193,13 @@ base_root_corrector = Corrector({
 
 advanced_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
-	"HASH"      : {
-		"*" : lambda periph : create_array(periph, component="HRx", name="HR") },
-	"RCC" : {
-		"*" : {
-			"xA?B*EN*R*" : lambda reg : change_name(reg,reg.name[1:]),
-			"MxA?B*EN*R*" : lambda reg : change_name(reg,reg.name[2:])
+	"GPIO"      : { "*" : GPIO_periph_advanced_cleaner },
+	"HASH"      : { "*" :
+            lambda periph : create_array(periph, component="HRx", name="HR") },
+	"RCC"       : {
+		"*"         : {
+			"xA?B*EN*R*"    : lambda reg : change_name(reg,reg.name[1:]),
+			"MxA?B*EN*R*"   : lambda reg : change_name(reg,reg.name[2:])
 		}
 	},
 })

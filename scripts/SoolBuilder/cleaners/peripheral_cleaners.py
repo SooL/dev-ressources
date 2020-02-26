@@ -249,6 +249,27 @@ def DAC_periph_cleaner(periph: "Peripheral") :
 		periph.place_component(DHR8RD, pos_0 + 32)
 		periph.place_component(DOR2, pos_0 + 40)
 
+def DMA_periph_cleaner(periph: "Peripheral") :
+	from structure import Register, Field
+	if "CSELR" in periph :
+		return
+	chips = ChipSet()
+	pos = -1
+	for chip in periph.chips.chips :
+		if "DMA" not in chip.header_handler.periph_table :
+			""# TODO delete peripheral
+		elif "CSELR" in chip.header_handler.periph_table["DMA"] :
+			chips.add(chip)
+			pos = chip.periph_table["DMA"]["CSELR"].byte_offset
+
+	if not chips.empty :
+		CSELR = Register(chips=chips, name="CSELR", brief="DMA channel selection register", size=32)
+		for i in range(1, 8) :
+			if f"CCR{i}" in periph :
+				CSELR.add_field(Field(chips=chips, name=f"C{i}S", brief=f"DMA channel {i} selection",
+				                      position=(i-1)*4, size=4))
+		periph.add_register(CSELR)
+		periph.place_component(CSELR, address=pos, name="CSELR", chips=chips)
 
 
 def I2C_periph_cleaner(periph: "Peripheral") :

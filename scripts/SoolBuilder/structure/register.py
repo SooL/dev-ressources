@@ -18,9 +18,9 @@ logger = logging.getLogger()
 ################################### REGISTER ###################################
 ################################################################################
 REGISTER_DEFAULT_SIZE: int = 32
-REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: Reg{reg.size}_t /// {reg.brief}
+REGISTER_DECLARATION: str = """{indent}struct {reg.name}_t: public {type} /// {reg.brief}
 {indent}{{
-{indent}\tusing Reg{reg.size}_t::operator=;
+{indent}\tusing {type}::operator=;
 {variants}{indent}\t//SOOL-{reg.alias}-DECLARATIONS
 {indent}}};
 """
@@ -68,6 +68,7 @@ class Register(Component) :
 		self._size = size
 		self.access = access
 		self.variants: T.List[RegisterVariant] = list()
+		self.type = None
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -324,6 +325,7 @@ class Register(Component) :
 
 		out = REGISTER_DECLARATION.format(
 			indent=indent, reg=self,
+			type=self.type if self.type is not None else f"Reg{self.size}_t",
 			variants=out)
 		if self.needs_define :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"

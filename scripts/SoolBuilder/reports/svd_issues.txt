@@ -13,6 +13,9 @@ STM32F0x1.svd, STM32F0x2.svd, STM32F0x8.svd :
     missing registers DAC.DHRxR2, DAC.DHRxL2, DAC.DHRxRD, DAC.DHRxLD (x in {8,12}), DAC.DOR2
         above registers only present for STM32F07x and STM32F09x
 
+STM32F0...svd
+    STM32F09x have registers that are not written in svd files (e.g. DMA.CSELR).
+
 F4.pdsc :
 	Few wrong svd assignation (F401xB/C/D/E should go to F401xE svd, never F401x) -> Fixed
 

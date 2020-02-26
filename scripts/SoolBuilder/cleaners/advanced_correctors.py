@@ -1,4 +1,6 @@
 import re
+from copy import copy
+
 
 def CAN_periph_advanced_cleaner(periph: "Peripheral") :
 	from structure import Peripheral, MappingElement
@@ -71,3 +73,27 @@ def CAN_periph_advanced_cleaner(periph: "Peripheral") :
 				if re.match("^R(I|D[TLH])\d*R", m.elements[i].name) :
 					m.remove_element(m.elements[i])
 				else : i += 1
+
+def GPIO_periph_advanced_cleaner(periph: "Peripheral") :
+	if "AFR" in periph :
+		return
+	elif "AFRL" in periph :
+		AFRL, AFRH = periph["AFRL"], periph["AFRH"]
+		AFR = copy(AFRL)
+		AFR.name = "AFR"
+		AFR.type = "ArrayRegBase_t<uint64_t, uint32_t>"
+		AFR._size = 64
+		periph.add_register(AFR)
+		for var in AFRH :
+			for field in var :
+				newField = copy(field)
+				newField.position += 32
+				newField.edited = True
+				AFR.add_field(newField)
+		for m in periph.mappings :
+			if "AFRL" in m :
+				elmt = copy(m["AFRL"])
+				elmt.component = AFR
+				elmt.name = "AFR"
+				periph.add_placement(elmt)
+
