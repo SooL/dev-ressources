@@ -276,6 +276,8 @@ def I2C_periph_cleaner(periph: "Peripheral") :
 
 	if "TIMINGR" in periph and "TIMEOUTR" in periph and "PECR" in periph:
 		periph.name = "FMPI2C"
+	elif periph.name is None :
+		periph.name = "I2C"
 
 def GPIO_periph_cleaner(periph) :
 	if "CRL" in periph :
