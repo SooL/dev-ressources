@@ -24,7 +24,7 @@ def remove_periph_prefix(obj : Component) :
 	if periph.name in ["DFSDM"] :
 		return # shitty peripherals
 
-	pattern = f"^{periph.name}[A-Za-z\d]*_\w+$"
+	pattern = fr"^{periph.name}[A-Za-z\d]*_\w+$"
 	if re.match(pattern, obj.name) :
 		if len(instances) == 1 and periph.name == instances[0].name :
 			# one-instance peripheral. if prefix is different from name, leave as is
@@ -33,10 +33,10 @@ def remove_periph_prefix(obj : Component) :
 		obj_name = obj.name[obj.name.index("_", len(periph.name))+1:]
 		if obj_name in obj.parent :
 			logger.warning(periph.name +" contains registers " + obj_name + " and " + obj.name)
-		else :
+		elif obj_name.isidentifier() :
 			obj.name = obj_name
 
-def cmsis_remove_reg_prefix(reg) :
+def cmsis_remove_reg_prefix(reg : Component) :
 	parent_name = reg.parent.name
 	if reg.name.startswith(parent_name+"_") :
 		reg.name = reg.name[len(parent_name)+1:]
