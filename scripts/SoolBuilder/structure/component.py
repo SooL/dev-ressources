@@ -20,7 +20,7 @@ class Component:
 	             ):
 		self._name = None
 		self.edited = True
-		self.name = name
+		self.name : str = name
 		
 		self.chips = ChipSet(chips)
 		self.brief = None if brief is None else ' '.join(brief.replace("\n", " ").split())

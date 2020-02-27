@@ -493,16 +493,52 @@ class Peripheral(Component) :
 	def generate_sql(self,cursor : sql.Cursor,group_id : int):
 		cursor.execute("INSERT INTO peripherals (name,grp_id) VALUES (:n,:g)", {"n":self.name,"g":group_id})
 		this_id = cursor.lastrowid
-
-		instance_map : T.Dict[PeripheralInstance,int] = dict()
-		register_map: T.Dict[Register, int] = dict()
-
-
+		reg_map = dict()
+		placement_map = dict()
+		done_map = dict()
 		for instance in self.instances:
-			instance_map[instance.name] = instance.generate_sql(cursor, this_id)
-		for register in self.registers:
-			if isinstance(register,Register) :
-				register.generate_sql(cursor)
-			if isinstance(register,Peripheral) :
-				register.generate_sql(cursor,group_id)
+			instance.generate_sql(cursor, this_id)
+		for mappings in self.mappings:
+			for elt in mappings :
+				if isinstance(elt.component,Register) :
+					if elt.component.name not in reg_map :
+						reg_id = elt.component.generate_sql(cursor)
+						reg_map[elt.component.name] = reg_id
+					else :
+						reg_id = reg_map[elt.component.name]
+				elif isinstance(elt.component,Peripheral) :
+					if elt.component.name not in reg_map:
+						sub_periph_id = elt.component.generate_sql(cursor,group_id)
+						cursor.execute("INSERT INTO registers (name,size,sub_periph_id) VALUES (:n,:s,:pid)",
+									   {"n":elt.name,"s":elt.size,"pid":sub_periph_id})
+						reg_id = cursor.lastrowid
+						reg_map[elt.component.name] = reg_id
+					else :
+						reg_id = reg_map[elt.component.name]
+				else :
+					raise ValueError()
+
+				key = (reg_id,elt.address)
+				if key in done_map :
+					if done_map[key] == elt.name :
+						continue
+				else :
+					done_map[key] = elt.name
+
+				try :
+					cursor.execute("""INSERT INTO reg_placements(periph_id,register_id,name,array_size,pos) 
+										VALUES (:pid,:rid,:n,:asize,:pos)""",
+								   {"pid":this_id,"rid":reg_id,"n":elt.name,"asize":elt.array_size,"pos":elt.address})
+					placement_map[elt.name] = cursor.lastrowid
+
+				except sql.IntegrityError:
+					logger.error(f"Register mapping unicity failure on peripheral {self.name} : double mapping of {elt.name} onto {done_map[key]}")
+
+				reg_map[reg_id] = (elt.name,elt.array_size,elt.address)
+
+				if isinstance(elt.component,Register) :
+					elt.component.generate_fields_sql(cursor,placement_map[elt.name])
+
+		return this_id
+
 

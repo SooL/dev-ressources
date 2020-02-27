@@ -9,6 +9,9 @@ from . import ChipSet
 from . import Component
 
 from tools import global_parameters
+import logging
+
+logger = logging.getLogger()
 
 REG_VAR_DECLARATION : str = """{indent}struct
 {indent}{{
@@ -222,6 +225,7 @@ class RegisterVariant(Component) :
 	def generate_sql(self,cursor : sql.Cursor, parent_id:int):
 
 		all_data = []
+
 		for f in self.fields :
 			if f.name is None :
 				continue

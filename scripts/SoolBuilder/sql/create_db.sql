@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS reg_placements (
 
 	pos INTEGER NOT NULL,
 
-	UNIQUE (periph_id,register_id) ON CONFLICT FAIL
+	UNIQUE (name,periph_id,register_id,pos) ON CONFLICT FAIL
 );
 
 CREATE TABLE IF NOT EXISTS registers (

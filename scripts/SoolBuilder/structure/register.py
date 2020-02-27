@@ -332,8 +332,13 @@ class Register(Component) :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
 
-	def generate_sql(self,cursor : sql.Cursor):
-		cursor.execute("INSERT INTO registers (name,size,type) VALUES (:n,:s,:t)", {"n":self.name,"s":self.size,"t":self.type})
+	def generate_sql(self,cursor : sql.Cursor,override_name :str = None ):
+
+		used_name = self.name if override_name is None else override_name
+		cursor.execute("INSERT INTO registers (name,size,type) VALUES (:n,:s,:t)", {"n":used_name,"s":self.size,"t":self.type})
 		this_id = cursor.lastrowid
+		return this_id
+
+	def generate_fields_sql(self,cursor,placement_id):
 		for variant in self.variants:
-			variant.generate_sql(cursor, this_id)
+			variant.generate_sql(cursor, placement_id)

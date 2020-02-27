@@ -406,19 +406,22 @@ if __name__ == "__main__" :
 		logger.info("\tDone.")
 		pass
 
-	logger.info("Generating SQL database...")
-	db = sql.connect("out/database.sqlite3")
-	with open("sql/create_db.sql","r") as script :
-		db.executescript(script.read())
-	cursor = db.cursor()
-	logger.info("\tDumping chipset...")
-	ChipSet.reference_chipset.generate_sql(cursor)
-	db.commit()
-	for name,group in output_groups.items() :
-		logger.info(f"\tDumping {name}...")
-		group.generate_sql(cursor)
+	if global_parameters.dump_sql :
+		logger.info("Generating SQL database...")
+		if os.path.exists("out/database.sqlite3"):
+			os.remove("out/database.sqlite3")
+		db = sql.connect("out/database.sqlite3")
+		with open("sql/create_db.sql","r") as script :
+			db.executescript(script.read())
+		cursor = db.cursor()
+		logger.info("\tDumping chipset...")
+		ChipSet.reference_chipset.generate_sql(cursor)
 		db.commit()
-	logger.info("Done")
+		for name,group in output_groups.items() :
+			logger.info(f"\tDumping {name}...")
+			group.generate_sql(cursor)
+			db.commit()
+		logger.info("Done")
 	end_time = time()
 	print("End of process.")
 	print(f"Elapsed time : {end_time - start_time:.2f}s")

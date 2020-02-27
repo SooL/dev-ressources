@@ -8,11 +8,13 @@ logger = logging.getLogger()
 class ParametersHandler :
 	generate_options = {"no-phy" 	: "Generate to allow targetting a non-physical device (emulation).",
 						"big-endian": "Swich to big endian memory organization.",
-						"dump"		: "Dump the database into .data/SooL.dat."}
+						"dump"		: "Dump the database into .data/SooL.dat.",
+						"sql"		: "Dump the final database into out/database.sqlite3"}
 
 	def __init__(self):
 		self.reuse_db			: bool = False
 		self.dump_db			: bool = False
+		self.dump_sql			: bool = False
 		self.physical_mapping	: bool = True
 		self.big_endian			: bool = False
 		self.store_packs 		: bool = False
@@ -50,6 +52,8 @@ class ParametersHandler :
 				self.big_endian = True
 			elif token == "dump":
 				self.dump_db = True
+			elif token == "sql":
+				self.dump_sql = True
 			else :
 				logger.error(f"Unrecognized option provided to generate : {token} will be ignored.")
 

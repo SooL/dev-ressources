@@ -18,7 +18,7 @@ class PeripheralMapping(Component) :
 ################################################################################
 #                                  OPERATORS                                   #
 ################################################################################
-	def __iter__(self):
+	def __iter__(self) -> T.Iterable[MappingElement]:
 		return iter(self.elements)
 
 	def __eq__(self, other):
