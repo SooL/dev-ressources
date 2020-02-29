@@ -379,6 +379,7 @@ class Peripheral(Component) :
 					for tmpl in self.templates :
 						if tmpl.compatible_with(inst) :
 							template = tmpl
+							break
 					if template is None :
 						template = PeripheralTemplate(f"{self.name}_tmpl_{len(self.templates)}", parent=self)
 						self.templates.append(template)
@@ -419,7 +420,8 @@ class Peripheral(Component) :
 		indent.increment()
 		out += f"{indent}//SOOL-{self.alias}-SUB-TYPES\n"
 		for reg in self.registers :
-			out += reg.declare(indent)
+			if not reg.has_template :
+				out += reg.declare(indent)
 
 		if len(self.mappings) > 1 :
 			out += f"{indent}union\n" \
