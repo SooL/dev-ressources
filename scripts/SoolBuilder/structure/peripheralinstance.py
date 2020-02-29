@@ -123,13 +123,12 @@ class PeripheralInstance(Component) :
 		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new class {0}({2});\n")\
 			.format(self.parent.name, self.name, self.defined_name)
 
-		out += f"{indent}#if __SOOL_DEBUG_NOPHY\n" \
-			   f"{nophy_instance}\n" \
-			   f"{indent}#else\n" \
-			   f"{normal_instance}\n" \
-			   f"{indent}#endif"
 		if not global_parameters.physical_mapping :
-			pass
+			out += f"{indent}#if __SOOL_DEBUG_NOPHY\n" \
+				   f"{nophy_instance}\n" \
+				   f"{indent}#else\n" \
+				   f"{normal_instance}\n" \
+				   f"{indent}#endif"
 		else :
 			out += normal_instance
 
