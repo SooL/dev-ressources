@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 import datetime
 import os
-import shutil
+import sys
 import typing as T
 import hashlib
 
@@ -42,6 +42,7 @@ class SoolManifest:
     def write_generation_info(self):
         gen_info : ET.Element = ET.SubElement(self.root,"generation")
         gen_info.append(ET.Element("date",{"value" : self.generation_date}))
+        gen_info.append(ET.Element("command-line",{"args":" ".join(sys.argv[1:])}))
 
     def write_pdsc_infos(self):
         hasher = hashlib.sha1()
@@ -56,7 +57,7 @@ class SoolManifest:
     def write_groups_info(self):
         hasher = hashlib.sha1()
         groups_root : ET.Element = ET.SubElement(self.root,"groups")
-        for group in self.generated_groups :
+        for group in sorted(self.generated_groups) :
             groups_root.append(ET.Element("group", {"name": group}))
             hasher.update(bytes(group,"us-ascii"))
 
@@ -68,7 +69,7 @@ class SoolManifest:
 
         families : T.Dict[str,ET.Element] = dict()
 
-        for chip in self.chip_association :
+        for chip in sorted(self.chip_association,key=lambda x : x.name) :
             family = chip.family
             if family not in families :
                 families[family] = ET.SubElement(chips_root,"family",{"name":family})

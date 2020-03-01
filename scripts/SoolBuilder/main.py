@@ -171,6 +171,7 @@ if __name__ == "__main__" :
 						help="Force packs versions as specified in .data/version.ini")
 
 	args = parser.parse_args()
+
 	global_parameters.read_args(args,svd.defined_archives_keil)
 
 	skip_analysis = False
