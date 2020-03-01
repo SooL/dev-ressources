@@ -21,6 +21,7 @@ class PDSCHandler:
 		self.associations : T.Set[Chip] = set()
 
 		self.file_name : str = os.path.basename(self.path)
+		self.version_string : str = ""
 		self.family = self.file_name[5:self.file_name.rfind("_")]
 
 		self.dest_paths : T.Dict[str,str] = {"svd" : "svd",
@@ -56,6 +57,8 @@ class PDSCHandler:
 		proc_list : T.List[ET.Element] = self.root.findall("devices/family/processor")
 		family : ET.Element
 		proc_ok = len(proc_list) > 0
+		self.version_string = self.root.find("releases/release").attrib["version"]
+
 		for family in self.root.findall("devices/family/subFamily") :
 			if not proc_ok:
 				proc_list = family.findall("processor")

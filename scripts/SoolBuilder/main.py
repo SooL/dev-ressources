@@ -33,6 +33,7 @@ from structure import *
 
 from tools import svd_retriever as svd
 from tools import global_parameters
+
 import pickle
 from FileSetHandler.pdsc import *
 from FileSetHandler import PDSCHandler
@@ -79,6 +80,8 @@ out_sys = f"{main_out}/system/include"
 pdsc_path_model = ".data/fileset/*.pdsc"
 pickle_data_path = ".data/SooL.dat"
 
+generation_manifest_path = f"{main_out}/manifest.xml"
+
 def get_node_text(root : ET.Element, node : str) -> str :
 	return str() if root.find(node) is None else root.find(node).text
 
@@ -111,8 +114,11 @@ def report_debilus(group_list : T.Dict[str,Group]) :
 	
 if __name__ == "__main__" :
 
+	from tools import SoolManifest
+
 	from time import time
 	import sqlite3 as sql
+
 
 	start_time = time()
 
@@ -169,6 +175,8 @@ if __name__ == "__main__" :
 
 	skip_analysis = False
 	output_groups: T.Dict[str, Group] = dict()
+
+	manifest_handler = SoolManifest(generation_manifest_path)
 
 	if global_parameters.reuse_db :
 		try :
@@ -290,6 +298,9 @@ if __name__ == "__main__" :
 		logger.info("SVD list done, begin processing")
 		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
 
+		for pdsc in pdsc_handlers :
+			manifest_handler.add_pdsc_version(pdsc.family,pdsc.version_string)
+
 		with open("reports/used_svd.txt","w") as report :
 			data = ""
 			for f in sorted(svd_list.keys()) :
@@ -348,6 +359,14 @@ if __name__ == "__main__" :
 		if args.group_filter is None or name in args.group_filter :
 			with open(f"{out_include}/{name}_struct.h","w") as header :
 				header.write(group.cpp_output())
+
+			manifest_handler.add_generated_group(name)
+
+	manifest_handler.add_chip(ChipSet.reference_chipset)
+	logger.info("Printing manifest...")
+	manifest_handler.construct_xml()
+	manifest_handler.write_file()
+
 
 	with open(f"{main_out}/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
