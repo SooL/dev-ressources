@@ -8,6 +8,8 @@ import hashlib
 
 from structure import Chip, ChipSet
 
+from tools import global_parameters
+
 class SoolManifest:
     def __init__(self,path):
         self.file_path  = path
@@ -17,7 +19,7 @@ class SoolManifest:
         self.generated_groups : T.List[str] = list()
         self.chip_association : T.List[Chip] = list()
         """Association chipname -> SVD,cmsis header"""
-        self.generation_date : str = datetime.datetime.now().isoformat()
+        self.generation_date : str = datetime.datetime.now().isoformat(timespec='seconds')
 
         self.root : ET.Element = ET.Element("manifest")
         self.hash : ET.Element = ET.SubElement(self.root,"hash")
@@ -43,6 +45,7 @@ class SoolManifest:
         gen_info : ET.Element = ET.SubElement(self.root,"generation")
         gen_info.append(ET.Element("date",{"value" : self.generation_date}))
         gen_info.append(ET.Element("command-line",{"args":" ".join(sys.argv[1:])}))
+        gen_info.append(global_parameters.to_xml)
 
     def write_pdsc_infos(self):
         hasher = hashlib.sha1()
@@ -74,7 +77,7 @@ class SoolManifest:
             if family not in families :
                 families[family] = ET.SubElement(chips_root,"family",{"name":family})
             elt = ET.Element("chip", {"define": chip.define,
-                                      "cmsis":os.path.basename(chip.header),
+                                      "header":os.path.basename(chip.header),
                                       "svd" : os.path.basename(chip.svd)})
             families[family].append(elt)
             hasher.update(bytes(str(ET.tostring(elt)),"us-ascii"))
