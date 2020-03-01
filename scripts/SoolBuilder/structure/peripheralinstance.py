@@ -111,13 +111,7 @@ class PeripheralInstance(Component) :
 		out = ""
 		class_name = self.parent.name
 		if self.parent.has_template :
-			template = None
-			for tmpl in self.parent.templates :
-				for instance in tmpl.instances :
-					if instance.name == self.name :
-						template = tmpl
-						break
-			if template is not None :
+			if len(self.parent.get_template(self)) > 0 :
 				class_name += f"<{self.name}_TMPL>"
 			else :
 				class_name += f"<>"
@@ -129,7 +123,7 @@ class PeripheralInstance(Component) :
 							  .format(class_name, self.name, self.defined_name)
 
 		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new class {0}({2});\n")\
-			.format(self.parent.name, self.name, self.defined_name)
+			.format(class_name, self.name, self.defined_name)
 
 		if not global_parameters.physical_mapping :
 			out += f"{indent}#if __SOOL_DEBUG_NOPHY\n" \
