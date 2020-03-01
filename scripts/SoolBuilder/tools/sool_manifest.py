@@ -73,7 +73,7 @@ class SoolManifest:
             family = chip.family
             if family not in families :
                 families[family] = ET.SubElement(chips_root,"family",{"name":family})
-            elt = ET.Element("chip", {"name": chip.name,
+            elt = ET.Element("chip", {"define": chip.define,
                                       "cmsis":os.path.basename(chip.header),
                                       "svd" : os.path.basename(chip.svd)})
             families[family].append(elt)
