@@ -97,7 +97,7 @@ class MappingElement(Component) :
 		template : str = "{0.name}"
 		if isinstance(self.component, Register) :
 			if self.component.has_template :
-				template = "tmpl::" + template
+				template = "typename tmpl::" + template
 			template += "_t"
 		template += " {1.name}"
 		if self.array_size > 0 :
