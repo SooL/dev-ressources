@@ -268,6 +268,8 @@ if __name__ == "__main__" :
 			pdsc_handlers[-1].rebuild_extracted_associations("./.data")
 			pdsc_handlers[-1].compute_cmsis_handlers()
 
+		for pdsc_file in pdsc_handlers :
+			pdsc_file.check_svd_define_association()
 		define_done_set = set()
 		i = 1
 		logger.info("Build SVD list...")
