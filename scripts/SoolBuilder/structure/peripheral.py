@@ -177,6 +177,12 @@ class Peripheral(Component) :
 				return True
 		return False
 
+	def get_template(self, instance) -> T.List[PeripheralTemplate] :
+		templates : T.List[PeripheralTemplate] = list()
+		for tmpl in self.templates :
+			if instance in tmpl.instances :
+				templates.append(tmpl)
+		return templates
 
 
 ################################################################################

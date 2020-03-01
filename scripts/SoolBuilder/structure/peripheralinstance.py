@@ -74,29 +74,37 @@ class PeripheralInstance(Component) :
 				define_not=False,
 				undefine=True)
 
-		if self.needs_template :
-			chips = ChipSet(self.chips)
-			template_defined = False
-			for tmpl in self.parent.templates :
-				if self in tmpl.instances :
-					if template_defined :
-						raise AssertionError("Two templates defined for " + self.name + "(" + repr(self.chips) + ")."
-                                             " Additional programming is needed")
-					#chips.remove(tmpl.chips)
-					defines[self.chips].add(
-						alias=f"{self.name}_TMPL",
-						defined_value= tmpl.name,
-						define_not=False,
-						undefine=True
-					)
-					template_defined = True
-			if not template_defined :
-				defines[self.chips].add(
+		#define the template if necessary
+		templates = self.parent.get_template(self)
+		remaining = self.chips.chips
+		if len(templates) > 0 :
+			for tmpl in templates :
+				chips = self.chips if self.chips.chips.issubset(tmpl.chips.chips) \
+						else ChipSet(self.chips.chips.intersection(tmpl.chips.chips))
+				if chips not in defines :
+					defines[chips] = DefinesHandler()
+
+				if not chips.chips.issubset(remaining) :
+					raise AssertionError("multiple templates defines in parallel for a single instance")
+				remaining = remaining.difference(chips.chips)
+
+				defines[chips].add(
 					alias=f"{self.name}_TMPL",
-					# no value (default template)
+					defined_value= tmpl.name,
 					define_not=False,
 					undefine=True
 				)
+		if len(templates) == 0 or len(list(remaining)) > 0 :
+			chips = self.chips if len(templates) == 0 else ChipSet(remaining)
+			if chips not in defines :
+				defines[chips] = DefinesHandler()
+
+			defines[chips].add(
+				alias=f"{self.name}_TMPL",
+				# no value (default template)
+				define_not=False,
+				undefine=True
+			)
 
 
 	def declaration_strings(self, indent : TabManager = TabManager()) -> str:

@@ -178,9 +178,8 @@ class Register(Component) :
 	def needs_template(self, instance) -> bool :
 		for var in self :
 			if var.for_template :
-				for inst in var.linked_instances :
-					if inst.name == instance.name :
-						return True
+				if instance in var.linked_instances :
+					return True
 		return False
 
 	def intra_svd_merge(self, other: "Register") :
