@@ -83,6 +83,14 @@ class Chip:
 			return False
 		return True
 
+	@property
+	def family(self) -> str:
+		if not fnmatch(self.name,"STM32*") :
+			raise ValueError("Incompatible name")
+		if fnmatch(self.name,"STM32MP*"):
+			return self.name[:8]
+		return self.name[:7]
+
 
 class ChipSet :
 	reference_chips_name_list : T.Set[str] = set()

@@ -178,9 +178,8 @@ class Register(Component) :
 	def needs_template(self, instance) -> bool :
 		for var in self :
 			if var.for_template :
-				for inst in var.linked_instances :
-					if inst.name == instance.name :
-						return True
+				if instance in var.linked_instances :
+					return True
 		return False
 
 	def intra_svd_merge(self, other: "Register") :
@@ -304,20 +303,32 @@ class Register(Component) :
 	def defined_value(self) -> T.Union[str, None]:
 		return None
 
-	def declare(self, indent: TabManager = TabManager()) -> T.Union[None,str] :
+	def declare(self, indent: TabManager = TabManager(), instances: T.Optional[T.List["PeripheralInstance"]] = None)\
+			-> T.Union[None,str] :
 		out: str = ""
-		is_union = len(self.variants) > 1
+		variants = None
+		if self.has_template :
+			variants = list()
+			if instances is not None and len(instances) > 0 :
+				for instance in instances :
+					for var in self.variants :
+						if var not in variants and var.for_instance(instance) :
+							variants.append(var)
+			else :
+				variants.extend(filter(lambda v : not v.for_template, self.variants))
+		else :
+			variants = self.variants
+
+		if len(variants) == 0 :
+			return ""
+
+		is_union = len(variants) > 1
 		if is_union :
 			indent.increment()
 			out += f"{indent}union\n{indent}{{\n"
 
 		indent.increment()
-		out += "".join(
-			map(lambda v : v.declare(indent), filter(lambda var: not var.for_template, self.variants)))
-
-		if self.has_template :
-			out += f"{indent}tmpl::{self.name}_t;\n"
-
+		out += "".join(map(lambda v : v.declare(indent), variants))
 		indent.decrement()
 
 		if is_union :

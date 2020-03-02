@@ -21,6 +21,7 @@ class PDSCHandler:
 		self.associations : T.Set[Chip] = set()
 
 		self.file_name : str = os.path.basename(self.path)
+		self.version_string : str = ""
 		self.family = self.file_name[5:self.file_name.rfind("_")]
 
 		self.dest_paths : T.Dict[str,str] = {"svd" : "svd",
@@ -56,6 +57,8 @@ class PDSCHandler:
 		proc_list : T.List[ET.Element] = self.root.findall("devices/family/processor")
 		family : ET.Element
 		proc_ok = len(proc_list) > 0
+		self.version_string = self.root.find("releases/release").attrib["version"]
+
 		for family in self.root.findall("devices/family/subFamily") :
 			if not proc_ok:
 				proc_list = family.findall("processor")
@@ -156,3 +159,48 @@ class PDSCHandler:
 			assoc.header_handler = curr_handler
 			if not assoc.header_handler.is_structural :
 				raise AssertionError(f"Chip header handler should be structural ! ({assoc.computed_define}")
+
+	def check_svd_define_association(self):
+		define_to_svd : T.Dict[str,T.List[str]]= dict()
+		svd_list : T.Dict[str,str] = dict()
+		defines_to_fix : T.List[str] = list()
+		logger.info(f"Checking define to SVD association for {self.file_name}...")
+		for c in self.associations :
+			formated_svd_name = os.path.basename(c.svd)
+			formated_svd_name = formated_svd_name[:formated_svd_name.find(".svd")]
+			if "_" in formated_svd_name :
+				formated_svd_name = formated_svd_name[:formated_svd_name.find("_")]
+
+			formated_svd_name = formated_svd_name.replace("x","*") + "*"
+
+			if formated_svd_name in svd_list and svd_list[formated_svd_name] != c.svd :
+				logger.error(f"\tVarious SVD match same formated template : {svd_list[formated_svd_name]} and {c.svd}")
+			svd_list[formated_svd_name] = c.svd
+
+			if c.define not in define_to_svd :
+				define_to_svd[c.define] = [formated_svd_name]
+			elif define_to_svd[c.define] == formated_svd_name :
+				pass
+			else :
+				if formated_svd_name not in define_to_svd[c.define] :
+					define_to_svd[c.define].append(formated_svd_name)
+					defines_to_fix.append(c.define)
+					logger.error(f"\tDefine to SVD integrity failure : {c.define} mapped to {[svd_list[x] for x in define_to_svd[c.define]]} and {c.svd}")
+
+
+		for broken_def in defines_to_fix :
+			for broken_chip in [x for x in self.associations if x.define == broken_def]:
+				fixed = False
+				for potential_svd_pattern in sorted(define_to_svd[broken_def],key=lambda x: x.count("*")) :
+					if not fixed and fnmatch(broken_chip.define,potential_svd_pattern) :
+						logger.warning(f"\t\tResolved {broken_chip.name} SVD from {broken_chip.svd} to {svd_list[potential_svd_pattern]}")
+						broken_chip.svd = svd_list[potential_svd_pattern]
+						fixed = True
+
+					if fixed :
+						break
+
+				if not fixed :
+					logger.warning(f"\t\tUnable to fix {broken_chip.name} SVD")
+
+

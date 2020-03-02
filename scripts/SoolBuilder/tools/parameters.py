@@ -1,6 +1,6 @@
 import typing as T
 import logging
-
+import xml.etree.ElementTree as ET
 
 logger = logging.getLogger()
 
@@ -33,6 +33,26 @@ class ParametersHandler :
 
 		self.archives = dict()
 
+
+	@property
+	def to_xml(self) -> ET.Element:
+		root = ET.Element("runtime-parameters")
+		generation_sec : ET.Element = ET.SubElement(root,"generation")
+		generation_sec.append(ET.Element("dump-run", {"value": "true" if self.dump_db else "false"}))
+		generation_sec.append(ET.Element("dump-sql", {"value": "true" if self.dump_sql else "false"}))
+		generation_sec.append(ET.Element("no-phy-avail", {"value": "false" if self.physical_mapping else "true"}))
+		generation_sec.append(ET.Element("endianness", {"value": "big" if self.big_endian else "little"}))
+		generation_sec.append(ET.Element("reuse-run", {"value": "true" if self.reuse_db else "false"}))
+
+		filters_sec : ET.Element = ET.SubElement(root,"filters",{"requested":"true" if len(self.group_filter) else "false"})
+		for group in sorted(self.group_filter) :
+			filters_sec.append(ET.Element("group",{"name":group}))
+
+		update_sec : ET.Element = ET.SubElement(root,"update",{"requested":"true" if self.update_requested else "false"})
+		for f in sorted(self.update_list) :
+			update_sec.append(ET.Element("family",{"name":f}))
+
+		return root
 
 	@property
 	def need_update(self):

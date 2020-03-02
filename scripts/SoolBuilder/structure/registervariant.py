@@ -222,6 +222,12 @@ class RegisterVariant(Component) :
 			out = f"{indent}#ifdef {self.defined_name}\n{out}{indent}#endif\n"
 		return out
 
+	def for_instance(self, instance) -> bool :
+		if self.for_template :
+			return instance in self.linked_instances
+		else :
+			return not self.chips.chips.isdisjoint(instance.chips.chips)
+
 	def generate_sql(self,cursor : sql.Cursor, parent_id:int):
 
 		all_data = []

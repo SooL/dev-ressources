@@ -36,6 +36,12 @@ class PeripheralTemplate(Component) :
 
 		self.instances.append(instance)
 
+	def add_common_variants(self, register: Register):
+
+		for var in register :
+			if not var.for_template and (len(self.instances)==0 or not var.chips.chips.isdisjoint(self.chips.chips)) :
+				self.registerVariants.append(var)
+
 	def finalize(self):
 		if len(self.instances) == 0 :
 			self.chips = self.parent.chips
@@ -44,7 +50,7 @@ class PeripheralTemplate(Component) :
 			names : T.Set[str] = set()
 			for inst in self.instances :
 				names.add(inst.name)
-			self.brief = "specific fields for " + ", ".join(names)
+			self.brief = "fields used by " + ", ".join(names)
 		super().finalize()
 
 	def define_for_instance(self, defines, instance, define_not: bool = False) :
@@ -64,26 +70,7 @@ class PeripheralTemplate(Component) :
 		registers: T.List[Register] = list(filter(lambda register : register.has_template, self.parent.registers))
 
 		for reg in registers :
-			variants: T.List[RegisterVariant] = list()
-			for var in self.registerVariants :
-				if var.parent is reg :
-					variants.append(var)
-			#if no variant for this register, still declare an empty struct
-			if len(variants) == 0 :
-				out += f"{indent}struct {reg.name}_t {{ }};\n"
-			else :
-				out += f"{indent}struct {reg.name}_t\n{indent}{{\n"
-				indent.increment()
-				if len(variants) > 1 :
-					out += f"{indent}union\n{indent}{{\n"
-					indent.increment()
-				for var in variants :
-					out += var.declare(indent)
-				if len(variants) > 1 :
-					indent.decrement()
-					out += f"{indent}}};\n"
-				indent.decrement()
-				out += f"{indent}}};\n"
+			out += reg.declare(indent, self.instances)
 
 		indent.decrement()
 		out += f"{indent}}};\n"
