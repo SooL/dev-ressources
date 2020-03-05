@@ -37,7 +37,8 @@ public:
 };
 
 //SOOL-USART-DEFINITIONS-BEGIN
-inline constexpr uint32_t USART::get_clock_enable_bit(const uintptr_t addr)
+template<typename tmpl>
+inline constexpr uint32_t USART<tmpl>::get_clock_enable_bit(const uintptr_t addr)
 {
 	switch (addr) {
 #ifdef USART1_BASE_ADDR
@@ -90,7 +91,8 @@ inline constexpr uint32_t USART::get_clock_enable_bit(const uintptr_t addr)
 	}
 }
 
-inline constexpr volatile Reg32_t& USART::get_clock_enable_reg(const uintptr_t addr)
+template<typename tmpl>
+inline constexpr volatile Reg32_t& USART<tmpl>::get_clock_enable_reg(const uintptr_t addr)
 {
 	switch (addr) {
 #ifdef USART1_BASE_ADDR
@@ -112,24 +114,28 @@ inline constexpr volatile Reg32_t& USART::get_clock_enable_reg(const uintptr_t a
 	}
 }
 
-inline void USART::enable_clock() volatile 
+template<typename tmpl>
+inline void USART<tmpl>::enable_clock() volatile
 {
 	get_clock_enable_reg(get_addr()) |= get_clock_enable_bit(get_addr());
 }
 
-inline void USART::disable_clock() volatile
+template<typename tmpl>
+inline void USART<tmpl>::disable_clock() volatile
 {
 	get_clock_enable_reg(rget_addr())
 			&= ~get_clock_enable_bit(get_addr());
 }
 
-inline bool USART::is_clock_enabled() const volatile
+template<typename tmpl>
+inline bool USART<tmpl>::is_clock_enabled() const volatile
 {
 	return (get_clock_enable_reg(get_addr()) & get_clock_enable_bit(get_addr()))
 	== get_clock_enable_bit(get_addr());
 }
 
-inline const bool USART::is_rx_not_empty() const
+template<typename tmpl>
+inline const bool USART<tmpl>::is_rx_not_empty() const
 {
 #ifdef USART_ISR
 	return ISR.RXNE == 1;
@@ -138,7 +144,8 @@ inline const bool USART::is_rx_not_empty() const
 #endif
 }
 
-inline const bool USART::is_tx_empty() const
+template<typename tmpl>
+inline const bool USART<tmpl>::is_tx_empty() const
 {
 #ifdef USART_ISR
 	return ISR.TXE == 1;
@@ -148,7 +155,8 @@ inline const bool USART::is_tx_empty() const
 
 }
 
-inline const bool USART::tx_sent() const
+template<typename tmpl>
+inline const bool USART<tmpl>::tx_sent() const
 {
 #ifdef USART_ISR
 	return ISR.TC == 1;
@@ -157,7 +165,8 @@ inline const bool USART::tx_sent() const
 #endif
 }
 
-inline USART& USART::operator<<(const uint8_t value)
+template<typename tmpl>
+inline USART& USART<tmpl>::operator<<(const uint8_t value)
 {
 #ifdef USART_DR
 	DR = value;
@@ -168,7 +177,8 @@ inline USART& USART::operator<<(const uint8_t value)
 	return *this;
 }
 
-inline USART& USART::operator<<(const uint16_t value)
+template<typename tmpl>
+inline USART<tmpl>& USART<tmpl>::operator<<(const uint16_t value)
 {
 #ifdef USART_DR
 	DR = value;
@@ -179,7 +189,8 @@ inline USART& USART::operator<<(const uint16_t value)
 	return *this;
 }
 
-inline USART& USART::operator>>(uint8_t &variable)
+template<typename tmpl>
+inline USART<tmpl>& USART<tmpl>::operator>>(uint8_t &variable)
 {
 #ifdef USART_DR
 	variable = DR;
@@ -189,7 +200,8 @@ inline USART& USART::operator>>(uint8_t &variable)
 	return *this;
 }
 
-inline USART& USART::operator>>(uint16_t &variable)
+template<typename tmpl>
+inline USART<tmpl>& USART<tmpl>::operator>>(uint16_t &variable)
 {
 #ifdef USART_DR
 	variable = DR;
