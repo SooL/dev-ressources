@@ -7,9 +7,9 @@ class USART
 {
 //SOOL-USART-DECLARATIONS-BEGIN
 private:
-	static constexpr uint32_t get_clock_enable_bit(const uint32_t addr);
+	static constexpr uint32_t get_clock_enable_bit(const uintptr_t addr);
 
-	static constexpr volatile Reg32_t& get_clock_enable_reg(const uint32_t addr);
+	static constexpr volatile Reg32_t& get_clock_enable_reg(const uintptr_t addr);
 
 public:
 	void enable_clock() volatile;
@@ -29,6 +29,8 @@ public:
 	USART& operator<<(const uint8_t value);
 
 	USART& operator<<(const uint16_t value);
+
+	void send(char* value);
 
 	USART& operator>>(uint8_t &variable);
 
@@ -123,7 +125,7 @@ inline void USART<tmpl>::enable_clock() volatile
 template<typename tmpl>
 inline void USART<tmpl>::disable_clock() volatile
 {
-	get_clock_enable_reg(rget_addr())
+	get_clock_enable_reg(get_addr())
 			&= ~get_clock_enable_bit(get_addr());
 }
 
@@ -166,7 +168,7 @@ inline const bool USART<tmpl>::tx_sent() const
 }
 
 template<typename tmpl>
-inline USART& USART<tmpl>::operator<<(const uint8_t value)
+inline USART<tmpl>& USART<tmpl>::operator<<(const uint8_t value)
 {
 #ifdef USART_DR
 	DR = value;
@@ -177,6 +179,7 @@ inline USART& USART<tmpl>::operator<<(const uint8_t value)
 	return *this;
 }
 
+
 template<typename tmpl>
 inline USART<tmpl>& USART<tmpl>::operator<<(const uint16_t value)
 {
@@ -184,8 +187,27 @@ inline USART<tmpl>& USART<tmpl>::operator<<(const uint16_t value)
 	DR = value;
 #else
 	TDR = value;
-	//TODO send
 #endif
+	return *this;
+}
+
+
+template<typename tmpl>
+void USART<tmpl>::send(char* value)
+{
+	int pos = 0;
+	while(value[pos])
+	{
+		while(! is_tx_empty())
+				asm("nop");
+#ifdef USART_DR
+		DR = value[pos];
+#else
+		TDR = value[pos];
+#endif
+		pos ++;
+	}
+
 	return *this;
 }
 
@@ -199,6 +221,8 @@ inline USART<tmpl>& USART<tmpl>::operator>>(uint8_t &variable)
 #endif
 	return *this;
 }
+
+
 
 template<typename tmpl>
 inline USART<tmpl>& USART<tmpl>::operator>>(uint16_t &variable)
