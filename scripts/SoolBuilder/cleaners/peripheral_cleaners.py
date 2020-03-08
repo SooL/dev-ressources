@@ -68,17 +68,16 @@ def USART_periph_cleaner(periph: "Peripheral") :
 	if periph.name is not None :
 		return
 
-	if "low power" in periph.brief :
+	brief_tokens = periph.brief.lower().split()
+	if "power" in brief_tokens :
 		periph.name = "LPUART"
+	elif "synchronous" in brief_tokens :
+		periph.name = "USART"
+	elif "asynchronous" in brief_tokens :
+		periph.name = "UART"
 	else :
-		brief_tokens = periph.brief.split()
-		if "synchronous" in brief_tokens :
-			periph.name = "USART"
-		elif "asynchronous" in brief_tokens :
-			periph.name = "UART"
-		else :
-			logger.error(f"USART type detection failure for {periph.instances} for chips {str(periph.chips)}. Assigning generic")
-			periph.name = "USART_GENERIC"
+		logger.error(f"USART type detection failure for {periph.instances} for chips {str(periph.chips)}. Assigning generic")
+		periph.name = "USART_GENERIC"
 
 def USB_periph_cleaner(periph: "Peripheral") :
 
