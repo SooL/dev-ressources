@@ -235,10 +235,12 @@ class RegisterVariant(Component) :
 		for f in self.fields :
 			if f.name is None :
 				continue
-			data = {"rid":parent_id,"n":f.name,"s":f.size,"p":f.position}
-			all_data.append(data)
+			for c in self.chips:
+				data = {"rid":parent_id,"n":f.name,"s":f.size,"p":f.position,"cid":c.sql_id}
+				all_data.append(data)
 			cursor.execute("INSERT INTO fields(name,size,position) VALUES (:n,:s,:p)",data)
 			f_id = cursor.lastrowid
+
 			data = [{"fid":f_id,"cname":c.name} for c in f.chips]
 
 			cursor.executemany("""
@@ -259,8 +261,8 @@ class RegisterVariant(Component) :
 					size == :s AND
 					position  == :p 
 		)
-		INSERT INTO field_reg_placement (field_id, reg_placement_id) 
-		SELECT fid,:rid FROM _temp_
+		INSERT INTO field_reg_placement (field_id, reg_placement_id, chip_id) 
+		SELECT fid,:rid,:cid FROM _temp_
 		""",all_data)
 
 

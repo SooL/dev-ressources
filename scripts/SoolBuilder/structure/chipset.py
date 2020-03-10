@@ -91,6 +91,9 @@ class Chip:
 			return self.name[:8]
 		return self.name[:7]
 
+	def generate_sql(self,cursor : sql.Cursor):
+		cursor.execute("INSERT INTO chips (name) VALUES (?)",(self.name,))
+		self.sql_id = cursor.lastrowid
 
 class ChipSet :
 	reference_chips_name_list : T.Set[str] = set()
@@ -253,4 +256,6 @@ class ChipSet :
 		return reference - self
 
 	def generate_sql(self,cursor : sql.Cursor):
-		cursor.executemany("INSERT INTO chips (name) VALUES (?)",[(x.name,) for x in self.chips])
+		for c in self :
+			c.generate_sql(cursor)
+		#cursor.executemany("INSERT INTO chips (name) VALUES (?)",[(x.name,) for x in self.chips])
