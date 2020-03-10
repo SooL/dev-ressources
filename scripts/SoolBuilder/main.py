@@ -440,7 +440,7 @@ if __name__ == "__main__" :
 		ChipSet.reference_chipset.generate_sql(cursor)
 		db.commit()
 		for name,group in output_groups.items() :
-			if name not in global_parameters.group_filter :
+			if global_parameters.got_group_filter and name not in global_parameters.group_filter :
 				continue
 			logger.info(f"\tDumping {name}...")
 			group.generate_sql(cursor)

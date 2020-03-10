@@ -62,6 +62,10 @@ class ParametersHandler :
 	def update_list(self):
 		return sorted(list(set(self.family_upgrade_request + self.family_update_request)))
 
+	@property
+	def got_group_filter(self):
+		return len(self.group_filter) > 0
+
 	def process_generate(self,options : T.List[str]):
 
 		if len(options) == 0 : return
