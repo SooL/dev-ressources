@@ -119,6 +119,8 @@ if __name__ == "__main__" :
 	from time import time
 	import sqlite3 as sql
 
+	from generators import generate_get_bit
+
 
 	start_time = time()
 
@@ -446,6 +448,15 @@ if __name__ == "__main__" :
 			group.generate_sql(cursor)
 			db.commit()
 		logger.info("Done")
+
+		for name,group in output_groups.items():
+			if global_parameters.got_group_filter and name not in global_parameters.group_filter :
+				continue
+			for periph in group.peripherals :
+				print("GENERATION FOR",periph.name)
+				print(generate_get_bit(db,periph.name))
+
+
 	end_time = time()
 	print("End of process.")
 	print(f"Elapsed time : {end_time - start_time:.2f}s")

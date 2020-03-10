@@ -255,7 +255,15 @@ class ChipSet :
 			reference = ChipSet.reference_chipset
 		return reference - self
 
+	def fill_from_name_list(self,name_list : T.List[str], ref : "Chipset" = None):
+		if ref is None :
+			ref = ChipSet.reference_chipset
+		for c in ref.chips :
+			if c.name in name_list :
+				self.add(c)
+				name_list.remove(c.name)
+
 	def generate_sql(self,cursor : sql.Cursor):
 		for c in self :
 			c.generate_sql(cursor)
-		#cursor.executemany("INSERT INTO chips (name) VALUES (?)",[(x.name,) for x in self.chips])
+

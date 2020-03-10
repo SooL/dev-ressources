@@ -1,6 +1,6 @@
--- List enable fields position, and the associated chips.
+-- List enable register names, and the associated chips.
 -- You can select the peripheral to target in the subquery (alias :pname).
-SELECT f.position as fpos, f.name as fname, GROUP_CONCAT(DISTINCT c.name) as cname
+SELECT r.name as rname, GROUP_CONCAT(DISTINCT f.name) as fname, GROUP_CONCAT(DISTINCT c.name) as cname
 FROM registers r
          INNER JOIN reg_placements rp ON r.id = rp.register_id
          INNER JOIN peripherals p ON rp.periph_id = p.id
@@ -16,4 +16,4 @@ WHERE p.name == 'RCC' AND
 			INNER JOIN groups g ON p.grp_id = g.id
 		WHERE p.name == :pname
 	)
-GROUP BY f.position, f.name;
+GROUP BY r.name;
