@@ -498,51 +498,63 @@ class Peripheral(Component) :
 
 		return out
 
-	def generate_sql(self,cursor : sql.Cursor,group_id : int):
-		cursor.execute("INSERT INTO peripherals (name,grp_id) VALUES (:n,:g)", {"n":self.name,"g":group_id})
-		this_id = cursor.lastrowid
+	def generate_sql(self, cursor : sql.Cursor, group_id : int):
+
+		gid = int(group_id)
+		cursor.execute("INSERT INTO peripherals (name,grp_id) VALUES (:n,:g)", {"n":self.name,"g":gid})
+		this_id = int(cursor.lastrowid)
 		reg_map = dict()
+		"""Maps a register name to its SQL ID"""
 		placement_map = dict()
 		done_map = dict()
+
 		for instance in self.instances:
 			instance.generate_sql(cursor, this_id)
+
 		for mappings in self.mappings:
 			for elt in mappings :
 				if isinstance(elt.component,Register) :
+					# We create the component (here register) if it hasn't been created before.
+					# This is not related to fields declaration.
 					if elt.component.name not in reg_map :
 						reg_id = elt.component.generate_sql(cursor)
 						reg_map[elt.component.name] = reg_id
 					else :
+						# If the register exists, we just get its ID.
 						reg_id = reg_map[elt.component.name]
 				elif isinstance(elt.component,Peripheral) :
 					if elt.component.name not in reg_map:
-						sub_periph_id = elt.component.generate_sql(cursor,group_id)
+						sub_periph_id = elt.component.generate_sql(cursor, gid)
 						cursor.execute("INSERT INTO registers (name,size,sub_periph_id) VALUES (:n,:s,:pid)",
 									   {"n":elt.name,"s":elt.size,"pid":sub_periph_id})
-						reg_id = cursor.lastrowid
+						reg_id = int(cursor.lastrowid)
 						reg_map[elt.component.name] = reg_id
 					else :
 						reg_id = reg_map[elt.component.name]
 				else :
 					raise ValueError()
 
-				key = (reg_id,elt.address)
+				# A register placement will be considered done if its id and addr are already done.
+				key = (reg_id,elt.address,this_id)
+
+				skip_regplacement = False
 				if key in done_map :
 					if done_map[key] == elt.name :
-						continue
+						skip_regplacement = True
 				else :
 					done_map[key] = elt.name
 
-				try :
-					cursor.execute("""INSERT INTO reg_placements(periph_id,register_id,name,array_size,pos) 
-										VALUES (:pid,:rid,:n,:asize,:pos)""",
-								   {"pid":this_id,"rid":reg_id,"n":elt.name,"asize":elt.array_size,"pos":elt.address})
-					placement_map[elt.name] = cursor.lastrowid
+				if not skip_regplacement :
+					try :
+						cursor.execute("""INSERT INTO reg_placements(periph_id,register_id,name,array_size,pos) 
+											VALUES (:pid,:rid,:n,:asize,:pos)""",
+									   {"pid":this_id,"rid":reg_id,"n":elt.name,"asize":elt.array_size,"pos":elt.address})
+						placement_map[elt.name] = cursor.lastrowid
 
-				except sql.IntegrityError:
-					logger.error(f"Register mapping unicity failure on peripheral {self.name} : double mapping of {elt.name} onto {done_map[key]}")
+					except sql.IntegrityError:
+						logger.error(f"Register mapping unicity failure on peripheral {self.name} : double mapping of {elt.name} onto {done_map[key]}")
 
-				reg_map[reg_id] = (elt.name,elt.array_size,elt.address)
+					reg_map[reg_id] = (elt.name,elt.array_size,elt.address)
 
 				if isinstance(elt.component,Register) :
 					elt.component.generate_fields_sql(cursor,placement_map[elt.name])

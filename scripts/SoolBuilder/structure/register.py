@@ -346,9 +346,14 @@ class Register(Component) :
 	def generate_sql(self,cursor : sql.Cursor,override_name :str = None ):
 
 		used_name = self.name if override_name is None else override_name
-		cursor.execute("INSERT INTO registers (name,size,type) VALUES (:n,:s,:t)", {"n":used_name,"s":self.size,"t":self.type})
-		this_id = cursor.lastrowid
-		return this_id
+		cursor.execute("SELECT id FROM registers WHERE name == :n AND size == :s",{"n":used_name,"s":self.size})
+		result = cursor.fetchone()
+
+		if result :
+			return result[0]
+		else:
+			cursor.execute("INSERT INTO registers (name,size,type) VALUES (:n,:s,:t)", {"n":used_name,"s":self.size,"t":self.type})
+			return cursor.lastrowid
 
 	def generate_fields_sql(self,cursor,placement_id):
 		for variant in self.variants:

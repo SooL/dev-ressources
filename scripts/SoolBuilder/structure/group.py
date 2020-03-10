@@ -287,5 +287,6 @@ class Group(Component) :
 
 	def generate_sql(self,cursor : sql.Cursor):
 		cursor.execute("INSERT INTO groups (name) VALUES (?)",(self.name,))
+		my_id = int(cursor.lastrowid)
 		for periph in self.peripherals :
-			periph.generate_sql(cursor,cursor.lastrowid)
+			periph.generate_sql(cursor,my_id)

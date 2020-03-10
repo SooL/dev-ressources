@@ -55,7 +55,8 @@ class SoolManifest:
             pdsc_root.append(ET.Element("family",{"name":k,"version":self.pdsc_version[k]}))
             hasher.update(bytes(f"{k}={self.pdsc_version[k]}","us-ascii"))
 
-        self.hash.append(ET.Element("fileset",{"value":hasher.hexdigest()}))
+        digest = hasher.hexdigest()
+        self.hash.append(ET.Element("files",{"short":digest[:6],"value": digest}))
 
     def write_groups_info(self):
         hasher = hashlib.sha1()
@@ -64,7 +65,9 @@ class SoolManifest:
             groups_root.append(ET.Element("group", {"name": group}))
             hasher.update(bytes(group,"us-ascii"))
 
-        self.hash.append(ET.Element("group", {"value": hasher.hexdigest()}))
+        digest = hasher.hexdigest()
+
+        self.hash.append(ET.Element("group",{"short": digest[:6], "value": digest}))
 
     def write_chips_info(self):
         hasher = hashlib.sha1()
@@ -82,7 +85,8 @@ class SoolManifest:
             families[family].append(elt)
             hasher.update(bytes(str(ET.tostring(elt)),"us-ascii"))
 
-        self.hash.append(ET.Element("chips",{"value":hasher.hexdigest()}))
+        digest = hasher.hexdigest()
+        self.hash.append(ET.Element("chips",{"short": digest[:6], "value": digest}))
 
     def construct_xml(self):
         self.write_pdsc_infos()
