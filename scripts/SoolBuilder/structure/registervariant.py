@@ -236,6 +236,9 @@ class RegisterVariant(Component) :
 			if f.name is None :
 				continue
 			for c in self.chips:
+				if c.sql_id is None :
+					c.update_sql_id(cursor)
+					logger.error(f"Chip SQL coherency failure on {c.name} : id = {c.sql_id}")
 				data = {"rid":parent_id,"n":f.name,"s":f.size,"p":f.position,"cid":c.sql_id}
 				all_data.append(data)
 			cursor.execute("INSERT INTO fields(name,size,position) VALUES (:n,:s,:p)",data)

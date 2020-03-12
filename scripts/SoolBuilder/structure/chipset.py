@@ -16,7 +16,7 @@ class Chip:
 		self.svd 	: str = svd
 		self.processor: str = processor
 		self.processor_define : str = pdefine
-
+		self.sql_id : int = None
 		self.header_handler : CMSISHeader = None
 
 	def __hash__(self):
@@ -94,6 +94,14 @@ class Chip:
 	def generate_sql(self,cursor : sql.Cursor):
 		cursor.execute("INSERT INTO chips (name) VALUES (?)",(self.name,))
 		self.sql_id = cursor.lastrowid
+
+	def update_sql_id(self,cursor : sql.Cursor):
+		result = cursor.execute("SELECT id FROM chips WHERE name == :cname",{"cname":self.name}).fetchone()
+		if not result :
+			self.generate_sql(cursor)
+		else :
+			self.sql_id = int(result[0]);
+
 
 class ChipSet :
 	reference_chips_name_list : T.Set[str] = set()

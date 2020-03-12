@@ -454,7 +454,7 @@ if __name__ == "__main__" :
 		os.makedirs(out_rccf,exist_ok=True)
 		db = sql.connect("out/database.sqlite3")
 		for name,group in output_groups.items():
-			if global_parameters.got_group_filter and name not in global_parameters.group_filter :
+			if name == "RCC" or global_parameters.got_group_filter and name not in global_parameters.group_filter :
 				continue
 			for periph in group.peripherals :
 				logger.info(f"RCCF generation for {periph.name}")
