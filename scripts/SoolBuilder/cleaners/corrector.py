@@ -11,6 +11,15 @@ def change_name(obj, name) :
 def change_type(obj, new_type) :
 	obj.type = new_type
 
+def clone_field(field, name=None, pos=None, brief=None, size=None) :
+	newField = Field(field.chips,
+	                 field.name if name is None else name,
+	                 field.brief if brief is None else brief,
+	                 field.position if pos is None else pos,
+	                 field.size if size is None else size)
+	if newField not in field.parent.parent :
+		field.parent.parent.add_field(newField)
+
 def remove_periph_prefix(obj : Component) :
 	from structure import Peripheral
 	periph = obj.parent
@@ -161,6 +170,15 @@ base_root_corrector = Corrector({
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"LPUART"    : lambda group: change_name(group, "USART"),
 	"RAMECC"    : { "*" : lambda periph: change_name(periph, "RAMECC") },
+	"RCC"           : {
+		"*"             : {
+			"*ENR"          : { "*" : {
+				"GPIOP?EN" : lambda field : change_name(field, f"GPIO{field.name[-3]}EN")
+			}},
+			"xA?B*EN*R*"  : lambda reg : change_name(reg, reg.name[1 :]),
+			"MxA?B*EN*R*" : lambda reg : change_name(reg, reg.name[2 :])
+		}
+	},
 	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
 	"TIM?*"     : lambda group: change_name(group, "TIM"),
 	"TIM"       : { "*" : TIM_periph_cleaner },
@@ -191,15 +209,20 @@ base_root_corrector = Corrector({
 	}},
 })
 
+
 advanced_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
-	"GPIO"      : { "*" : GPIO_periph_advanced_cleaner },
-	"HASH"      : { "*" :
-            lambda periph : create_array(periph, component="HRx", name="HR") },
+	"GPIO"      : { "*" : GPIO_periph_advanced_cleaner},
+	"HASH"      : {
+		"*"         : lambda periph : create_array(periph, component="HRx", name="HR")
+    },
 	"RCC"       : {
 		"*"         : {
-			"xA?B*EN*R*"    : lambda reg : change_name(reg,reg.name[1:]),
-			"MxA?B*EN*R*"   : lambda reg : change_name(reg,reg.name[2:])
+			"*ENR"      : { "*" : {
+				"IOP?EN"  : lambda field : clone_field(field, name=f"GPIO{field.name[-3]}EN")
+			}},
+			"xA?B*EN*R*"  : lambda reg : change_name(reg,reg.name[1:]),
+			"MxA?B*EN*R*" : lambda reg : change_name(reg,reg.name[2:])
 		}
 	},
 })

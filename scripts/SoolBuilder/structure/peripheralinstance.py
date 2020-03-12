@@ -119,7 +119,7 @@ class PeripheralInstance(Component) :
 
 		normal_instance = str(indent + (
 			0 if global_parameters.physical_mapping else 1)) + \
-						  "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});" \
+						  "volatile class {0} * const {1} = reinterpret_cast<class {0}* const>({2});\n" \
 							  .format(class_name, self.name, self.defined_name)
 
 		nophy_instance = (str(indent + 1) + "volatile class {0} * const {1} = new class {0}({2});\n")\
@@ -127,10 +127,10 @@ class PeripheralInstance(Component) :
 
 		if not global_parameters.physical_mapping :
 			out += f"{indent}#if __SOOL_DEBUG_NOPHY\n" \
-				   f"{nophy_instance}\n" \
+				   f"{nophy_instance}" \
 				   f"{indent}#else\n" \
-				   f"{normal_instance}\n" \
-				   f"{indent}#endif"
+				   f"{normal_instance}" \
+				   f"{indent}#endif\n"
 		else :
 			out += normal_instance
 
@@ -150,11 +150,11 @@ class PeripheralInstance(Component) :
 		if len(ifdef_string) > 0 :
 			indent.increment()
 			out = f"\n{indent -1 }#if {ifdef_string}\n" \
-				  f"{self.declaration_strings(indent)}\n" \
+				  f"{self.declaration_strings(indent)}" \
 				  f"{indent-1}#endif\n"
 			indent.decrement()
 		else:
-			out = self.declaration_strings(indent) + "\n"
+			out = self.declaration_strings(indent)
 			if not global_parameters.physical_mapping :
 				out += "\n"
 
