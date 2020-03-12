@@ -76,7 +76,7 @@ logger.addHandler(log_file_handler)
 main_out = "out"
 out_include = f"{main_out}/include"
 out_sys = f"{main_out}/system/include"
-
+out_rccf = f"{main_out}/rccf"
 pdsc_path_model = ".data/fileset/*.pdsc"
 pickle_data_path = ".data/SooL.dat"
 
@@ -430,7 +430,8 @@ if __name__ == "__main__" :
 		logger.info("\tDone.")
 		pass
 
-	if global_parameters.dump_sql :
+
+	if global_parameters.dump_sql or (global_parameters.dump_rccf and not os.path.exists("out/database.sqlite3")) :
 		logger.info("Generating SQL database...")
 		if os.path.exists("out/database.sqlite3"):
 			os.remove("out/database.sqlite3")
@@ -449,12 +450,16 @@ if __name__ == "__main__" :
 			db.commit()
 		logger.info("Done")
 
+	if global_parameters.dump_rccf :
+		os.makedirs(out_rccf,exist_ok=True)
+		db = sql.connect("out/database.sqlite3")
 		for name,group in output_groups.items():
 			if global_parameters.got_group_filter and name not in global_parameters.group_filter :
 				continue
 			for periph in group.peripherals :
-				print("GENERATION FOR",periph.name)
-				print(generate_get_bit(db,periph.name))
+				logger.info(f"RCCF generation for {periph.name}")
+				with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
+					rccf.write(generate_get_bit(db,periph.name))
 
 
 	end_time = time()
