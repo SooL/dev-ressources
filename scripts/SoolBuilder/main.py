@@ -459,7 +459,7 @@ if __name__ == "__main__" :
 			for periph in group.peripherals :
 				logger.info(f"RCCF generation for {periph.name}")
 				with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
-					rccf.write(generate_get_bit(db,periph.name))
+					rccf.write(generate_get_bit(db,periph))
 
 
 	end_time = time()
