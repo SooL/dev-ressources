@@ -120,6 +120,8 @@ if __name__ == "__main__" :
 	import sqlite3 as sql
 
 	from generators import generate_get_bit
+	from generators import generate_get_reg
+	from generators import generate_records
 
 
 	start_time = time()
@@ -431,7 +433,7 @@ if __name__ == "__main__" :
 		pass
 
 
-	if global_parameters.dump_sql or (global_parameters.dump_rccf and not os.path.exists("out/database.sqlite3")) :
+	if global_parameters.dump_sql :
 		logger.info("Generating SQL database...")
 		if os.path.exists("out/database.sqlite3"):
 			os.remove("out/database.sqlite3")
@@ -459,7 +461,10 @@ if __name__ == "__main__" :
 			for periph in group.peripherals :
 				logger.info(f"RCCF generation for {periph.name}")
 				with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
-					rccf.write(generate_get_bit(db,periph))
+					records = generate_records(db,periph,output_groups['RCC'].peripherals[0])
+					rccf.write(generate_get_reg(records))
+					rccf.write(generate_get_bit(records))
+
 
 
 	end_time = time()

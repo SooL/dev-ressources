@@ -1,1 +1,1 @@
-from .rcc_functions import generate_get_bit
+from .rcc_functions import generate_get_reg, generate_get_bit, generate_records

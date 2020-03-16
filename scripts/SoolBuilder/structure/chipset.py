@@ -142,6 +142,9 @@ class ChipSet :
 	def __iter__(self):
 		return iter(self.chips)
 
+	def __and__(self, other):
+		if isinstance(other,ChipSet) :
+			return ChipSet(self.chips ^ other.chips)
 	@property
 	def families(self) ->T.Dict[str, T.Set[Chip]]:
 		if not self._families_up_to_date :
