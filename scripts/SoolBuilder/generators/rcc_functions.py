@@ -17,19 +17,23 @@ class Record:
 	def output_fpos(self):
 		out = ""
 		out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
-		out += f"{indent + 1}case {self.instance.name}_BASE_ADDR :\n"
+		indent.increment()
+		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
+		indent.increment()
 		for i in range(len(self.values_pos)):
 			v = list(self.values_pos.keys())[i]
 			cs = self.values_pos[v]
 
-
 			if i == 0:
-				out += f"{indent + 1}#if {cs.defined_list()}\n"
+				out += f"{indent}#if {cs.defined_list()}\n"
 			else:
-				out += f"{indent + 1}#elif {cs.defined_list()}\n"
+				out += f"{indent}#elif {cs.defined_list()}\n"
 
-			out += f"{indent + 2}eturn 1 << {v};\n"
-		out += f"{indent + 1}#endif\n"
+			out += f"{indent + 1}return 1 << {v};\n"
+
+		indent.decrement()
+		out += f"{indent}#endif\n"
+		indent.decrement()
 		out += f"{indent}#endif"
 		return out
 
@@ -52,12 +56,7 @@ class Record:
 		out += f"{indent}#endif"
 		return out
 
-def generate_records(db : sql.Connection, periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record] :
-	cursor = db.cursor()
-	cursor.row_factory = sql.Row
-
-	peripheral_name = periph.name
-
+def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record] :
 	names = [(f"{x.name}EN",x) for x in periph.instances]
 	records_dict : T.Dict[str,Record] = dict()
 	for fname,instance in names :
@@ -84,27 +83,51 @@ def generate_records(db : sql.Connection, periph : Peripheral, rcc : Peripheral)
 	return records_dict
 
 
-def generate_get_bit(records_dict : T.Dict[str,Record]) -> str :
-	out =  f"uint32_t get_enable_bit(uintptr_t addr)\n"
+def generate_get_bit(records_dict : T.Dict[str,Record],periph : Peripheral) -> str :
+	out = ""
+	need_template = False
+	for inst in periph.instances :
+		if periph.needs_template(inst) :
+			need_template = True
+			break
+	if need_template :
+		out += "template<typename T>\n"
+
+	out += f"inline constexpr uint32_t {periph.name}{'<T>' if need_template else ''}::get_clock_enable_bit(const uintptr_t addr)\n"
 	out += f"{{\n"
-	out += f"{indent}case (addr) {{"
+	indent.increment()
+	out += f"{indent}switch (addr) \n{indent}{{\n"
 
 	for n, rec in records_dict.items():
-		out += f"//Output for {n}\n"
+		out += f"{indent}//Output for {n}\n"
 		out += rec.output_fpos()
 		out += "\n"
-	out += "}\n"
+	out += f"{indent}}}\n"
+	indent.decrement()
 	out += "}\n"
 	return out
 
-def generate_get_reg(records_dict: T.Dict[str, Record]) -> str:
-	out = "uint32_t get_enable_reg(uintptr_t addr){\n"
-	out += "case (addr) {"
+
+def generate_get_reg(records_dict: T.Dict[str, Record],periph : Peripheral) -> str:
+	out = ""
+	need_template = False
+	for inst in periph.instances :
+		if periph.needs_template(inst) :
+			need_template = True
+			break
+	if need_template :
+		out += "template<typename T>\n"
+
+	out += f"inline constexpr volatile Reg32_t& {periph.name}{'<T>' if need_template else ''}::get_clock_enable_reg(const uintptr_t addr)\n"
+	out += f"{{\n"
+	indent.increment()
+	out += f"{indent}switch (addr) \n{indent}{{\n"
 
 	for n, rec in records_dict.items():
-		out += f"//Output for {n}\n"
+		out += f"{indent}//Output for {n}\n"
 		out += rec.output_register()
 		out += "\n"
-	out += "}\n"
+	out += f"{indent}}}\n"
+	indent.decrement()
 	out += "}\n"
 	return out
