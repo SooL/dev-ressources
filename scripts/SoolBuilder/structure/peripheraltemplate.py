@@ -19,13 +19,15 @@ class PeripheralTemplate(Component) :
 		# tests if variants are overlapping (chips in common for different variants in same register)
 		inst_variants = instance.template_reg_variants
 		for var in self.registerVariants :
-			for inst_var in inst_variants :
-				if var.parent is inst_var.parent and var != inst_var and not var.chips.chips.isdisjoint(inst_var.chips.chips) :
-						return False
+			if var.for_template and var not in inst_variants :
+				for inst_var in inst_variants :
+					if inst_var.for_template :
+						if var.parent is inst_var.parent and var is not inst_var : # same register, different variants
+							if not var.chips.chips.isdisjoint(inst_var.chips.chips) :
+								return False
 		return True
 
 	def add_instance(self, instance: PeripheralInstance) :
-		#super().inter_svd_merge(instance) # merges chips
 
 		new_variants = instance.template_reg_variants
 
@@ -35,12 +37,6 @@ class PeripheralTemplate(Component) :
 				self.chips.add(var.chips)
 
 		self.instances.append(instance)
-
-	def add_common_variants(self, register: Register):
-
-		for var in register :
-			if not var.for_template and (len(self.instances)==0 or not var.chips.chips.isdisjoint(self.chips.chips)) :
-				self.registerVariants.append(var)
 
 	def finalize(self):
 		if len(self.instances) == 0 :
