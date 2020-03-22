@@ -215,7 +215,7 @@ class ChipSet :
 			self._families[family].add(chip)
 		self._families_up_to_date = True
 
-	def defined_list(self, chips_per_line = 5,reference_chipset = None, allow_reverse = False):
+	def defined_list(self, chips_per_line = 5,reference_chipset = None, newline_prefix = "    "):
 		if reference_chipset is None :
 			reference_chipset = ChipSet.reference_chipset
 
@@ -231,7 +231,7 @@ class ChipSet :
 
 		for family in sorted(matched_family.keys()) :
 			if line_size == chips_per_line:
-				output += "\\\n    "
+				output += f"\\\n{newline_prefix}"
 				line_size = 0
 			output += f"defined({family:13s}) || "
 			matched_family[family] = False
@@ -241,7 +241,7 @@ class ChipSet :
 			family = ChipSet.get_family(chip.name)
 			if family not in matched_family or matched_family[family] :
 				if line_size == chips_per_line :
-					output += "\\\n    "
+					output += f"\\\n{newline_prefix}"
 					line_size = 0
 				if family not in matched_family :
 					output += f"defined({chip.name:13s}) || "

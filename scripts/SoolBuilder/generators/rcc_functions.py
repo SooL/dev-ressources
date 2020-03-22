@@ -25,9 +25,9 @@ class Record:
 			cs = self.values_pos[v]
 
 			if i == 0:
-				out += f"{indent}#if {cs.defined_list()}\n"
+				out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ')}\n"
 			else:
-				out += f"{indent}#elif {cs.defined_list()}\n"
+				out += f"{indent}#elif {cs.defined_list(f'{indent}      ')}\n"
 
 			out += f"{indent + 1}return 1 << {v};\n"
 
@@ -40,19 +40,23 @@ class Record:
 	def output_register(self):
 		out = ""
 		out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
-		out += f"{indent+1}case {self.instance.name}_BASE_ADDR :\n"
+		indent.increment()
+		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
+		indent.increment()
 		for i in range(len(self.values_reg)):
 			v = list(self.values_reg.keys())[i]
 			cs = self.values_reg[v]
 
 
 			if i == 0:
-				out += f"{indent+1}#if {cs.defined_list()}\n"
+				out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ')}\n"
 			else:
-				out += f"{indent+1}#elif {cs.defined_list()}\n"
+				out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ')}\n"
 
-			out += f"{indent+2}return RCC->{v};\n"
-		out += f"{indent+1}#endif\n"
+			out += f"{indent+1}return RCC->{v};\n"
+		indent.decrement()
+		out += f"{indent}#endif\n"
+		indent.decrement()
 		out += f"{indent}#endif"
 		return out
 
