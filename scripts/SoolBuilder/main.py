@@ -363,7 +363,7 @@ if __name__ == "__main__" :
 
 	logger.info("Printing output files...")
 	for name, group in output_groups.items():
-		if args.group_filter is None or name in args.group_filter :
+		if not global_parameters.got_group_filter or name in global_parameters.group_filter :
 			with open(f"{out_include}/{name}_struct.h","w") as header :
 				header.write(group.cpp_output())
 
