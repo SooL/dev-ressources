@@ -185,6 +185,10 @@ class Register(Component) :
 								if inst not in linked_instances :
 									linked_instances.append(inst)
 							look_needed = True
+							if len(v.fields) == 0 :
+								self.variants.remove(v)
+								break
+
 
 		if var is None :
 			var = RegisterVariant(linked_instances=linked_instances)

@@ -152,6 +152,9 @@ class RegisterVariant(Component) :
 			raise ValueError(f"{field} is not in {self}")
 		else :
 			raise TypeError(f"Cannot remove {field} from {self} : not a str or Field")
+		self.chips = ChipSet()
+		for field in self :
+			self.chips.add(field.chips)
 
 
 	def sort_fields(self, reverse = False):
