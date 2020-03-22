@@ -144,7 +144,7 @@ class ChipSet :
 
 	def __and__(self, other):
 		if isinstance(other,ChipSet) :
-			return ChipSet(self.chips ^ other.chips)
+			return ChipSet(self.chips & other.chips)
 	@property
 	def families(self) ->T.Dict[str, T.Set[Chip]]:
 		if not self._families_up_to_date :

@@ -2,7 +2,7 @@ import os
 import sqlite3 as sql
 import typing as T
 from structure import ChipSet
-from structure import Peripheral, PeripheralInstance
+from structure import Peripheral, PeripheralInstance, Field
 from structure import default_tabmanager as indent
 from copy import copy
 
@@ -56,18 +56,39 @@ class Record:
 		out += f"{indent}#endif"
 		return out
 
+
 def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record] :
+	"""
+	Generates records dict to be used for RCCF generation.
+	:param periph: Periph to generate RCCF for.
+	:param rcc: RCC peripheral description
+	:return: Fully formed dict.
+	"""
 	names = [(f"{x.name}EN",x) for x in periph.instances]
+	"""Fields name that will be looked up"""
 	records_dict : T.Dict[str,Record] = dict()
+	"""Dict which associate a field name with a proper record."""
+
+	# For each instance we try to find the matching fields in RCC for all chips
 	for fname,instance in names :
-		curr_cs = copy(instance.chips)
+		curr_cs : ChipSet = copy(instance.chips)
+		"""Instance chipset"""
+		# For all potentially valid RCC registers (Enable Register)
 		for reg in rcc :
 			if "ENR" not in reg.name :
 				continue
-			fieldlist = list()
+
+			fieldlist : T.List[Field] = list()
+			"""List of all fields across all variant for the given RCC register"""
+
 			for v in reg :
 				fieldlist += v.fields
+
+			# We look for a field matching the current fname and update the record accordingly.
+			# Since we want something which is valid for the instance's chips, the found fields should have
+			# some chips in common with the instance.
 			for field in [f for f in fieldlist if f.name == fname] :
+
 				common_chips : ChipSet = curr_cs & field.chips
 				if not common_chips.empty :
 					curr_cs = curr_cs - common_chips
