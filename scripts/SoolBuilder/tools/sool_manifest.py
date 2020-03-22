@@ -25,6 +25,13 @@ class SoolManifest:
         self.root : ET.Element = ET.Element("manifest")
         self.hash : ET.Element = ET.SubElement(self.root,"hash")
 
+        try :
+            sha1 = subprocess.check_output(["git", "rev-parse","HEAD"]).strip().decode()
+        except :
+            sha1 = "0"*40
+
+        self.hash.append(ET.Element("mainv", {"short": sha1[:6], "value": sha1}))
+
         self.write_generation_info()
 
     def add_pdsc_version(self,family : str, version : str):
@@ -45,12 +52,6 @@ class SoolManifest:
     def write_generation_info(self):
         gen_info : ET.Element = ET.SubElement(self.root,"generation")
 
-        try :
-            generator_git_version = subprocess.check_output(["git", "describe","--all", "--always", "--long"]).strip().decode()
-        except :
-            generator_git_version = "NA"
-
-        gen_info.append(ET.Element("generator-version", {"value": generator_git_version}))
         gen_info.append(ET.Element("date",{"value" : self.generation_date}))
         gen_info.append(ET.Element("command-line",{"args":" ".join(sys.argv[1:])}))
         gen_info.append(global_parameters.to_xml)
@@ -104,4 +105,8 @@ class SoolManifest:
     def write_file(self):
         with open(self.file_path,"w") as out :
             dom = minidom.parseString(ET.tostring(self.root))
+            pi = dom.createProcessingInstruction('xml-stylesheet','type="text/xsl" href="manifest.xsl"')
+            root = dom.firstChild
+            dom.insertBefore(pi, root)
+
             out.write(dom.toprettyxml())
