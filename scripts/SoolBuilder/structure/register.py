@@ -156,7 +156,6 @@ class Register(Component) :
 				return
 			if v.has_room_for(field) :
 				var = v
-				break
 
 		if var is None :
 			var = RegisterVariant()
