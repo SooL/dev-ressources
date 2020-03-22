@@ -5,6 +5,7 @@ import os
 import sys
 import typing as T
 import hashlib
+import subprocess
 
 from structure import Chip, ChipSet
 
@@ -43,6 +44,13 @@ class SoolManifest:
 
     def write_generation_info(self):
         gen_info : ET.Element = ET.SubElement(self.root,"generation")
+
+        try :
+            generator_git_version = subprocess.check_output(["git", "describe","--all", "--always", "--long"]).strip().decode()
+        except :
+            generator_git_version = "NA"
+
+        gen_info.append(ET.Element("generator-version", {"value": generator_git_version}))
         gen_info.append(ET.Element("date",{"value" : self.generation_date}))
         gen_info.append(ET.Element("command-line",{"args":" ".join(sys.argv[1:])}))
         gen_info.append(global_parameters.to_xml)
