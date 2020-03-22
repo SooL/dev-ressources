@@ -20,12 +20,13 @@ REG_VAR_DECLARATION : str = """{indent}struct
 
 
 class RegisterVariant(Component) :
-	def __init__(self, chips: T.Optional[ChipSet] = None) :
+	def __init__(self, chips: T.Optional[ChipSet] = None,
+	             linked_instances : T.Optional[T.List["PeripheralInstance"]] = None) :
 		super().__init__(chips=chips)
 		self.fields : T.List[Field] = list()
 
 		from structure import PeripheralInstance
-		self.linked_instances : T.Optional[T.List[PeripheralInstance]] = None
+		self.linked_instances : T.Optional[T.List[PeripheralInstance]] = linked_instances
 
 ################################################################################
 #                                  OPERATORS                                   #

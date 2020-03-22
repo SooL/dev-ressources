@@ -78,7 +78,7 @@ class Register(Component) :
 	def __iter__(self) :
 		return iter(self.variants)
 
-	def __contains__(self, item) :
+	def __contains__(self, item : T.Union[str, Field, RegisterVariant]) :
 		if isinstance(item, RegisterVariant) :
 			return super().__contains__(item)
 		elif isinstance(item,Field) :
@@ -94,7 +94,7 @@ class Register(Component) :
 		else :
 			raise TypeError()
 
-	def __getitem__(self, item: str) -> Field:
+	def __getitem__(self, item: T.Union[str, Field]) -> Field:
 		result: T.Union[Field, None] = None
 		for var in self :
 			if item in var :
@@ -143,28 +143,59 @@ class Register(Component) :
 #                         FIELDS & VARIANTS MANAGEMENT                         #
 ################################################################################
 
-	def add_field(self, field: Field, in_xml_node: bool = False) :
+	def add_field(self, field: Field, in_xml_node: bool = False,
+	              linked_instances : T.Optional[T.List["PeripheralInstance"]] = None) :
 		self.chips.add(field.chips)
 
 		var: T.Optional[RegisterVariant] = None
-		for v in self.variants :
-			if (not in_xml_node) and v.for_template :
-				continue # don't add single fields to template variants
-
-			if field in v :
-				v[field].inter_svd_merge(field)
-				return
-			if v.has_room_for(field) :
-				var = v
+		if in_xml_node :
+			for v in self :
+				if field in v :
+					v[field].inter_svd_merge(field)
+					return
+				elif var is None and v.has_room_for(field) :
+					var = v
+		elif linked_instances is None :
+			for v in self :
+				if v.for_template :
+					continue
+				elif field in v :
+					v[field].inter_svd_merge(field)
+					return
+				elif var is None and v.has_room_for(field) :
+					var = v
+		else : # linked instance != None :
+			look_needed = True
+			while look_needed :
+				look_needed = False
+				for v in self :
+					if v.for_template :
+						if sorted(v.linked_instances) == sorted(linked_instances) :
+							if field in v :
+								v[field].inter_svd_merge(field)
+								return
+							elif v.has_room_for(field) :
+								var = v
+						elif field in v :
+							# remove field from variant, create new variant with merged fields (at the end of the loop)
+							var = None # even if previous variant had room for this field, a new variant must be created
+							field.inter_svd_merge(v[field])
+							v.remove_field(v[field])
+							for inst in v.linked_instances :
+								if inst not in linked_instances :
+									linked_instances.append(inst)
+							look_needed = True
 
 		if var is None :
-			var = RegisterVariant()
-			self.add_variant(var)
+			var = RegisterVariant(linked_instances=linked_instances)
+			var.set_parent(self)
+			self.variants.append(var)
+
 		var.add_field(field)
 
 	def add_variant(self, variant: RegisterVariant) :
-		self.variants.append(variant)
-		variant.set_parent(self)
+		for f in variant :
+			self.add_field(f, linked_instances=variant.linked_instances)
 		self.edited = True
 
 	def get_linked_variants(self, instance) -> T.List[RegisterVariant]:
@@ -263,7 +294,7 @@ class Register(Component) :
 					for f in o_v :
 						self.add_field(f)
 
-	def before_svd_compile(self, parent_corrector):
+	def before_svd_compile(self, parent_corrector) :
 		old_name = self.name
 		super().before_svd_compile(parent_corrector)
 		if self.name != old_name :
@@ -272,7 +303,7 @@ class Register(Component) :
 					if elmt.component is self and elmt.name == old_name :
 						elmt.name = self.name
 
-	def svd_compile(self):
+	def svd_compile(self) :
 		super().svd_compile()
 
 		var_index = 0
