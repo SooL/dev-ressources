@@ -161,9 +161,15 @@ base_root_corrector = Corrector({
 	"GTZC"		: lambda group: change_name(group, "TZC"),
 	"HASH"     : {
 		"*"         : {
-			"HR?"       : ({ "*" : {
+			"HASH_HR*"  : (lambda reg : change_name(reg, reg.name[5:]), { "*" : {
 				"H*"        : lambda field : change_name(field, "H")
 			}}),
+			"HR*"       : { "*" : {
+				"H*"        : lambda field : change_name(field, "H")
+			}},
+			"CSR*"      : { "*" : {
+				"CS*"       : lambda field : change_name(field, "CS")
+			}}
 		},
 	},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
@@ -214,7 +220,10 @@ advanced_root_corrector = Corrector({
 	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
 	"GPIO"      : { "*" : GPIO_periph_advanced_cleaner},
 	"HASH"      : {
-		"*"         : lambda periph : create_array(periph, component="HRx", name="HR")
+		"*"         : {
+			"HRx"       : lambda reg : create_array(reg.parent, component=reg, name="HR"),
+			"CSRx"       : lambda reg : create_array(reg.parent, component=reg, name="CSR"),
+		}
     },
 	"RCC"       : {
 		"*"         : {
