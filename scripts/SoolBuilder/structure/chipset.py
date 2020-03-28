@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 
 class Chip:
-	def __init__(self,define = None,header = None ,svd = None, processor = None, pdefine = None ):
+	def __init__(self,define = None,header = None ,svd = None, processor = None, pdefine = None, cmsis_options : T.Dict[str,str] = None ):
 		self.define : str = define
 		self.header : str = header
 		self.svd 	: str = svd
@@ -18,6 +18,7 @@ class Chip:
 		self.processor_define : str = pdefine
 		self.sql_id : int = None
 		self.header_handler : CMSISHeader = None
+		self.cmsis_options : T.Dict[str,str] = cmsis_options
 
 	def __hash__(self):
 		return hash((self.define,self.header,self.svd,self.processor))

@@ -157,6 +157,7 @@ class PDSCHandler:
 			#Now the right handler is selected.
 			assoc.header = curr_handler.path
 			assoc.header_handler = curr_handler
+			assoc.cmsis_options = curr_handler.cmsis_conf
 			if not assoc.header_handler.is_structural :
 				raise AssertionError(f"Chip header handler should be structural ! ({assoc.computed_define}")
 

@@ -102,11 +102,15 @@ class CMSISHeader:
 		"""Processed include table, chip define to valid file path"""
 		self.memory_table	: T.Dict[str,int] 			  = None
 		"""Processed memory table, memory define to integer memory address."""
-		
+		self.cmsis_conf		: T.Dict[str, int] 			  = None
+		"""Processed CMSIS configuration section. Define to data"""
+
+
 		self.raw_irq_table 	: str 			= None
 		self.raw_includes	: str 			= None
 		self.raw_peripheral : T.List[str] 	= None
 		self.raw_memory 	: str 			= None
+		self.raw_cmsis_conf : str			= None
 		
 	@property
 	def is_structural(self) -> bool:
@@ -138,6 +142,12 @@ class CMSISHeader:
 		"""
 		with open(self.path,"r",encoding="latin-1") as f :
 			data = f.read()
+
+		start = data.find("@addtogroup Configuration_section_for_CMSIS")
+		if start != -1 :
+			end = data.find("@}",start)
+			self.raw_cmsis_conf = data[start:end]
+
 		end = data.rfind("IRQn_Type;")
 		if end != -1 :
 			start = data.rfind("enum",0,end)
@@ -263,6 +273,31 @@ class CMSISHeader:
 				if not ( "enum" in line or "/*" in line or "{" in line or "}" in line or "MAX_IRQ_n" in line) :
 					logger.warning(f"IRQ line match failure: {line}")
 
+	def process_cmsis_conf(self):
+		"""
+		This function process the CMSIS section in order to retrieve all options.
+		"""
+
+		regex = re.compile(r"\#(?P<command>\w+)\s+(?P<name>(?:\w+))\s+(?P<val>(?:0x)?\d+)?")
+
+		if self.raw_cmsis_conf is None or len(self.raw_cmsis_conf) == 0:
+			logger.error(f"Analyze of an empty CMSIS conf for {os.path.basename(self.path)}")
+			return
+		if self.cmsis_conf is None :
+			self.cmsis_conf = dict()
+
+		for line in [x.strip() for x in self.raw_cmsis_conf.split("\n")]:
+			if line == str():
+				continue
+
+			result = regex.search(line)
+			if result:
+				if result["command"] != "define" :
+					logger.error(f"Found {result['command']} statement while parsing CMSIS conf in {os.path.basename(self.path)}")
+					break
+				else :
+					self.cmsis_conf[result["name"]] = int(result["val"],0) if result["val"] is not None else ""
+
 	def process_peripheral_definition(self):
 		"""
 		This function process the peripheral definitions data in order to fill the peripheral_table.
@@ -304,6 +339,7 @@ class CMSISHeader:
 		self.process_memory_table()
 		self.process_irq_table()
 		self.process_peripheral_definition()
+		self.process_cmsis_conf()
 
 	def apply_corrector(self, root_corrector):
 		for periph in self.periph_table.values() :

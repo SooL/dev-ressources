@@ -123,7 +123,7 @@ if __name__ == "__main__" :
 	from generators import generate_get_reg
 	from generators import generate_records
 	from generators import generate_sool_irqn
-
+	from generators import generate_sool_cmsis_config
 
 	start_time = time()
 
@@ -381,6 +381,10 @@ if __name__ == "__main__" :
 
 	with open(f"{out_sys}/IRQn.h", "w") as irq_table :
 		irq_table.write(generate_sool_irqn())
+		pass
+
+	with open(f"{out_sys}/cmsis_config.h", "w") as cmsis_configuration :
+		cmsis_configuration.write(generate_sool_cmsis_config())
 		pass
 
 

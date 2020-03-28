@@ -1,2 +1,5 @@
 stm32f042x6.h, stm32f038xx.h, stm32f048xx.h, stm32f058xx.h :
     missing CRC.POL (read-only) register declaration.
+
+stm32mp157cxx_ca7.h, stm32mp157axx_ca7.h stm32h747xx.h stm32h745xx.h, stm32h757xx.h, stm32h755xx.h
+    Missing a @} for CMSIS configuration section.
