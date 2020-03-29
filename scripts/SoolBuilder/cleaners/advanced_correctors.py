@@ -81,7 +81,7 @@ def GPIO_periph_advanced_cleaner(periph: "Peripheral") :
 		AFRL, AFRH = periph["AFRL"], periph["AFRH"]
 		AFR = copy(AFRL)
 		AFR.name = "AFR"
-		AFR.type = "ArrayRegBase_t<uint64_t, uint32_t>"
+		AFR.type = "SmallArrayRegBase_t<uint64_t, uint32_t>"
 		AFR._size = 64
 		periph.add_register(AFR)
 		for var in AFRH :
@@ -95,5 +95,29 @@ def GPIO_periph_advanced_cleaner(periph: "Peripheral") :
 				elmt = copy(m["AFRL"])
 				elmt.component = AFR
 				elmt.name = "AFR"
+				periph.add_placement(elmt)
+
+def SYSCFG_periph_advanced_cleaner(periph: "Peripheral") :
+	from structure import Register
+	if "EXTICR1" in periph :
+		EXTICRx = [periph["EXTICR1"], periph["EXTICR2"], periph["EXTICR3"], periph["EXTICR4"]]
+		EXTICR = copy(EXTICRx[0])
+		EXTICR.name = "EXTICR"
+		EXTICR.type = "ArrayRegBase_t<uint32_t, 4>"
+		EXTICR._size = 32*4
+		EXTICR.brief = "external interrupt configuration register"
+		periph.add_register(EXTICR)
+		for i in range(0, 4) :
+			for var in EXTICRx[i] :
+				for field in var :
+					newField = copy(field)
+					newField.position += i*32
+					newField.edited = True
+					EXTICR.add_field(newField)
+		for m in periph.mappings :
+			if "EXTICR1" in m :
+				elmt = copy(m["EXTICR1"])
+				elmt.component = EXTICR
+				elmt.name = "EXTICR"
 				periph.add_placement(elmt)
 

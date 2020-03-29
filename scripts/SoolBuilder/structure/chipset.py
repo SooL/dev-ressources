@@ -146,15 +146,6 @@ class ChipSet :
 	def __and__(self, other):
 		if isinstance(other,ChipSet) :
 			return ChipSet(self.chips & other.chips)
-	@property
-	def families(self) ->T.Dict[str, T.Set[Chip]]:
-		if not self._families_up_to_date :
-			self.update_families()
-		return self._families
-
-	@property
-	def empty(self) -> bool:
-		return len(self.chips) == 0
 	
 	def __str__(self):
 		return "\t".join(sorted([str(x) for x in self.chips]))
@@ -178,6 +169,16 @@ class ChipSet :
 		ret : ChipSet = ChipSet(self.chips)
 		ret.remove(other)
 		return ret
+
+	@property
+	def families(self) ->T.Dict[str, T.Set[Chip]]:
+		if not self._families_up_to_date :
+			self.update_families()
+		return self._families
+
+	@property
+	def empty(self) -> bool:
+		return len(self.chips) == 0
 
 	def add(self, other: T.Union[T.List[Chip], T.Set[Chip], 'ChipSet', Chip]):
 		if isinstance(other, ChipSet) :

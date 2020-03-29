@@ -116,12 +116,9 @@ class Register(Component) :
 			return False
 
 	def __copy__(self) :
-
 		result = Register(chips=self.chips, name=self.name, brief=self.brief, size=self.size, access=self.access)
-
 		for var in self :
 			result.add_variant(copy(var))
-
 		return result
 
 	@property

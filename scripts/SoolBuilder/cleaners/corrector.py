@@ -11,6 +11,9 @@ def change_name(obj, name) :
 def change_type(obj, new_type) :
 	obj.type = new_type
 
+def change_brief(obj, new_brief) :
+	obj.brief = new_brief
+
 def clone_field(field, name=None, pos=None, brief=None, size=None) :
 	newField = Field(field.chips,
 	                 field.name if name is None else name,
@@ -147,6 +150,17 @@ base_root_corrector = Corrector({
 	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
+	"FLASH"     : {
+		"*"         : {
+			"PCROP*"    : { "*" : {
+				"PCROP*_*"  : lambda field : change_name(field, field.name[field.name.index('_')+1:])
+			}},
+			"WRP*"    : { "*" : {
+				"WRP*_*"  : lambda field : change_name(field, field.name[field.name.index('_')+1:]),
+				"WRP?"    : lambda field : change_name(field, field.name[:-1])
+			}}
+		}
+	},
 	"GIC*"    : lambda group: change_name(group, "GIC"),
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
@@ -186,6 +200,13 @@ base_root_corrector = Corrector({
 		}
 	},
 	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
+	"SYSCFG"    : {
+		"*"         : {
+			"EXTICR?"   : { "*" : {
+				"EXTI?*"    : lambda field : change_brief(field, f"EXTI {field.name[4:]} configuration")
+			}}
+		}
+	},
 	"TIM?*"     : lambda group: change_name(group, "TIM"),
 	"TIM"       : { "*" : TIM_periph_cleaner },
 	"TZC"		: {"*" : TZC_periph_cleaner},
@@ -217,7 +238,7 @@ base_root_corrector = Corrector({
 
 
 advanced_root_corrector = Corrector({
-	"CAN"       : { "*" : CAN_periph_advanced_cleaner },
+	"CAN"       : { "*" : CAN_periph_advanced_cleaner},
 	"GPIO"      : { "*" : GPIO_periph_advanced_cleaner},
 	"HASH"      : {
 		"*"         : {
@@ -234,6 +255,7 @@ advanced_root_corrector = Corrector({
 			"MxA?B*EN*R*" : lambda reg : change_name(reg,reg.name[2:])
 		}
 	},
+	"SYSCFG"    : { "*" : SYSCFG_periph_advanced_cleaner},
 })
 
 cmsis_root_corrector = Corrector({

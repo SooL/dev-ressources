@@ -66,7 +66,6 @@ class Field(Component) :
 
 
 	def __copy__(self) :
-
 		return Field(chips=self.chips, name=self.name, brief=self.brief, position=self.position, size=self.size)
 
 	@property
@@ -89,7 +88,11 @@ class Field(Component) :
 		name = self.defined_name if self.needs_define else self.name
 		if name is None :
 			name = ""
-		out = f"{indent}uint{min(self.parent.parent.size, 64)}_t {name:16} : {self.size};"
+		type_size = \
+			self.parent.parent.size if self.parent.parent.size <= 32 else \
+			32 if int(self.position/32) == int((self.position+self.size)/32) else \
+			64
+		out = f"{indent}uint{type_size}_t {name:16} : {self.size};"
 		if self.brief is not None :
 			out += f" /// {self.brief}"
 		return out + "\n"
