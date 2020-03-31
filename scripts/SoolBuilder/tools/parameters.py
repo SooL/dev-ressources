@@ -46,6 +46,7 @@ class ParametersHandler :
 
 		self.group_filter		: T.List[str] = list()
 		self.chips_filter		: T.List[str] = list()
+		self.chips_exclude		: T.List[str] = list()
 
 		self.family_update_request : T.List[str] = list()
 		self.family_upgrade_request: T.List[str] = list()
@@ -73,7 +74,11 @@ class ParametersHandler :
 			filters_sec.append(ET.Element("group",{"name":group}))
 
 		for chip in sorted(self.chips_filter):
-			filters_sec.append(ET.Element("chips", {"patern": chip}))
+			filters_sec.append(ET.Element("chips", {"keep": chip}))
+
+		for chip in sorted(self.chips_exclude):
+			filters_sec.append(ET.Element("chips", {"remove": chip}))
+
 
 		update_sec : ET.Element = ET.SubElement(root,"update",{"requested":"true" if self.update_requested else "false"})
 		for f in sorted(self.update_list) :
@@ -97,13 +102,27 @@ class ParametersHandler :
 	def got_chip_filter(self):
 		return len(self.chips_filter) > 0
 
-	def is_chip_valid(self, chip_name : str):
+	@property
+	def got_chip_exclude(self):
+		return len(self.chips_filter) > 0
+
+	def __chip_keep(self,chip_name : str) -> bool:
 		if not self.got_chip_filter :
 			return True
 		for p in self.chips_filter :
 			if fnmatch.fnmatch(chip_name,p) :
 				return True
+
+	def __chip_exclude(self, chip_name: str) -> bool:
+		if not self.got_chip_exclude:
+			return False
+		for p in self.chips_exclude:
+			if fnmatch.fnmatch(chip_name, p):
+				return True
 		return False
+
+	def is_chip_valid(self, chip_name : str):
+		return self.__chip_keep(chip_name) and not self.__chip_exclude(chip_name)
 
 	def process_generate(self,options : T.List[str]):
 
@@ -141,6 +160,7 @@ class ParametersHandler :
 			self.group_filter.clear()
 
 		self.chips_filter = args.chips_filter
+		self.chips_exclude = args.chips_exclude
 
 		if self.update_requested :
 			if 'all' in args.update_svd :
