@@ -37,7 +37,7 @@ def svd_processor(handler : SVDFile, filter : T.List[str] = None):
 def svd_process_handler(svd_set : T.Dict[str,SVDFile], filter : T.List[str] = None):
 	if global_parameters.jobs == 1 :
 		logger.info("Processing SVD in the current thread.")
-		ret = {i.path:svd_processor(i) for i in svd_set.values()}
+		ret = {i.path:svd_processor(i,filter) for i in svd_set.values()}
 	else:
 		logger.info(f"Dispatching SVD analysis in a pool of {global_parameters.jobs} workers.")
 		#handlers = map(svd_processor, [(x, filter) for x in svd_set.values()])
