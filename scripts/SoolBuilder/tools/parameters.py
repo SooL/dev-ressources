@@ -20,6 +20,7 @@
 import typing as T
 import logging
 import xml.etree.ElementTree as ET
+import fnmatch
 
 logger = logging.getLogger()
 
@@ -44,6 +45,8 @@ class ParametersHandler :
 		self.force_pack_version	: bool = False
 
 		self.group_filter		: T.List[str] = list()
+		self.chips_filter		: T.List[str] = list()
+
 		self.family_update_request : T.List[str] = list()
 		self.family_upgrade_request: T.List[str] = list()
 		self.fileset_reinit		: bool = False
@@ -69,6 +72,9 @@ class ParametersHandler :
 		for group in sorted(self.group_filter) :
 			filters_sec.append(ET.Element("group",{"name":group}))
 
+		for chip in sorted(self.chips_filter):
+			filters_sec.append(ET.Element("chips", {"patern": chip}))
+
 		update_sec : ET.Element = ET.SubElement(root,"update",{"requested":"true" if self.update_requested else "false"})
 		for f in sorted(self.update_list) :
 			update_sec.append(ET.Element("family",{"name":f}))
@@ -86,6 +92,18 @@ class ParametersHandler :
 	@property
 	def got_group_filter(self):
 		return len(self.group_filter) > 0
+
+	@property
+	def got_chip_filter(self):
+		return len(self.chips_filter) > 0
+
+	def is_chip_valid(self, chip_name : str):
+		if not self.got_chip_filter :
+			return True
+		for p in self.chips_filter :
+			if fnmatch.fnmatch(chip_name,p) :
+				return True
+		return False
 
 	def process_generate(self,options : T.List[str]):
 
@@ -117,8 +135,13 @@ class ParametersHandler :
 		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
 		self.jobs				= args.jobs
-		if args.group_filter is not None :
-			self.group_filter = args.group_filter.split(",")
+
+		self.group_filter = args.group_filter
+		if "all" in [x.lower() for x in self.group_filter] :
+			self.group_filter.clear()
+
+		self.chips_filter = args.chips_filter
+
 		if self.update_requested :
 			if 'all' in args.update_svd :
 				self.fileset_reinit = True

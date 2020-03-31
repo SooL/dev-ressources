@@ -147,10 +147,17 @@ if __name__ == "__main__" :
 						action="store_true",
 						help="Store the downloaded .pack files in .data/packs instead of using a temporary location")
 	parser.add_argument("--limit-groups",
+						nargs="+",
 						dest="group_filter",
 						help="groups to regenerate",
-						default=None)
-	parser.add_argument("--generate","-g",nargs="+",
+						default=list())
+	parser.add_argument("--limit-chips",
+						nargs="+",
+						dest="chips_filter",
+						help="Chips to consider",
+						default=list())
+	parser.add_argument("--generate","-g",
+						nargs="+",
 						default=list(),
 						choices=global_parameters.generate_options.keys(),
 						help="Generation options. " +

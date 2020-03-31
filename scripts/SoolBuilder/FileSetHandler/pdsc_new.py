@@ -28,6 +28,7 @@ from cleaners.corrector import cmsis_root_corrector
 from structure import Chip
 from cmsis_analysis import CMSISHeader
 from fnmatch import fnmatch
+from tools import global_parameters
 logger = logging.getLogger()
 
 
@@ -100,7 +101,8 @@ class PDSCHandler:
 						if current_assoc.fix(device.attrib["Dname"]) :
 							# if not "STM32F1" in current_assoc.define and not fnmatch(device.attrib["Dname"],current_assoc.define.replace("x","?") + "*") :
 							# 	logger.warning(f"\tChip/Define mismatch {device.attrib['Dname']} got {current_assoc.define}")
-							self.associations.add(copy(current_assoc))
+							if global_parameters.is_chip_valid(current_assoc.name) :
+								self.associations.add(copy(current_assoc))
 
 	def rebuild_extracted_associations(self,root_destination : str):
 		destination_paths = self.dest_paths
