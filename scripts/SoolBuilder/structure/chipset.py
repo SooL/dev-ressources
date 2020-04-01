@@ -156,6 +156,12 @@ class ChipSet :
 		else :
 			raise TypeError()
 
+	def __ge__(self, other):
+		if isinstance(other,ChipSet) :
+			return self.chips.issuperset(other.chips)
+		else :
+			raise TypeError()
+
 	def __hash__(self):
 		return hash(tuple(sorted([x.name for x in self.chips])))
 
@@ -244,11 +250,15 @@ class ChipSet :
 		line_size: int = 0
 		matched_family : T.Dict[str,bool] = dict()
 
+		if self >= reference_chipset :
+			return "1"
+
 		for family, chips in reference_chipset.families.items():
 			if len(chips - self.chips) == 0 :
 				matched_family[family] = True
-		if matched_family.keys() == reference_chipset.families.keys() :
-			return "1"
+
+		# if matched_family.keys() == reference_chipset.families.keys() :
+		# 	return "1"
 
 		for family in sorted(matched_family.keys()) :
 			if line_size == chips_per_line:
