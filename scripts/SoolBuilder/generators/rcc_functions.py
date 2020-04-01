@@ -28,6 +28,7 @@ from copy import copy
 class Record:
 	def __init__(self,field_name, instance : PeripheralInstance):
 		self.instance : PeripheralInstance = instance
+		self.overall_chipset = ChipSet()
 		self.field_name : str = field_name
 		self.values_pos: T.Dict[int,ChipSet] = dict()
 		self.values_reg: T.Dict[int, ChipSet] = dict()
@@ -35,48 +36,65 @@ class Record:
 
 	def output_fpos(self):
 		out = ""
-		out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
-		indent.increment()
+		# Check if whether the instance is in all chips which support the peripheral.
+		univ_instance = self.instance.chips == self.instance.parent.chips
+		if not univ_instance :
+			out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
+			indent.increment()
 		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
 		indent.increment()
+
+
 		for i in range(len(self.values_pos)):
 			v = list(self.values_pos.keys())[i]
 			cs = self.values_pos[v]
 
-			if i == 0:
-				out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ')}\n"
-			else:
-				out += f"{indent}#elif {cs.defined_list(f'{indent}      ')}\n"
+			if not univ_instance :
+				if i == 0:
+					out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ',reference_chipset=self.overall_chipset)}\n"
+				else:
+					out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ',reference_chipset=self.overall_chipset)}\n"
 
-			out += f"{indent + 1}return 1 << {v};\n"
+			out += f"{indent + (1 if not univ_instance else 0)}return 1 << {v};\n"
 
-		indent.decrement()
-		out += f"{indent}#endif\n"
-		indent.decrement()
-		out += f"{indent}#endif"
+		if not univ_instance:
+			out += f"{indent}#endif\n"
+			indent.decrement()
+			indent.decrement()
+			out += f"{indent}#endif"
+		else :
+			indent.decrement()
+
 		return out
 
 	def output_register(self):
 		out = ""
-		out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
-		indent.increment()
+		univ_instance = self.instance.chips == self.instance.parent.chips
+		if not univ_instance:
+			out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
+			indent.increment()
 		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
 		indent.increment()
 		for i in range(len(self.values_reg)):
 			v = list(self.values_reg.keys())[i]
 			cs = self.values_reg[v]
 
+			if not univ_instance :
+				if i == 0:
+					out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ',reference_chipset=self.overall_chipset)}\n"
+				else:
+					out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ',reference_chipset=self.overall_chipset)}\n"
 
-			if i == 0:
-				out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ')}\n"
-			else:
-				out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ')}\n"
+			out += f"{indent + (1 if not univ_instance else 0)}return RCC->{v};\n"
 
-			out += f"{indent+1}return RCC->{v};\n"
-		indent.decrement()
-		out += f"{indent}#endif\n"
-		indent.decrement()
-		out += f"{indent}#endif"
+		if not univ_instance:
+			out += f"{indent}#endif\n"
+			indent.decrement()
+			indent.decrement()
+			out += f"{indent}#endif"
+		else :
+			indent.decrement()
+
 		return out
 
 
@@ -122,7 +140,10 @@ def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record
 					if reg.name not in records_dict[fname].values_reg :
 						records_dict[fname].values_reg[reg.name] = ChipSet()
 					records_dict[fname].values_pos[field.position].add(common_chips)
+					records_dict[fname].overall_chipset.add(common_chips)
+
 					records_dict[fname].values_reg[reg.name].add(reg.chips)
+					records_dict[fname].overall_chipset.add(reg.chips)
 
 	return records_dict
 
