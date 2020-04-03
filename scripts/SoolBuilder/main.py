@@ -156,6 +156,11 @@ if __name__ == "__main__" :
 						dest="chips_filter",
 						help="Chips to consider",
 						default=list())
+	parser.add_argument("--exclude-chips",
+						nargs="+",
+						dest="chips_exclude",
+						help="Chips to exclude",
+						default=list())
 	parser.add_argument("--generate","-g",
 						nargs="+",
 						default=list(),
