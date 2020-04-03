@@ -213,7 +213,6 @@ class Component:
 		"""
 		Applies corrections, prepare templates
 		"""
-		self.edited = False
 
 		correctors = None if (parent_corrector is None) else parent_corrector[self]
 
@@ -235,7 +234,6 @@ class Component:
 		"""
 		Merges identical child components
 		"""
-		self.edited = False
 		if hasattr(self, '__iter__') :
 			# noinspection PyTypeChecker
 			for child in self :
@@ -246,7 +244,6 @@ class Component:
 		Cleans the component and its children, checks for potential errors, applies advanced corrections
 		:return:
 		"""
-		self.edited = False
 
 		correctors = None if (parent_corrector is None) else parent_corrector[self]
 

@@ -185,28 +185,40 @@ def FDCAN_periph_cleaner(periph: "Peripheral") :
 
 def FLASH_periph_cleaner(periph: "Peripheral") :
 	from structure import Register, Field
-	PCROP2SR, PCROP2ER, WRP2AR, WRP2BR, SEC2R = None, None, None, None, None
-	PCROP1SR, PCROP1ER, WRP1AR, WRP1BR, SEC1R = None, None, None, None, None
+	corr = [
+		#reg1, reg2, name1     , name2     , [[f_name, f_brief, f_offset, f_size]], relative_offset
+		[None, None, "PCROP1SR", "PCROP2SR", [["STRT", "PCROP area start offset", 0, 16]], 0x20],
+		[None, None, "PCROP1ER", "PCROP2ER", [["END", "PCROP area start offset", 0, 16]], 0x20],
+		[None, None, "WRP1AR", "WRP2AR", [
+			["STRT", "WRP area start offset", 0, 8],
+			["END", "WRP area end offset", 16, 8],
+		], 0x20],
+		[None, None, "WRP1BR", "WRP2BR", [
+			["STRT", "WRP area start offset", 0, 8],
+			["END", "WRP area end offset", 16, 8],
+		], 0x20],
+		[None, None, "SEC1R", "SEC2R", [["SEC_SIZE2", None, 0, 8]], 0x04],
+	]
 
 	for chip in periph.chips.chips :
 		header_FLASH = chip.header_handler.periph_table["FLASH"]
-		if "PCROP2SR" in header_FLASH and "PCROP2SR" not in periph:
-			if PCROP2SR is None :
-				PCROP1SR = periph["PCROP1SR"]
-				PCROP2SR = Register(ChipSet(chip), "PCROP2SR", PCROP1SR.brief.replace("1", "2"))
-				PCROP2SR.add_field(Field(PCROP2SR.chips, "STRT", "PCROP area start offset", 0, 16))
-				periph.add_register(PCROP2SR)
-			else :
-				PCROP2SR.chips += chip
+		for reg in corr :
+			if reg[3] in header_FLASH and reg[3] not in periph :
+				if reg[1] is None :
+					reg[0] = periph[reg[2]]
+					reg[1] = Register(ChipSet(chip), reg[3], reg[0].brief.replace("1", "2"))
+					for field in reg[4] :
+						reg[1].add_field(Field(reg[1].chips, field[0], field[1], field[2], field[3]))
+					periph.add_register(reg[1])
+				else :
+					reg[1].chips += chip
 		# TODO same for PCROP2ER, WRP2AR, WRP2BR, SEC2R. Refer to dm00355726 (G4 RM) for differences between X1R & X2R
 		for m in periph.mappings :
 			for elmt in m :
-				if elmt.component is PCROP1SR and PCROP2SR is not None :
-					periph.place_component(PCROP2SR, elmt.address + 0x20, "PCROP2SR", elmt.chips & PCROP2SR.chips)
-				elif elmt.component is PCROP1ER and PCROP2ER is not None :
-					periph.place_component(PCROP2ER, elmt.address + 0x20, "PCROP2ER", elmt.chips & PCROP2ER.chips)
-				elif elmt.component is WRP1AR and WRP2AR is not None :
-					periph.place_component(WRP2AR, elmt.address + 0x20, "WRP2AR", elmt.chips & WRP2AR.chips)
+				for reg in corr :
+					if elmt.component is reg[0] and reg[1] is not None :
+						periph.place_component(reg[1], elmt.address + 0x20, reg[3], elmt.chips & reg[1].chips)
+						break
 
 
 def GPIO_periph_cleaner(periph) :

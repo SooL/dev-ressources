@@ -24,14 +24,15 @@ from fnmatch import fnmatch
 from cleaners import *
 from structure import Component
 
-def change_name(obj, name) :
-	obj.name = name
-
-def change_type(obj, new_type) :
-	obj.type = new_type
-
-def change_brief(obj, new_brief) :
-	obj.brief = new_brief
+def modify(obj, new_name=None, new_type=None, new_brief=None, new_size=None) :
+	if new_name is not None :
+		obj.name = new_name
+	if new_type is not None :
+		obj.type = new_type
+	if new_brief is not None :
+		obj.brief = new_brief
+	if new_size is not None :
+		obj.size = new_size
 
 def clone_field(field, name=None, pos=None, brief=None, size=None) :
 	newField = Field(field.chips,
@@ -155,35 +156,38 @@ class Corrector:
 base_root_corrector = Corrector({
 
 	"ADC"       : { "*" : ADC_periph_cleaner },
-	"AES?"      : lambda group : change_name(group, "AES"),
+	"AES?"      : lambda group : modify(group, new_name="AES"),
 	"CAN"       : { "*" : CAN_periph_base_cleaner },
-	"COMP?"      : lambda group : change_name(group, "COMP"),
+	"COMP?"      : lambda group : modify(group, new_name="COMP"),
 	"CRC"       : {
 		"*"         : (CRC_periph_cleaner, {
-			"DR"        : { "*" : {"Data_register" : lambda f : change_name(f, "DR") }},
-			"IDR"       : { "*" : {"Independent_data_register" : lambda f : change_name(f, "IDR") }},
-			"POL"       : { "*" : {"Polynomialcoefficients" : lambda f : change_name(f, "POL") }},
+			"DR"        : { "*" : {"Data_register" : lambda f : modify(f, new_name="DR") }},
+			"IDR"       : { "*" : {"Independent_data_register" : lambda f : modify(f, new_name="IDR") }},
+			"POL"       : { "*" : {"Polynomialcoefficients" : lambda f : modify(f, new_name="POL") }},
 		})
 	},
 	"DAC"       : { "*" : DAC_periph_cleaner },
-	"DMAMUX*"   : lambda group: change_name(group, "DMAMUX"),
+	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
 	"FLASH"     : {
-		"*"         : {
+		"*"         : (FLASH_periph_cleaner, {
 			"PCROP*"    : { "*" : {
-				"PCROP*_*"  : lambda field : change_name(field, field.name[field.name.index('_')+1:])
+				"PCROP*_*"  : lambda field : modify(field, new_name=field.name[field.name.index('_')+1:]),
+				"STRT"      : lambda field : modify(field, new_size=16),
 			}},
-			"WRP*"    : { "*" : {
-				"WRP*_*"  : lambda field : change_name(field, field.name[field.name.index('_')+1:]),
-				"WRP?"    : lambda field : change_name(field, field.name[:-1])
+			"WRP*"      : { "*" : {
+				"WRP*_*"    : lambda field : modify(field, new_name=field.name[field.name.index('_')+1:]),
+				"WRP?"      : lambda field : modify(field, new_name=field.name[:-1]),
+				"STRT"      : FLASH_WRPxR_field_cleaner,
+				"END"       : FLASH_WRPxR_field_cleaner,
 			}}
-		}
+		})
 	},
-	"GIC*"    : lambda group: change_name(group, "GIC"),
+	"GIC*"    : lambda group: modify(group, new_name="GIC"),
 	"GPIO"      : {
 		"*"        : (GPIO_periph_cleaner, {
-			"OSPEEDER"  : lambda reg: change_name(reg, "OSPEEDR"),
+			"OSPEEDER"  : lambda reg: modify(reg, new_name="OSPEEDR"),
 			"*"         : {
 			    "*"         : (GPIO_reg_var_cleaner, {
 				    "*"         : GPIO_field_cleaner
@@ -191,62 +195,62 @@ base_root_corrector = Corrector({
 			},
 		})
 	},
-	"GTZC"		: lambda group: change_name(group, "TZC"),
+	"GTZC"		: lambda group: modify(group, new_name="TZC"),
 	"HASH"     : {
 		"*"         : {
-			"HASH_HR*"  : (lambda reg : change_name(reg, reg.name[5:]), { "*" : {
-				"H*"        : lambda field : change_name(field, "H")
+			"HASH_HR*"  : (lambda reg : modify(reg, new_name=reg.name[5:]), { "*" : {
+				"H*"        : lambda field : modify(field, new_name="H") # TODO see why necessary
 			}}),
 			"HR*"       : { "*" : {
-				"H*"        : lambda field : change_name(field, "H")
+				"H*"        : lambda field : modify(field, new_name="H")
 			}},
 			"CSR*"      : { "*" : {
-				"CS*"       : lambda field : change_name(field, "CS")
+				"CS*"       : lambda field : modify(field, new_name="CS")
 			}}
 		},
 	},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
 	"I2C"       : { "*" : I2C_periph_cleaner },
-	"LPUART"    : lambda group: change_name(group, "USART"),
-	"RAMECC"    : { "*" : lambda periph: change_name(periph, "RAMECC") },
+	"LPUART"    : lambda group: modify(group, new_name="USART"),
+	"RAMECC"    : { "*" : lambda periph: modify(periph, new_name="RAMECC") },
 	"RCC"           : {
 		"*"             : {
 			"*ENR"          : { "*" : {
-				"GPIOP?EN" : lambda field : change_name(field, f"GPIO{field.name[-3]}EN")
+				"GPIOP?EN" : lambda field : modify(field, new_name=f"GPIO{field.name[-3]}EN")
 			}},
-			"xA?B*EN*R*"  : lambda reg : change_name(reg, reg.name[1 :]),
-			"MxA?B*EN*R*" : lambda reg : change_name(reg, reg.name[2 :])
+			"xA?B*EN*R*"  : lambda reg : modify(reg, new_name=reg.name[1 :]),
+			"MxA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[2 :])
 		}
 	},
-	"SERIALCONTROLL" : lambda group : change_name(group, "SERIAL_CONTROL"),
+	"SERIALCONTROLL" : lambda group : modify(group, new_name="SERIAL_CONTROL"),
 	"SYSCFG"    : {
 		"*"         : {
 			"EXTICR?"   : { "*" : {
-				"EXTI?*"    : lambda field : change_brief(field, f"EXTI {field.name[4:]} configuration")
+				"EXTI?*"    : lambda field : modify(field, new_brief=f"EXTI {field.name[4:]} configuration")
 			}}
 		}
 	},
-	"TIM?*"     : lambda group: change_name(group, "TIM"),
+	"TIM?*"     : lambda group: modify(group, new_name="TIM"),
 	"TIM"       : { "*" : TIM_periph_cleaner },
 	"TZC"		: {"*" : TZC_periph_cleaner},
 	"USART"     : {
 		"*"         : (USART_periph_cleaner, {
-			"0x00000000": lambda reg : change_name(reg,"CR1"),
+			"0x00000000": lambda reg : modify(reg, new_name="CR1"),
 			"CR2"       : { "*" : {
-				"TAINV" : lambda field : change_name(field, "DATAINV")
+				"TAINV" : lambda field : modify(field, new_name="DATAINV")
 			}}
 		}),
 	},
-	"USB_*"     : lambda group: change_name(group, "USB"),
+	"USB_*"     : lambda group: modify(group, new_name="USB"),
 	"USB"       : { "*" : USB_periph_cleaner },
-	"RNG1"     : lambda group: change_name(group, "RNG"),
+	"RNG1"     : lambda group: modify(group, new_name="RNG"),
 	"SERIAL_CONTROL" : (SERIAL_CONTROL_group_cleaner, {
 		"*"         : (SERIAL_CONTROL_periph_cleaner, {
-			"SC?_*"     : lambda reg : change_name(reg, reg.name[4:])
+			"SC?_*"     : lambda reg : modify(reg, new_name=reg.name[4:])
 		}),
 	}),
 
-	"STGENR" : lambda group : change_name(group,"STGEN"),
+	"STGENR" : lambda group : modify(group, new_name="STGEN"),
 
 	"*"	        : {
 		"*"         : {
@@ -270,8 +274,8 @@ advanced_root_corrector = Corrector({
 			"*ENR"      : { "*" : {
 				"IOP?EN"  : lambda field : clone_field(field, name=f"GPIO{field.name[-3]}EN")
 			}},
-			"xA?B*EN*R*"  : lambda reg : change_name(reg,reg.name[1:]),
-			"MxA?B*EN*R*" : lambda reg : change_name(reg,reg.name[2:])
+			"xA?B*EN*R*"  : lambda reg : modify(reg, new_name=reg.name[1:]),
+			"MxA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[2:])
 		}
 	},
 	"SYSCFG"    : { "*" : SYSCFG_periph_advanced_cleaner},

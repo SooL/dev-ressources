@@ -98,14 +98,17 @@ class SVDFile :
 
 			grp.edited = True
 			while grp.has_been_edited :
+				grp.validate_edit()
 				grp.before_svd_compile()
 
 			grp.edited = True
 			while grp.has_been_edited :
+				grp.validate_edit()
 				grp.svd_compile()
 
 			grp.edited = True
 			while grp.has_been_edited :
+				grp.validate_edit()
 				grp.after_svd_compile()
 		
 	

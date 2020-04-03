@@ -393,6 +393,27 @@ class Peripheral(Component) :
 
 	def finalize(self):
 		super().finalize()
+		nb_reg = len(self.registers)
+		r_i1 = 0
+		while r_i1 < nb_reg :
+			r_i2 = r_i1+1
+			while r_i2 < nb_reg :
+				if self.registers[r_i1] == self.registers[r_i2] :
+					r1 = self.registers[r_i1]
+					r2 = self.registers[r_i2]
+					r1.inter_svd_merge(r2)
+					self.registers.pop(r_i2)
+					nb_reg -= 1
+					for m in self.mappings :
+						elmts = list(filter(lambda e : e.component is r2, m.elements))
+						for elmt in elmts :
+							elmt.component = r1
+							m.remove_element(elmt)
+							self.add_placement(elmt)
+				else :
+					r_i2 += 1
+			r_i1 += 1
+
 		for i in self.instances :
 			i.set_parent(self)
 			i.finalize()

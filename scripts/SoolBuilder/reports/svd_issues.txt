@@ -32,8 +32,11 @@ STM32L010x4,STM32L010x6,STM32L010x8,STM32L010xB,STM32L011xx,STM32L021xx,STM32L03
 	Interrupt "22 : TIM22"
 
 RCC.*ENR.GPIOxPEN
-STM32L1
+STM32L1 :
     inserted 'P' needs to be removed
 
-G4.svd
+G4.svd :
     missing FLASH.{PCROP2SR, PCROP2ER, WRP2AR, WRP2BR, SEC2R}
+
+WB.svd, L4R5.svd :
+    FLASH.WRP1BR field names are swapped : STRT became END and vice-versa. descriptions are correct

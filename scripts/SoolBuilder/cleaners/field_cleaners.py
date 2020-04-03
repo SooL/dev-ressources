@@ -22,7 +22,7 @@ from fnmatch import fnmatch
 
 
 # noinspection PyUnresolvedReferences
-def GPIO_field_cleaner(field : "Field", ):
+def GPIO_field_cleaner(field : "Field"):
 	reg = field.parent.parent
 	if reg.name == "OSPEEDR"    : field.name = f"OSPEED{int(field.position / field.size)}"
 	elif reg.name == "MODER"    : field.name = f"MODE{  int(field.position / field.size)}"
@@ -38,3 +38,22 @@ def GPIO_field_cleaner(field : "Field", ):
 			.replace(" (y = 0..7)", "")\
 			.replace(" (y = 8..15)", "")\
 			.replace("These bits are ", "")
+
+# noinspection PyUnresolvedReferences
+def FLASH_WRPxR_field_cleaner(field: "Field") :
+	print("correct WRPxR for" + repr(field.chips))
+
+	if field.name == "STRT" and field.position == 16 :
+		field.name = "END"
+
+	elif field.name == "END" and field.position == 0 :
+		field.name = "STRT"
+
+	if field.name == "STRT" :
+		field.size = 8
+		field.brief = "WRP area start offset"
+
+	elif field.name == "END" :
+		field.size = 8
+		field.brief = "WRP area end offset"
+
