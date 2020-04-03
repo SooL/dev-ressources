@@ -198,9 +198,7 @@ base_root_corrector = Corrector({
 	"GTZC"		: lambda group: modify(group, new_name="TZC"),
 	"HASH"     : {
 		"*"         : {
-			"HASH_HR*"  : (lambda reg : modify(reg, new_name=reg.name[5:]), { "*" : {
-				"H*"        : lambda field : modify(field, new_name="H") # TODO see why necessary
-			}}),
+			"HASH_HR*"  : lambda reg : modify(reg, new_name=reg.name[5:]),
 			"HR*"       : { "*" : {
 				"H*"        : lambda field : modify(field, new_name="H")
 			}},

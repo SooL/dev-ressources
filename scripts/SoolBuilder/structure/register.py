@@ -251,10 +251,10 @@ class Register(Component) :
 			if name_2.startswith(name_1) :
 				new_name = name_1
 			else :
-				tokens_1 = re.split('([xy\d]+)', name_1)
-				tokens_2 = re.split('([xy\d]+)', name_2)
-				no_digit_1 = (''.join(map(lambda c : 'x' if c.isdigit() else c, tokens_1)))
-				no_digit_2 = (''.join(map(lambda c : 'x' if c.isdigit() else c, tokens_2)))
+				tokens_1 = re.split('([nxyz\d]+)', name_1)
+				tokens_2 = re.split('([nxyz\d]+)', name_2)
+				no_digit_1 = (''.join(map(lambda c : 'x' if re.match('([nxyz\d]+)', c) else c, tokens_1)))
+				no_digit_2 = (''.join(map(lambda c : 'x' if re.match('([nxyz\d]+)', c) else c, tokens_2)))
 				if no_digit_1 == no_digit_2 :
 					if tokens_1[0] + ''.join(tokens_1[2:]) == tokens_2[0] + ''.join(tokens_2[2:]) :
 						new_name = tokens_1[0] + 'x' + ''.join(tokens_1[2:])
