@@ -46,6 +46,7 @@ class RegisterVariant(Component) :
 
 		from structure import PeripheralInstance
 		self.linked_instances : T.Optional[T.List[PeripheralInstance]] = linked_instances
+		self._force_no_instances = False
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -124,7 +125,7 @@ class RegisterVariant(Component) :
 	def before_svd_compile(self, parent_corrector) :
 		super().before_svd_compile(parent_corrector)
 		self.sort_fields()
-		if self.linked_instances is None :
+		if self.linked_instances is None and not self._force_no_instances :
 			self.linked_instances = copy(self.parent.parent.instances)
 
 	def after_svd_compile(self, parent_corrector):
@@ -141,6 +142,8 @@ class RegisterVariant(Component) :
 				self.edited = True
 
 	def force_remove_template(self):
+		if not self._force_no_instances :
+			self._force_no_instances = True
 		if self.linked_instances is not None :
 			self.edited = True
 			self.linked_instances = None

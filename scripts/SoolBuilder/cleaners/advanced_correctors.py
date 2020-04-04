@@ -118,7 +118,7 @@ def GPIO_periph_advanced_cleaner(periph: "Peripheral") :
 
 def SYSCFG_periph_advanced_cleaner(periph: "Peripheral") :
 	from structure import Register
-	if "EXTICR1" in periph :
+	if "EXTICR1" in periph and "EXTICRx" not in periph :
 		EXTICRx = [periph["EXTICR1"], periph["EXTICR2"], periph["EXTICR3"], periph["EXTICR4"]]
 		EXTICR = copy(EXTICRx[0])
 		EXTICR.name = "EXTICR"

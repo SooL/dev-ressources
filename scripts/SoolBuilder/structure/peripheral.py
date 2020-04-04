@@ -404,12 +404,21 @@ class Peripheral(Component) :
 					r1.inter_svd_merge(r2)
 					self.registers.pop(r_i2)
 					nb_reg -= 1
-					for m in self.mappings :
+					nb_maps = len(self.mappings)
+					m_i = 0
+					while m_i < nb_maps :
+						m = self.mappings[m_i]
 						elmts = list(filter(lambda e : e.component is r2, m.elements))
 						for elmt in elmts :
 							elmt.component = r1
 							m.remove_element(elmt)
 							self.add_placement(elmt)
+						if len(m.elements) == 0 :
+							self.mappings.pop(m_i)
+							nb_maps -= 1
+						else :
+							m_i += 1
+
 				else :
 					r_i2 += 1
 			r_i1 += 1
