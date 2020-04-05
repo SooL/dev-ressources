@@ -169,6 +169,31 @@ def DMA_periph_cleaner(periph: "Peripheral") :
 		periph.add_register(CSELR)
 		periph.place_component(CSELR, address=pos, name="CSELR", chips=chips)
 
+def DBGMCU_periph_cleaner(periph: "Peripheral") :
+	from structure import Register
+	corr = [
+		["^APB[1L]_?FZR?$", ["APB1FZR", "APB1FZ"]],
+		["^APB[2H]_?FZR?$", ["APB2FZR", "APB2FZ"]],
+		["APB1(L_FZ|_FZR1)?", ["APB1FZR1"]],
+		["APB1(H_FZ|_FZR2)?", ["APB1FZR2"]],
+		["C2AP_B1FZR1", ["C2APB1FZR1"]]
+	]
+	for chip in periph.chips :
+		header_DBGMCU = chip.header_handler.periph_table["DBGMCU"]
+		for reg_corr in corr :
+			regs = list(filter(lambda reg : re.match(reg_corr[0], reg.name), periph.registers))
+			if len(regs) > 0 :
+				reg_name = None
+				for name in reg_corr[1] :
+					if name in header_DBGMCU :
+						reg_name = name
+						break
+				if reg_name is None :
+					raise AssertionError(f"no {reg_corr[1][0]} register in header {chip.header_handler.file_name}")
+				for reg in regs :
+					reg.name = reg_name
+
+
 def ETHERNET_periph_cleaner(periph: "Peripheral") :
 	if len(periph.instances) == 1 :
 		periph.name = periph.instances[0].name

@@ -167,16 +167,7 @@ base_root_corrector = Corrector({
 		})
 	},
 	"DAC"       : { "*" : DAC_periph_cleaner },
-	"DBGMCU"    : {
-		"*"         : {
-			"APBLFZ"    : lambda reg : modify(reg, new_name="APB1FZ"),
-			"APBHFZ"    : lambda reg : modify(reg, new_name="APB2FZ"),
-			"APB1L_FZ"  : lambda reg : modify(reg, new_name="APB1FZR1"),
-			"APB1H_FZ"  : lambda reg : modify(reg, new_name="APB1FZR2"),
-			"APB2_FZ"   : lambda reg : modify(reg, new_name="APB2FZ"),
-
-		}
-	},
+	"DBGMCU"    : { "*" : DBGMCU_periph_cleaner },
 	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
@@ -221,13 +212,15 @@ base_root_corrector = Corrector({
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"LPUART"    : lambda group: modify(group, new_name="USART"),
 	"RAMECC"    : { "*" : lambda periph: modify(periph, new_name="RAMECC") },
-	"RCC"           : {
-		"*"             : {
-			"*ENR"          : { "*" : {
-				"GPIOP?EN" : lambda field : modify(field, new_name=f"GPIO{field.name[-3]}EN")
+	"RCC"       : {
+		"*"         : {
+			"*ENR"      : { "*" : {
+				"GPIOP?EN"  : lambda field : modify(field, new_name=f"GPIO{field.name[-3]}EN")
 			}},
-			"xA?B*EN*R*"  : lambda reg : modify(reg, new_name=reg.name[1 :]),
-			"MxA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[2 :])
+			"xA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[1 :]),
+			"MxA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[2 :]),
+			"PLLSYSCFGR" : lambda reg : modify(reg, new_name="PLLCFGR"),
+			"CCIPR1"    : lambda reg : modify(reg, new_name="CCIPR")
 		}
 	},
 	"SERIALCONTROLL" : lambda group : modify(group, new_name="SERIAL_CONTROL"),

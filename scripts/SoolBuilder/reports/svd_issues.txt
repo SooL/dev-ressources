@@ -37,9 +37,14 @@ STM32L1 :
 
 G4.svd :
     missing FLASH.{PCROP2SR, PCROP2ER, WRP2AR, WRP2BR, SEC2R}
+    RCC.PLLCFGR renamed PLLSYSCFGR
 
 WB.svd, L4R5.svd :
     FLASH.WRP1BR field names are swapped : STRT became END and vice-versa. descriptions are correct
 
 some svd :
     DBGMCU.APB1FZR1 (and similar) renamed APB1L_FZ (or similar).
+
+WB :
+    DBGMCU.C2APB2FZR is not properly placed (and what is "alternateRegister" ?)
+
