@@ -167,6 +167,16 @@ base_root_corrector = Corrector({
 		})
 	},
 	"DAC"       : { "*" : DAC_periph_cleaner },
+	"DBGMCU"    : {
+		"*"         : {
+			"APBLFZ"    : lambda reg : modify(reg, new_name="APB1FZ"),
+			"APBHFZ"    : lambda reg : modify(reg, new_name="APB2FZ"),
+			"APB1L_FZ"  : lambda reg : modify(reg, new_name="APB1FZR1"),
+			"APB1H_FZ"  : lambda reg : modify(reg, new_name="APB1FZR2"),
+			"APB2_FZ"   : lambda reg : modify(reg, new_name="APB2FZ"),
+
+		}
+	},
 	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },

@@ -40,3 +40,6 @@ G4.svd :
 
 WB.svd, L4R5.svd :
     FLASH.WRP1BR field names are swapped : STRT became END and vice-versa. descriptions are correct
+
+some svd :
+    DBGMCU.APB1FZR1 (and similar) renamed APB1L_FZ (or similar).
