@@ -6,3 +6,6 @@ stm32mp157cxx_ca7.h, stm32mp157axx_ca7.h stm32h747xx.h stm32h745xx.h, stm32h757x
 
 stm32l4*
     Dynamic define for FLASH_SIZE (use of a register)
+
+most files:
+    DGCMCU.APBxFZ(R)'s name is not consistent with reference manual
