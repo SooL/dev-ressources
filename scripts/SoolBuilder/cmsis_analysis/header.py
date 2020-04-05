@@ -50,8 +50,9 @@ class CMSISRegister:
 
 
 class CMSISPeripheral:
-	def __init__(self, name : str= None):
+	def __init__(self, parent: "CMSISHeader", name : str= None):
 		self.registers : T.List[CMSISRegister] = list()
+		self.parent = parent
 		self.name : str = name
 
 	@property
@@ -130,7 +131,12 @@ class CMSISHeader:
 		self.raw_peripheral : T.List[str] 	= None
 		self.raw_memory 	: str 			= None
 		self.raw_cmsis_conf : str			= None
-		
+
+	@property
+	def file_name(self) -> str:
+		idx = self.path.rindex('/')
+		return self.path if idx == -1 else self.path[idx+1:]
+
 	@property
 	def is_structural(self) -> bool:
 		"""
@@ -330,7 +336,7 @@ class CMSISHeader:
 		periph_rexp = re.compile(r"(?:__(?P<io>[IO]{1,2})\s+)?(?P<type>u?int(?P<int_size>\d+)_t|\w+)\s+(?P<name>\w*)(?:\[(?P<arr_size>\d+)\])?\s*;\s*(?:\*(?:!<)?(?P<com>.+)\*)?")
 		
 		for raw in self.raw_peripheral :
-			new_peripheral = CMSISPeripheral()
+			new_peripheral = CMSISPeripheral(self)
 			for line in [x.strip() for x in raw.split("\n")]:
 				if line == str():
 					continue

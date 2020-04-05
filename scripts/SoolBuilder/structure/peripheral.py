@@ -388,7 +388,9 @@ class Peripheral(Component) :
 						if isinstance(elmt, Register) :
 							logger.warning(f"Header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
 			if not match :
-				logger.warning(f"Missing header register {cmsis_reg.type} {cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} in {self}");
+				logger.warning(f"Register {cmsis_reg.type} "
+				               f"{cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} "
+				               f"({cmsis_periph.parent.file_name}) is missing in peripheral {self}")
 
 
 	def finalize(self):
