@@ -48,3 +48,11 @@ some svd :
 WB :
     DBGMCU.C2APB2FZR is not properly placed (and what is "alternateRegister" ?)
 
+STM32L100.svd :
+    RTC.ALRMBSSR contains the wrong fields
+    RTC.TAFCR contains the wrong fields
+
+STM32MP1.svd :
+    RTC registers mapping does not follow the mapping of the reference manual.
+    TAMP peripheral is not described
+

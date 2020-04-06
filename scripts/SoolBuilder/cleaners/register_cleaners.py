@@ -19,9 +19,10 @@
 
 import typing as T
 import re
+from copy import copy
 from fnmatch import fnmatch
 
-from structure import Field, RegisterVariant
+from structure import Field, RegisterVariant, ChipSet, Register
 
 
 def TIM_reg_cleaner(register: "Register") :
@@ -65,3 +66,44 @@ def GPIO_reg_var_cleaner(var : RegisterVariant):
 			if field_name not in var :
 				var.add_field(Field(chips=var.chips, name=field_name, brief=None,
 				                    position= start*4 + i*field_size, size=field_size))
+
+def RTC_ALMRBSSR_cleaner(var : RegisterVariant) :
+	if "BKP" in var : # wrong fields
+		var.remove_field(var["BKP"])
+		var.add_field(Field(var.chips, "SS", None, 0, 15))
+		var.add_field(Field(var.chips, "MASKSS", None, 24, 4))
+
+def RTC_TAFCR_cleaner(var : RegisterVariant) :
+	if "MASKSS" in var : # wrong fields
+		var.remove_field(var["MASKSS"])
+		var.add_field(Field(var.chips, "ALARMOUTTYPE", None, 16, 1))
+		var.add_field(Field(var.chips, "TAMPPUDIS   ", None, 15, 1))
+		var.add_field(Field(var.chips, "TAMPPRCH    ", None, 13, 2))
+		var.add_field(Field(var.chips, "TAMPFLT     ", None, 11, 2))
+		var.add_field(Field(var.chips, "TAMPFREQ    ", None, 8, 3))
+		var.add_field(Field(var.chips, "TAMPTS      ", None, 7, 1))
+		var.add_field(Field(var.chips, "TAMP3TRG    ", None, 6, 1))
+		var.add_field(Field(var.chips, "TAMP3E      ", None, 5, 1))
+		var.add_field(Field(var.chips, "TAMP2TRG    ", None, 4, 1))
+		var.add_field(Field(var.chips, "TAMP2E      ", None, 3, 1))
+		var.add_field(Field(var.chips, "TAMPIE      ", None, 2, 1))
+		var.add_field(Field(var.chips, "TAMP1TRG    ", None, 1, 1))
+		var.add_field(Field(var.chips, "TAMP1E      ", None, 0, 1))
+
+def RTC_CFGR_cleaner(reg : Register) :
+	OR_chips = ChipSet()
+	CFGR_chips = copy(reg.chips.chips)
+	for chip in CFGR_chips :
+		header_periph = chip.header_handler.periph_table["RTC"]
+		if "CFGR" not in header_periph :
+			if "OR" in header_periph :
+				OR_chips.add(chip)
+			reg.chips.remove(chip)
+	if reg.chips.empty :
+		if not OR_chips.empty :
+			reg.name = "OR"
+			reg.description = "Option register"
+		else :
+			reg.parent.remove_register(reg)
+	elif not OR_chips.empty :
+		raise AssertionError("RTC.CFGR and RTC.OR cohabiting")

@@ -157,6 +157,7 @@ base_root_corrector = Corrector({
 
 	"ADC"       : { "*" : ADC_periph_cleaner },
 	"AES?"      : lambda group : modify(group, new_name="AES"),
+	"BSEC"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"CAN"       : { "*" : CAN_periph_base_cleaner },
 	"COMP?"      : lambda group : modify(group, new_name="COMP"),
 	"CRC"       : {
@@ -166,8 +167,17 @@ base_root_corrector = Corrector({
 			"POL"       : { "*" : {"Polynomialcoefficients" : lambda f : modify(f, new_name="POL") }},
 		})
 	},
+	"CRYP"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"DAC"       : { "*" : DAC_periph_cleaner },
 	"DBGMCU"    : { "*" : DBGMCU_periph_cleaner },
+	"DCMI"      : {
+		"*"         : (PERIPH_VERSION_REGISTERS_cleaner, {
+			"RIS"       : lambda reg : modify(reg, new_name="RISR"),
+			"MIS"       : lambda reg : modify(reg, new_name="MISR"),
+			"CWSTRT"    : lambda reg : modify(reg, new_name="CWSTRTR"),
+			"CWSIZE"    : lambda reg : modify(reg, new_name="CWSIZER"),
+		})
+	},
 	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
@@ -210,7 +220,9 @@ base_root_corrector = Corrector({
 	},
 	"HRTIM"     : { "*" : HRTIM_periph_cleaner },
 	"I2C"       : { "*" : I2C_periph_cleaner },
+	"IPCC"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"LPUART"    : lambda group: modify(group, new_name="USART"),
+	"MDMA"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"RAMECC"    : { "*" : lambda periph: modify(periph, new_name="RAMECC") },
 	"RCC"       : {
 		"*"         : {
@@ -223,6 +235,14 @@ base_root_corrector = Corrector({
 			"CCIPR1"    : lambda reg : modify(reg, new_name="CCIPR")
 		}
 	},
+	"RTC"       : {
+		"*"         : {
+			"ALRMBSSR"  : { "*" : RTC_ALMRBSSR_cleaner },
+			"TAFCR"     : { "*" : RTC_TAFCR_cleaner },
+			"CFGR"      : RTC_CFGR_cleaner,
+		}
+	},
+	"SDMMC" : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"SERIALCONTROLL" : lambda group : modify(group, new_name="SERIAL_CONTROL"),
 	"SYSCFG"    : {
 		"*"         : {
@@ -258,6 +278,8 @@ base_root_corrector = Corrector({
 			"*_*"       : remove_periph_prefix,
 			"*"         : {"*" : {"*_*" : remove_periph_prefix }}
 	}},
+
+	"WWDG"  : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 })
 
 

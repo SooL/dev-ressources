@@ -26,8 +26,39 @@ from structure import ChipSet
 
 logger = logging.getLogger()
 
+def PERIPH_VERSION_REGISTERS_cleaner(periph: "Peripheral") :
+	from structure import Register, Field
+	p_name = periph.name if periph.name is not None else periph.parent.name
+	corr = [
+		[None, None, ["VERR", "VER", "IP_VER"], f"{p_name} version register", [("MINREV", 0, 4), ("MAJREV", 4, 4)]],
+		[None, None, ["IPIDR", "IPDR", "ID"], f"{p_name} identification register", [("ID", 0, 32)]],
+		[None, None, ["SIDR", "SID"], f"{p_name} size identification register", [("SID", 0, 32)]],
+	]
+	for chip in periph.chips :
+		if p_name in chip.header_handler.periph_table :
+			header_periph = chip.header_handler.periph_table[p_name]
+			for corr_reg in corr :
+				name = None
+				for candidate in corr_reg[2] :
+					if candidate in header_periph :
+						name = candidate
+				if name is not None and name not in periph :
+					if corr_reg[0] is None :
+						corr_reg[0] = Register(chip, name, corr_reg[3])
+						corr_reg[1] = header_periph[name].byte_offset
+					else :
+						corr_reg[0].chips.add(chip)
+	for corr_reg in corr :
+		if corr_reg[0] is not None :
+			for f in corr_reg[4] :
+				corr_reg[0].add_field(Field(corr_reg[0].chips, f[0], position=f[1], size=f[2]))
+			periph.add_register(corr_reg[0])
+			periph.place_component(corr_reg[0], corr_reg[1])
+
+
 
 def ADC_periph_cleaner(periph: "Peripheral") :
+	PERIPH_VERSION_REGISTERS_cleaner(periph)
 	common: bool = False
 	if "common" in periph.brief.lower() :
 		common = True
@@ -72,6 +103,7 @@ def CAN_periph_base_cleaner(periph: "Peripheral") :
 
 def CRC_periph_cleaner(periph: "Peripheral") :
 	from structure import Register, Field, MappingElement
+	PERIPH_VERSION_REGISTERS_cleaner(periph)
 	if "POL" in periph :
 		return
 	svd_name = list(periph.chips.chips)[0].svd
@@ -83,7 +115,7 @@ def CRC_periph_cleaner(periph: "Peripheral") :
 		periph.place_component(pol_reg, 0x14)
 
 def DAC_periph_cleaner(periph: "Peripheral") :
-	from structure import Register, Field, MappingElement
+	PERIPH_VERSION_REGISTERS_cleaner(periph)
 	if "DOR2" in periph :
 		return
 	if "DOR1" not in periph :
@@ -170,13 +202,12 @@ def DMA_periph_cleaner(periph: "Peripheral") :
 		periph.place_component(CSELR, address=pos, name="CSELR", chips=chips)
 
 def DBGMCU_periph_cleaner(periph: "Peripheral") :
-	from structure import Register
 	corr = [
 		["^APB[1L]_?FZR?$", ["APB1FZR", "APB1FZ"]],
 		["^APB[2H]_?FZR?$", ["APB2FZR", "APB2FZ"]],
-		["APB1(L_FZ|_FZR1)?", ["APB1FZR1"]],
-		["APB1(H_FZ|_FZR2)?", ["APB1FZR2"]],
-		["C2AP_B1FZR1", ["C2APB1FZR1"]]
+		["^APB1(L_FZ|_FZR1)?$", ["APB1FZR1"]],
+		["^APB1(H_FZ|_FZR2)?$", ["APB1FZR2"]],
+		["^C2AP_B1FZR1$", ["C2APB1FZR1"]]
 	]
 	for chip in periph.chips :
 		header_DBGMCU = chip.header_handler.periph_table["DBGMCU"]
