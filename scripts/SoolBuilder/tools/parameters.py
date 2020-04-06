@@ -53,6 +53,8 @@ class ParametersHandler :
 		self.fileset_reinit		: bool = False
 
 		self.enforce_versions	: bool = False
+
+		self.cubeide_path		: str = None
 		
 		self.jobs : int = 1
 
