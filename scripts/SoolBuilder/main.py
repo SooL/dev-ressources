@@ -420,15 +420,18 @@ if __name__ == "__main__" :
 
 	if global_parameters.dump_rccf :
 		os.makedirs(out_rccf,exist_ok=True)
-		for name,group in output_groups.items():
-			if name == "RCC" or global_parameters.got_group_filter and name not in global_parameters.group_filter :
-				continue
-			for periph in group.peripherals :
-				logger.info(f"RCCF generation for {periph.name}")
-				with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
-					records = generate_records(periph,output_groups['RCC'].peripherals[0])
-					rccf.write(generate_get_reg(records,periph))
-					rccf.write(generate_get_bit(records,periph))
+		if "RCC" not in output_groups :
+			logger.error(f"Tried to generate RCCF while RCC isn't analyzed. Aborting.")
+		else :
+			for name,group in output_groups.items():
+				if name == "RCC" or global_parameters.got_group_filter and name not in global_parameters.group_filter :
+					continue
+				for periph in group.peripherals :
+					logger.info(f"RCCF generation for {periph.name}")
+					with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
+						records = generate_records(periph,output_groups['RCC'].peripherals[0])
+						rccf.write(generate_get_reg(records,periph))
+						rccf.write(generate_get_bit(records,periph))
 
 
 
