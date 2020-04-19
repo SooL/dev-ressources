@@ -156,7 +156,7 @@ class ParametersHandler :
 		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
 		self.jobs				= args.jobs
-
+		self.cubeide_path		= args.cubeide_path
 		self.group_filter = args.group_filter
 		if "all" in [x.lower() for x in self.group_filter] :
 			self.group_filter.clear()

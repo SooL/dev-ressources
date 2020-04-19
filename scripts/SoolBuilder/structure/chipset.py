@@ -205,6 +205,11 @@ class ChipSet :
 	def empty(self) -> bool:
 		return len(self.chips) == 0
 
+	@property
+	def defines(self) -> T.List[str]:
+		return [x.define for x in self.chips]
+
+
 	def add(self, other: T.Union[T.List[Chip], T.Set[Chip], 'ChipSet', Chip]):
 		if isinstance(other, ChipSet) :
 			self.chips.update(other.chips)

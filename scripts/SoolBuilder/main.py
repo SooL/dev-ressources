@@ -124,6 +124,9 @@ if __name__ == "__main__" :
 	from generators import generate_sool_irqn
 	from generators import generate_sool_cmsis_config
 
+	from FileSetHandler import FileSetLocator
+	from FileSetHandler import STFilesetHandler
+
 	start_time = time()
 
 	logger.info("Tool startup")
@@ -185,6 +188,10 @@ if __name__ == "__main__" :
 	parser.add_argument("--force-version",
 						action="store_true",
 						help="Force packs versions as specified in .data/version.ini")
+	parser.add_argument("--cubeide-path",
+						type=str,
+						default=None,
+						help="Path to STM32CubeIDE installation")
 
 	args = parser.parse_args()
 
@@ -287,6 +294,7 @@ if __name__ == "__main__" :
 
 		for pdsc_file in pdsc_handlers :
 			pdsc_file.check_svd_define_association()
+
 		define_done_set = set()
 		i = 1
 		logger.info("Build SVD list...")
@@ -313,6 +321,26 @@ if __name__ == "__main__" :
 						svd_list[assoc.svd].chipset.add(assoc)
 			i += 1
 		used_svd = set()
+
+
+		# ------------ EXPERIMENT ----------------------
+
+		if global_parameters.cubeide_path is not None:
+			init_def_list = ChipSet.reference_chipset.defines
+			fsl = FileSetLocator(global_parameters.cubeide_path)
+			overall : STFilesetHandler = None
+			for fileset in fsl.targets_list:
+				newfs = STFilesetHandler(fileset)
+				newfs.process()
+
+				if overall is None:
+					overall = newfs
+				else:
+					overall.merge(newfs)
+			t = overall.match_defines_svd(init_def_list)
+			print("Done")
+
+		# ------------ EXPERIMENT ----------------------
 
 		logger.info("SVD list done, begin processing")
 		svd_list = svd_process_handler(svd_list,global_parameters.group_filter)
