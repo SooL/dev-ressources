@@ -35,6 +35,7 @@ from FileSetHandler import PDSCHandler
 
 logger = logging.getLogger()
 svd_path = "./.data/svd"
+svdst_path = "./.data/svd-st"
 fileset_path = "./.data/fileset"
 packs_path = "./.data/packs"
 cmsis_path = "./.data/cmsis"
@@ -102,6 +103,11 @@ def init():
 		logger.warning("Delete" + os.path.realpath(cmsis_path))
 		shutil.rmtree(cmsis_path)
 	os.makedirs(cmsis_path)
+
+	if os.path.exists(svdst_path) :
+		logger.warning("Delete" + os.path.realpath(svdst_path))
+		shutil.rmtree(svdst_path)
+	os.makedirs(svdst_path)
 
 	if not os.path.exists(packs_path) :
 		os.makedirs(packs_path)

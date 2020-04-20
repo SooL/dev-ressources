@@ -328,6 +328,7 @@ if __name__ == "__main__" :
 		if global_parameters.cubeide_path is not None:
 			init_def_list = ChipSet.reference_chipset.defines
 			fsl = FileSetLocator(global_parameters.cubeide_path)
+			fsl.retrieve_svd("./.data/svd-st")
 			overall : STFilesetHandler = None
 			for fileset in fsl.targets_list:
 				newfs = STFilesetHandler(fileset)
@@ -338,7 +339,29 @@ if __name__ == "__main__" :
 				else:
 					overall.merge(newfs)
 			t = overall.match_defines_svd(init_def_list)
-			print("Done")
+
+			svd_list.clear()
+			logger.info("Fix SVD using ST's")
+			to_be_removed = list()
+			ref_cs = {c for c in ChipSet.reference_chipset.chips}
+			for chip in ref_cs :
+				if chip.define in t :
+					chip.svd = f"./.data/svd-st/{list(t[chip.define])[0]}"
+					if chip.svd not in svd_list :
+						svd_list[chip.svd] = SVDFile(chip.svd,{chip})
+					else :
+						svd_list[chip.svd].chipset.add(chip)
+				else :
+					logger.info(f"Removing unmatched chip {chip}")
+					to_be_removed.append(chip)
+
+			for c in to_be_removed :
+				ChipSet.reference_chipset.remove(c)
+				for pdsc in pdsc_handlers :
+					if c in pdsc.associations :
+						pdsc.associations.remove(c)
+
+
 
 		# ------------ EXPERIMENT ----------------------
 

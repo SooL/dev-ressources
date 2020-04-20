@@ -120,13 +120,13 @@ class FileSetLocator :
 		self.targets_list.clear()
 
 		patterns_targets = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb_*/resources/board_def/stm32targets.xml"
-		patterns_svd = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb_debug_*/resources/cmsis/STMicroelectronics_CMSIS_SVD/*.svd"
+		patterns_svd = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb.debug_*/resources/cmsis/STMicroelectronics_CMSIS_SVD/*.svd"
 
 		for target_list_file in glob.glob(patterns_targets) :
 			self.targets_list.append(os.path.abspath(target_list_file))
 
 		for svd_file in glob.glob(patterns_svd) :
-			self.targets_list[os.path.basename(svd_file)] = os.path.abspath(svd_file)
+			self.svd_list[os.path.basename(svd_file)] = os.path.abspath(svd_file)
 
 	def retrieve_svd(self,dest):
 		logger.info(f"Retrieving SVD files to {dest}")
