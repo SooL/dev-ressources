@@ -360,6 +360,7 @@ if __name__ == "__main__" :
 				for pdsc in pdsc_handlers :
 					if c in pdsc.associations :
 						pdsc.associations.remove(c)
+			ChipSet.reference_chipset.chips = set(list(ChipSet.reference_chipset.chips))
 
 
 
