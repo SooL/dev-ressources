@@ -232,7 +232,8 @@ base_root_corrector = Corrector({
 			"xA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[1 :]),
 			"MxA?B*EN*R*" : lambda reg : modify(reg, new_name=reg.name[2 :]),
 			"PLLSYSCFGR" : lambda reg : modify(reg, new_name="PLLCFGR"),
-			"CCIPR1"    : lambda reg : modify(reg, new_name="CCIPR")
+			"CCIPR1"    : lambda reg : modify(reg, new_name="CCIPR"),
+			"PLL*"   : { "*" : RCC_PLL_cleaner },
 		}
 	},
 	"RTC"       : {

@@ -67,6 +67,25 @@ def GPIO_reg_var_cleaner(var : RegisterVariant):
 				var.add_field(Field(chips=var.chips, name=field_name, brief=None,
 				                    position= start*4 + i*field_size, size=field_size))
 
+def RCC_PLL_cleaner(var: RegisterVariant) :
+	for f in var :
+		if re.match("PLL[A-Z]0", f.name) and f.name[:-1] not in var.parent :
+			pos = f.position
+			base_name = f.name[:-1]
+			i = 1
+			split = False
+			while f"{base_name}{i}" in var :
+				if var[f"{base_name}{i}"].position != pos + i :
+					split = True
+				var.remove_field(var[f"{base_name}{i}"])
+				i += 1
+			if split :
+				raise AssertionError(f"{base_name} is split")
+			else :
+				var.remove_field(f)
+				size = i
+				var.parent.add_field(Field(f.chips, f"{base_name}", f.brief, pos, size))
+
 def RTC_ALMRBSSR_cleaner(var : RegisterVariant) :
 	if "BKP" in var : # wrong fields
 		var.remove_field(var["BKP"])
