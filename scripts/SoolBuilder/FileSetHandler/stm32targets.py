@@ -55,7 +55,12 @@ class STFilesetHandler :
 				stop = cached.find('>', start)
 				cached = cached[:start] + "<targetDefinitions" + cached[stop:]
 			else:
-				logger.warning("No xmlns found")
+				start = cached.find("<targetParts")
+				if start > -1:
+					stop = cached.find('>', start)
+					cached = cached[:start] + "<targetParts" + cached[stop:]
+				else :
+					logger.warning("No xmlns found")
 
 		return ET.fromstring(cached)
 
