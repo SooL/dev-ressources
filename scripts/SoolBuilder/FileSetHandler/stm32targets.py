@@ -124,8 +124,10 @@ class FileSetLocator :
 		self.svd_list.clear()
 		self.targets_list.clear()
 
-		patterns_targets = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb_*/resources/board_def/stm32targets.xml"
-		patterns_svd = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb.debug_*/resources/cmsis/STMicroelectronics_CMSIS_SVD/*.svd"
+		#patterns_targets = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb_*/resources/board_def/stm32targets.xml"
+		patterns_targets = f"{self.root}/plugins/com.st.stm32cube.ide.mcu.productdb_*/resources/board_def/stm32targets.xml"
+		#patterns_svd = f"{self.root}/plugins/com.st.stm32cube.ide.m[cp]u.productdb.debug_*/resources/cmsis/STMicroelectronics_CMSIS_SVD/*.svd"
+		patterns_svd = f"{self.root}/plugins/com.st.stm32cube.ide.mcu.productdb.debug_*/resources/cmsis/STMicroelectronics_CMSIS_SVD/*.svd"
 
 		for target_list_file in glob.glob(patterns_targets) :
 			self.targets_list.append(os.path.abspath(target_list_file))
