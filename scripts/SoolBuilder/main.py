@@ -407,6 +407,8 @@ if __name__ == "__main__" :
 			i += 1
 		del i
 
+		output_groups['TIM'].create_parent_class()
+
 		for name, group in output_groups.items() :
 			logger.info(f"Finalizing {name}")
 			group.finalize()

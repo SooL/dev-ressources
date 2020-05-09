@@ -68,6 +68,7 @@ class Peripheral(Component) :
 		self.instances: T.List[PeripheralInstance] = list()
 		self.templates: T.List[PeripheralTemplate] = list()
 		self.max_size = 0
+		self.inheritFrom = None
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -75,6 +76,14 @@ class Peripheral(Component) :
 
 	def __iter__(self):
 		return iter(self.registers)
+
+	def __lt__(self, other):
+		if self.inheritFrom is None and other.inheritFrom is not None :
+			return True
+		elif self.inheritFrom is not None and other.inheritFrom is None :
+			return False
+		else :
+			return self.name < other.name
 
 	def __eq__(self, other):
 		if isinstance(other, Peripheral) :
@@ -111,6 +120,7 @@ class Peripheral(Component) :
 					return reg
 			raise KeyError()
 		raise TypeError()
+
 
 	@property
 	def alias(self) -> T.Union[None, str]:
@@ -471,7 +481,10 @@ class Peripheral(Component) :
 			out += f"{indent}#ifdef {self.defined_name}\n"
 		if self.has_template and not isinstance(self.parent, Peripheral):
 			out += f"{indent}template<typename tmpl={self.templates[-1].name}>\n"
-		out += f"{indent}class {self.name} /// {self.brief}\n" \
+
+		inheritance = "" if self.inheritFrom is None else " : public " + self.inheritFrom.name
+
+		out += f"{indent}class {self.name}{inheritance} /// {self.brief}\n" \
 		       f"{indent}{{\n"\
 			   f"{indent}public:\n"
 		indent.increment()
@@ -490,19 +503,21 @@ class Peripheral(Component) :
 			indent.decrement()
 			out += f"{indent}}};\n"
 
-
-
-
-		if not global_parameters.physical_mapping :
+		NO_PHY = not global_parameters.physical_mapping
+		if NO_PHY :
 			out += f"\n{indent}#if __SOOL_DEBUG_NOPHY\n"
-			out += f"{indent + 1}{self.name}(uintptr_t addr) : myaddr(addr){{}};\n"
-			out += f"{indent + 1}const uintptr_t myaddr;\n"
-			out += f"{indent + 1}inline const uintptr_t get_addr() {{return myaddr;}};\n"
-			out += f"{indent}#else\n"
-		out += f"{indent + 1}inline const uintptr_t get_addr() {{return reinterpret_cast<uintptr_t>(this);}};\n"
+
+		if self.inheritFrom is None :
+			if NO_PHY :
+				out += f"{indent + 1}{self.name}(uintptr_t addr) : myaddr(addr){{}};\n"
+				out += f"{indent + 1}const uintptr_t myaddr;\n"
+				out += f"{indent + 1}inline const uintptr_t get_addr() {{return myaddr;}};\n"
+				out += f"{indent}#else\n"
+			out += f"{indent + 1}inline const uintptr_t get_addr() {{return reinterpret_cast<uintptr_t>(this);}};\n"
+
 		out += f"{indent}private:\n"
 		out += f"{indent + 1}{self.name}() = delete;\n"
-		if not global_parameters.physical_mapping:
+		if NO_PHY :
 			out += f"{indent}#endif\n"
 		out += f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
 
