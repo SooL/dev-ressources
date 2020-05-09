@@ -115,9 +115,7 @@ def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record
 		curr_cs : ChipSet = copy(instance.chips)
 		"""Instance chipset"""
 		# For all potentially valid RCC registers (Enable Register)
-		for reg in rcc :
-			if "ENR" not in reg.name :
-				continue
+		for reg in [ x for x in rcc if "ENR" in x.name]:
 
 			fieldlist : T.List[Field] = list()
 			"""List of all fields across all variant for the given RCC register"""
@@ -142,8 +140,8 @@ def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record
 					records_dict[fname].values_pos[field.position].add(common_chips)
 					records_dict[fname].overall_chipset.add(common_chips)
 
-					records_dict[fname].values_reg[reg.name].add(reg.chips)
-					records_dict[fname].overall_chipset.add(reg.chips)
+					records_dict[fname].values_reg[reg.name].add(common_chips)
+					records_dict[fname].overall_chipset.add(common_chips)
 
 	return records_dict
 
