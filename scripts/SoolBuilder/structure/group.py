@@ -108,6 +108,7 @@ class Group(Component) :
 		parent_class = Peripheral(self.chips, self.name + '_PARENT', f'{self.name} peripherals parent class')
 		for p in self.peripherals :
 			p.inheritFrom = parent_class
+			parent_class.chips.add(p.chips)
 		#TODO move compatible registers in parent class
 		self.add_peripheral(parent_class)
 
