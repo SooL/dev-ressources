@@ -98,6 +98,13 @@ class Group(Component) :
 		peripheral.set_parent(self)
 		self.edited = True
 
+	def create_parent_class(self) :
+		parent_class = Peripheral(self.chips, self.name + '_PARENT', f'{self.name} peripherals parent class')
+		for p in self.peripherals :
+			p.inheritFrom = parent_class
+		#TODO move compatible registers in parent class
+		self.add_peripheral(parent_class)
+
 	def __struct_based_periph_merge(self) :
 		length = len(self.peripherals)
 		i = 0
@@ -241,6 +248,8 @@ class Group(Component) :
 		default_tabmanager.increment()
 		tmp += f"{default_tabmanager}namespace core {{\n"
 		default_tabmanager.increment()
+
+		self.peripherals.sort()
 
 		for peripheral in self.peripherals :
 			tmp += peripheral.declare_templates(default_tabmanager)
