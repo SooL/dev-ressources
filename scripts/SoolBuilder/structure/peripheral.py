@@ -505,6 +505,8 @@ class Peripheral(Component) :
 			indent.decrement()
 			out += f"{indent}}};\n"
 
+		out += f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
+
 		if self.inheritFrom is None:
 			NO_PHY = not global_parameters.physical_mapping
 			if NO_PHY :
@@ -520,7 +522,7 @@ class Peripheral(Component) :
 			out += f"{indent + 1}{self.name}() = delete;\n"
 			if NO_PHY :
 				out += f"{indent}#endif\n"
-		out += f"{indent}//SOOL-{self.alias}-DECLARATIONS\n"
+
 
 		indent.decrement()
 		out += f"{indent}}};\n"
