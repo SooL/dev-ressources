@@ -21,6 +21,7 @@ import os
 import sqlite3 as sql
 import typing as T
 from structure import ChipSet
+from structure import Group
 from structure import Peripheral, PeripheralInstance, Field
 from structure import default_tabmanager as indent
 from copy import copy
@@ -105,7 +106,13 @@ def generate_records(periph : Peripheral, rcc : Peripheral) -> T.Dict[str,Record
 	:param rcc: RCC peripheral description
 	:return: Fully formed dict.
 	"""
-	names = [(f"{x.name}EN",x) for x in periph.instances]
+	group : Group = periph.parent
+	names : T.List[T.Tuple[str,PeripheralInstance]] = [(f"{x.name}EN",x) for x in periph.instances]
+
+	# If periph is a parent class, we append all childs enable fields.
+
+	for child in [p for p in group if p.inheritFrom is periph] :
+		names.extend([(f"{x.name}EN",x) for x in child.instances])
 	"""Fields name that will be looked up"""
 	records_dict : T.Dict[str,Record] = dict()
 	"""Dict which associate a field name with a proper record."""

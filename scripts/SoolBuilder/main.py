@@ -480,7 +480,7 @@ if __name__ == "__main__" :
 			for name,group in output_groups.items():
 				if name == "RCC" or global_parameters.got_group_filter and name not in global_parameters.group_filter :
 					continue
-				for periph in group.peripherals :
+				for periph in group.toplevel_periphs :
 					logger.info(f"RCCF generation for {periph.name}")
 					with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
 						records = generate_records(periph,output_groups['RCC'].peripherals[0])

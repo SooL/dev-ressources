@@ -142,6 +142,10 @@ class Peripheral(Component) :
 				return True
 		return False
 
+	@property
+	def inherits(self):
+		return self.inheritFrom is not None
+
 ################################################################################
 #                             REGISTERS MANAGEMENT                             #
 ################################################################################

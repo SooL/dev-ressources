@@ -89,6 +89,12 @@ class Group(Component) :
 	def __iter__(self):
 		return iter(self.peripherals)
 
+	@property
+	def toplevel_periphs(self) -> T.List[Peripheral]:
+		"""
+		:return: Peripheral that does not inherit from anyone.
+		"""
+		return [periph for periph in self if not periph.inherits]
 ########################################################################################################################
 #                                                PERIPHERALS MANAGEMENT                                                #
 ########################################################################################################################
