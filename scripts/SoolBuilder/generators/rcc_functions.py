@@ -34,12 +34,14 @@ class Record:
 		self.values_pos: T.Dict[int,ChipSet] = dict()
 		self.values_reg: T.Dict[int, ChipSet] = dict()
 		self.instance.chips.update_families()
+		self.parent = self.instance.parent.inheritFrom if self.instance.parent.inherits else self.instance.parent
 
 	def output_fpos(self):
 		out = ""
 		# Check if whether the instance is in all chips which support the peripheral.
-		univ_instance = self.instance.chips == self.instance.parent.chips
-		if not univ_instance :
+		univ_peripheral_instance = self.instance.chips == self.parent.chips
+		unique_position = len(self.values_pos) == 1
+		if not univ_peripheral_instance :
 			out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
 			indent.increment()
 		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
@@ -50,28 +52,31 @@ class Record:
 			v = list(self.values_pos.keys())[i]
 			cs = self.values_pos[v]
 
-			if not univ_instance :
+			if not unique_position :
 				if i == 0:
 					out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ',reference_chipset=self.overall_chipset)}\n"
 				else:
 					out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ',reference_chipset=self.overall_chipset)}\n"
 
-			out += f"{indent + (1 if not univ_instance else 0)}return 1 << {v};\n"
+			out += f"{indent + (1 if not univ_peripheral_instance else 0)}return 1 << {v};\n"
 
-		if not univ_instance:
+		if not unique_position:
 			out += f"{indent}#endif\n"
 			indent.decrement()
+		if not univ_peripheral_instance:
 			indent.decrement()
 			out += f"{indent}#endif"
 		else :
 			indent.decrement()
-
+		indent.level = 1
 		return out
 
 	def output_register(self):
 		out = ""
-		univ_instance = self.instance.chips == self.instance.parent.chips
-		if not univ_instance:
+		# Parent points to periph which does not makes sense when there is inheritance.
+		univ_peripheral_instance = self.instance.chips == self.parent.chips
+		unique_register = len(self.values_reg) == 1
+		if not univ_peripheral_instance:
 			out += f"{indent}#ifdef {self.instance.name}_BASE_ADDR\n"
 			indent.increment()
 		out += f"{indent}case {self.instance.name}_BASE_ADDR :\n"
@@ -80,22 +85,23 @@ class Record:
 			v = list(self.values_reg.keys())[i]
 			cs = self.values_reg[v]
 
-			if not univ_instance :
+			if not unique_register :
 				if i == 0:
 					out += f"{indent}#if {cs.defined_list(newline_prefix=f'{indent}    ',reference_chipset=self.overall_chipset)}\n"
 				else:
 					out += f"{indent}#elif {cs.defined_list(newline_prefix=f'{indent}      ',reference_chipset=self.overall_chipset)}\n"
 
-			out += f"{indent + (1 if not univ_instance else 0)}return RCC->{v};\n"
+			out += f"{indent + (1 if not unique_register else 0)}return RCC->{v};\n"
 
-		if not univ_instance:
+		if not unique_register:
 			out += f"{indent}#endif\n"
 			indent.decrement()
+		if not univ_peripheral_instance:
 			indent.decrement()
 			out += f"{indent}#endif"
-		else :
+		else:
 			indent.decrement()
-
+		indent.level = 1
 		return out
 
 
@@ -163,7 +169,7 @@ def generate_get_bit(records_dict : T.Dict[str,Record],periph : Peripheral) -> s
 	if need_template :
 		out += "template<typename T>\n"
 
-	out += f"inline constexpr uint32_t {periph.name}{'<T>' if need_template else ''}::get_clock_enable_bit(const uintptr_t addr)\n"
+	out += f"static constexpr uint32_t {periph.name}{'<T>' if need_template else ''}::get_clock_enable_bit(const uintptr_t addr)\n"
 	out += f"{{\n"
 	indent.increment()
 	out += f"{indent}switch (addr) \n{indent}{{\n"
@@ -188,7 +194,7 @@ def generate_get_reg(records_dict: T.Dict[str, Record],periph : Peripheral) -> s
 	if need_template :
 		out += "template<typename T>\n"
 
-	out += f"inline constexpr volatile Reg32_t& {periph.name}{'<T>' if need_template else ''}::get_clock_enable_reg(const uintptr_t addr)\n"
+	out += f"static constexpr volatile Reg32_t& {periph.name}{'<T>' if need_template else ''}::get_clock_enable_reg(const uintptr_t addr)\n"
 	out += f"{{\n"
 	indent.increment()
 	out += f"{indent}switch (addr) \n{indent}{{\n"
