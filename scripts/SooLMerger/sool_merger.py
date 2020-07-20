@@ -37,11 +37,17 @@ parser.add_argument("dest_dir",
 
 
 def build_files_names(curr_file: str,dest_dir: str) -> Tuple[Path,Path,Path] :
+	"""
+	Generate all files paths
+	:param curr_file:
+	:param dest_dir:
+	:return: Tuple with (struct file, def file, resulting file)
+	"""
 	print("\n{:#^80s}".format(" FILES NAME GENERATION "))
 	if curr_file.rfind('_') == -1 :
 		raise NameError("Invalid source file name " + curr_file)
 	root = curr_file[:curr_file.rfind('_')]
-	
+
 	print("Input :")
 	print("\tInput file  : ",curr_file)
 	print("\tOutput dir  : ",dest_dir)
@@ -49,9 +55,9 @@ def build_files_names(curr_file: str,dest_dir: str) -> Tuple[Path,Path,Path] :
 	print("\tRoot        : ",root)
 	print("\tStruct file : ",root + "_struct.h")
 	print("\tDef.   file : ",root + "_definition.h")
-	print("\tMerged file : ",str(Path(dest_dir) / (root[root.rfind("/")+1:] + ".h")))
+	print("\tMerged file : ",str(Path(dest_dir) / (os.path.basename(root)+ ".h")))
 	
-	return (Path(root + "_struct.h"),Path(root + "_definition.h"),Path(dest_dir) / (root[root.rfind("/")+1:] + ".h"))
+	return (Path(root + "_struct.h"),Path(root + "_definition.h"),Path(dest_dir) / (os.path.basename(root)+ ".h"))
 
 def perform_checks(source_struct : Path,source_def : Path,dest : Path) :
 	print("\n{:#^80s}".format(" FILES EXISTENCE CHECKS "))
