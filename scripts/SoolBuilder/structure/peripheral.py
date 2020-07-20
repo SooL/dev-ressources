@@ -68,7 +68,7 @@ class Peripheral(Component) :
 		self.instances: T.List[PeripheralInstance] = list()
 		self.templates: T.List[PeripheralTemplate] = list()
 		self.max_size = 0
-		self.inheritFrom = None
+		self.inheritFrom : Peripheral = None
 
 ################################################################################
 #                                  OPERATORS                                   #
@@ -516,7 +516,7 @@ class Peripheral(Component) :
 					out += f"{indent + 1}const uintptr_t myaddr;\n"
 					out += f"{indent + 1}inline const uintptr_t get_addr() const volatile {{return myaddr;}};\n"
 					out += f"{indent}#else\n"
-				out += f"{indent + 1}inline const uintptr_t get_addr() const volatile {{return reinterpret_cast<uintptr_t>(this);}};\n"
+				out += f"{indent + 1}inline constexpr uintptr_t get_addr() const volatile {{return (uintptr_t)(this);}};\n"
 
 			out += f"{indent}private:\n"
 			out += f"{indent + 1}{self.name}() = delete;\n"
