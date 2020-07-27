@@ -17,7 +17,7 @@
 #  along with SooL core Library. If not, see  <https://www.gnu.org/licenses/>. *
 # ******************************************************************************
 
-from FileSetHandler.pdsc_new import PDSCHandler
+from .pdsc_new import PDSCHandler
 # from FileSetHandler.pdsc import PDSCFile
 # from FileSetHandler.pack import KeilPack
 from .stm32targets import FileSetLocator, STFilesetHandler

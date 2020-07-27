@@ -24,9 +24,12 @@
 
 import glob
 
-
 import argparse
 import shutil
+import logging
+import xml.etree.ElementTree as ET
+import typing as T
+import os
 
 from structure import *
 
@@ -34,9 +37,10 @@ from tools import svd_retriever as svd
 from tools import global_parameters
 
 import pickle
-from FileSetHandler.pdsc import *
 from FileSetHandler import PDSCHandler
 from FileSetHandler.svd import SVDFile
+
+
 from  cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 from dispatchers import svd_process_handler
