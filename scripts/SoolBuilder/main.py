@@ -27,7 +27,6 @@ import glob
 import argparse
 import shutil
 import logging
-import xml.etree.ElementTree as ET
 import typing as T
 import os
 
@@ -142,9 +141,6 @@ if __name__ == "__main__" :
 						help="Job ammount, be careful of RAM usage...",
 						default=1,
 						type=int)
-	# parser.add_argument("--dump",
-	# 					action="store_true",
-	# 					help="Generate a SooL.dat file which might be used by other scripts")
 	parser.add_argument("--reuse",
 						action="store_true",
 						help="Reuse an existing .data/SooL.dat file to skip the analysis step.")
@@ -156,8 +152,8 @@ if __name__ == "__main__" :
 						default=None,
 						help="Path to STM32CubeIDE installation")
 
+	# Start of actual code
 	args = parser.parse_args()
-
 	global_parameters.read_args(args,svd.defined_archives_keil)
 
 	skip_analysis = False
@@ -177,18 +173,9 @@ if __name__ == "__main__" :
 			skip_analysis = False
 			logger.error(f"Error while trying to reuse a previous database : {e.__cause__}")
 
-	if global_parameters.big_endian :
-		logger.warning("The library will be generated for big endian.")
-
-	if not global_parameters.physical_mapping :
-		logger.warning("The library will be generated with non-physical capabilities.")
-
 	if not skip_analysis :
-		if not os.path.exists(svd.svd_path) :
+		if not os.path.exists(svd.svd_path)  or global_parameters.fileset_reinit:
 			logger.info("First initialization")
-			svd.init()
-
-		if global_parameters.fileset_reinit :
 			svd.init()
 
 		if global_parameters.need_update :

@@ -142,8 +142,10 @@ class ParametersHandler :
 		for token in options :
 			if token == "no-phy" :
 				self.physical_mapping = False
+				logger.warning("The library will be generated with non-physical capabilities.")
 			elif token == "big-endian" :
 				self.big_endian = True
+				logger.warning("The library will be generated for big endian.")
 			elif token == "dump":
 				self.dump_db = True
 			elif token == "sql":
