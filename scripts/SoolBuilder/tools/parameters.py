@@ -60,6 +60,16 @@ class ParametersHandler :
 
 		self.archives = dict()
 
+		# Constants as of now
+		self.main_out = "out"
+		self.out_include = f"{self.main_out}/include"
+		self.out_sys = f"{self.main_out}/system/include"
+		self.out_rccf = f"{self.main_out}/rccf"
+		self.pdsc_path_model = ".data/fileset/*.pdsc"
+		self.pickle_data_path = ".data/SooL.dat"
+
+		self.generation_manifest_path = f"{self.main_out}/manifest.xml"
+
 
 	@property
 	def to_xml(self) -> ET.Element:

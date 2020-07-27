@@ -41,14 +41,14 @@ from FileSetHandler import PDSCHandler
 from FileSetHandler.svd import SVDFile
 
 
-from  cleaners import register_forbid_autonamefix
+from cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 from dispatchers import svd_process_handler
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
 ########################################################################################################################
-
+# Logger shall be initialized in global of main in order to be used in multi-thread stuff.
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
@@ -71,49 +71,8 @@ log_file_handler.setFormatter(formatter)
 logger.addHandler(log_file_handler)
 
 ########################################################################################################################
-#                                            GLOBAL VARIABLES INITIALIZATION                                           #
-########################################################################################################################
-
-# ________________________________________________________________________________________________________________ Paths
-
-main_out = "out"
-out_include = f"{main_out}/include"
-out_sys = f"{main_out}/system/include"
-out_rccf = f"{main_out}/rccf"
-pdsc_path_model = ".data/fileset/*.pdsc"
-pickle_data_path = ".data/SooL.dat"
-
-generation_manifest_path = f"{main_out}/manifest.xml"
-
-def get_node_text(root : ET.Element, node : str) -> str :
-	return str() if root.find(node) is None else root.find(node).text
-
-########################################################################################################################
 #                                                         MAIN                                                         #
 ########################################################################################################################
-
-
-def report_debilus(group_list : T.Dict[str,Group]) :
-	out =""
-	for group in group_list :
-		out += f"Group : {group}\n"
-		for p in group_list[group].peripherals :
-			out += f"\tPeripheral : {p.name}\n"
-			chips_sum : T.Dict[str,T.List[int]] = dict()
-			
-			for m in p.mappings :
-				for c in m.chips.chips :
-					if c not in chips_sum :
-						chips_sum[c] = [p.mappings.index(m)]
-					else :
-						chips_sum[c].append(p.mappings.index(m))
-			i = 1
-			for chip_name, lst in chips_sum.items() :
-				if len(lst) > 1 :
-					out += f"\t\tIssue : Chip {chip_name} is found {len(lst)} times. Indexes : {str(lst)}\n"
-	
-	return out
-	
 	
 if __name__ == "__main__" :
 
@@ -204,12 +163,12 @@ if __name__ == "__main__" :
 	skip_analysis = False
 	output_groups: T.Dict[str, Group] = dict()
 
-	manifest_handler = SoolManifest(generation_manifest_path)
+	manifest_handler = SoolManifest(global_parameters.generation_manifest_path)
 
 	if global_parameters.reuse_db :
 		try :
 			logger.info("Trying to restore a previous database...")
-			with open(pickle_data_path,"rb") as pickle_file :
+			with open(global_parameters.pickle_data_path,"rb") as pickle_file :
 				output_groups = pickle.load(pickle_file)
 			skip_analysis = True
 			logger.info("\tDone !")
@@ -289,7 +248,7 @@ if __name__ == "__main__" :
 		register_forbid_autonamefix.setup()
 
 		logger.info("Reading .pdsc files to map STM number to svd...")
-		for pdsc_file in glob.glob(pdsc_path_model):
+		for pdsc_file in glob.glob(global_parameters.pdsc_path_model):
 			logger.info(f"Reading {pdsc_file}...")
 			pdsc_handlers.append(PDSCHandler(pdsc_file))
 			pdsc_handlers[-1].process()
@@ -428,13 +387,13 @@ if __name__ == "__main__" :
 	if args.refresh_output :
 		if os.path.exists("out/") :
 			shutil.rmtree("out")
-		os.makedirs(out_include)
-		os.makedirs(out_sys)
+		os.makedirs(global_parameters.out_include)
+		os.makedirs(global_parameters.out_sys)
 
 	logger.info("Printing output files...")
 	for name, group in output_groups.items():
 		if not global_parameters.got_group_filter or name in global_parameters.group_filter :
-			with open(f"{out_include}/{name}_struct.h","w") as header :
+			with open(f"{global_parameters.out_include}/{name}_struct.h","w") as header :
 				header.write(group.cpp_output())
 
 			manifest_handler.add_generated_group(name)
@@ -445,14 +404,14 @@ if __name__ == "__main__" :
 	manifest_handler.write_file()
 
 
-	with open(f"{main_out}/sool_chip_setup.h", "w") as header:
+	with open(f"{global_parameters.main_out}/sool_chip_setup.h", "w") as header:
 		header.write(generate_sool_chip_setup())
 
-	with open(f"{out_sys}/IRQn.h", "w") as irq_table :
+	with open(f"{global_parameters.out_sys}/IRQn.h", "w") as irq_table :
 		irq_table.write(generate_sool_irqn())
 		pass
 
-	with open(f"{out_sys}/cmsis_config.h", "w") as cmsis_configuration :
+	with open(f"{global_parameters.out_sys}/cmsis_config.h", "w") as cmsis_configuration :
 		cmsis_configuration.write(generate_sool_cmsis_config())
 		pass
 
@@ -477,7 +436,7 @@ if __name__ == "__main__" :
 		logger.info("Done")
 
 	if global_parameters.dump_rccf :
-		os.makedirs(out_rccf,exist_ok=True)
+		os.makedirs(global_parameters.out_rccf,exist_ok=True)
 		if "RCC" not in output_groups :
 			logger.error(f"Tried to generate RCCF while RCC isn't analyzed. Aborting.")
 		else :
@@ -486,7 +445,7 @@ if __name__ == "__main__" :
 					continue
 				for periph in group.toplevel_periphs :
 					logger.info(f"RCCF generation for {periph.name}")
-					with open(f"{out_rccf}/{periph.name}.h","w") as rccf :
+					with open(f"{global_parameters.out_rccf}/{periph.name}.h","w") as rccf :
 						records = generate_records(periph,output_groups['RCC'].peripherals[0])
 						rccf.write(generate_get_reg(records,periph))
 						rccf.write(generate_get_bit(records,periph))
