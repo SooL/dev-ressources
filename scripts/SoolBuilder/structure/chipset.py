@@ -91,8 +91,9 @@ class Chip:
 	def legalize(self):
 		self.header = self.header.replace("\\","/")
 		self.svd = self.svd.replace("\\", "/")
-		if 'g' in self.define:
-			self.define = self.define.replace("g", "G")
+		self.define = self.define.upper().replace("X","x")
+		# if 'g' in self.define:
+		# 	self.define = self.define.replace("g", "G")
 
 	def fix(self,chip_name : str) -> bool:
 		if fnmatch(chip_name,"STM32F401?[BCDE]*"):
