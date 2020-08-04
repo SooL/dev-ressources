@@ -20,3 +20,4 @@
 from .rcc_functions import generate_get_reg, generate_get_bit, generate_records
 from .sool_irqn_table import generate_sool_irqn
 from .sool_cmsis_config import generate_sool_cmsis_config
+from .sool_chip_setup import generate_sool_chip_setup

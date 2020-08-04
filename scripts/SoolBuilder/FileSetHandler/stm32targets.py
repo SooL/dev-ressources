@@ -93,7 +93,7 @@ class STFilesetHandler :
 	def merge(self,other : "STFilesetHandler"):
 		self.chips.update(other.chips)
 
-	def match_defines_svd(self,defines : T.List[str]):
+	def match_defines_svd(self,defines : T.List[str]) -> T.Dict[str,T.Set[str]]:
 		result : T.Dict[str,T.Set[str]] = dict()
 		i = 0
 		for pat in defines :

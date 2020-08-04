@@ -21,3 +21,5 @@ from .pdsc import PDSCHandler
 # from FileSetHandler.pdsc import PDSCFile
 # from FileSetHandler.pack import KeilPack
 from .stm32targets import FileSetLocator, STFilesetHandler
+
+from .svd import SVDFile
