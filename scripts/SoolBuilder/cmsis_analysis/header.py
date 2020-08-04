@@ -169,6 +169,9 @@ class CMSISHeader:
 			data = f.read()
 
 		start = data.find("@addtogroup Configuration_section_for_CMSIS")
+		# L5 inconsistency workaround :
+		if start == -1 :
+			start = data.find("@addtogroup Configuration_of_CMSIS")
 		if start != -1 :
 			end = data.find("@}",start)
 			self.raw_cmsis_conf = data[start:end]
