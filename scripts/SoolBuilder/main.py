@@ -44,6 +44,7 @@ from cleaners import register_forbid_autonamefix
 from generators.sool_chip_setup import generate_sool_chip_setup
 from dispatchers import svd_process_handler
 
+
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
 ########################################################################################################################
@@ -88,6 +89,8 @@ if __name__ == "__main__" :
 
 	from FileSetHandler import FileSetLocator
 	from FileSetHandler import STFilesetHandler
+
+	from builder import SooLBuilder
 
 	start_time = time()
 
@@ -156,6 +159,9 @@ if __name__ == "__main__" :
 	args = parser.parse_args()
 	global_parameters.read_args(args,svd.defined_archives_keil)
 
+	builder = SooLBuilder(global_parameters)
+	builder.run()
+	quit(0)
 	skip_analysis = False
 	output_groups: T.Dict[str, Group] = dict()
 
@@ -396,11 +402,9 @@ if __name__ == "__main__" :
 
 	with open(f"{global_parameters.out_sys}/IRQn.h", "w") as irq_table :
 		irq_table.write(generate_sool_irqn())
-		pass
 
 	with open(f"{global_parameters.out_sys}/cmsis_config.h", "w") as cmsis_configuration :
 		cmsis_configuration.write(generate_sool_cmsis_config())
-		pass
 
 
 	if global_parameters.dump_sql :
@@ -422,7 +426,7 @@ if __name__ == "__main__" :
 			db.commit()
 		logger.info("Done")
 
-	if global_parameters.dump_rccf :
+	if global_parameters.generate_rccf :
 		os.makedirs(global_parameters.out_rccf,exist_ok=True)
 		if "RCC" not in output_groups :
 			logger.error(f"Tried to generate RCCF while RCC isn't analyzed. Aborting.")

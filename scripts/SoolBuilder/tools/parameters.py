@@ -36,13 +36,14 @@ class ParametersHandler :
 		self.reuse_db			: bool = False
 		self.dump_db			: bool = False
 		self.dump_sql			: bool = False
-		self.dump_rccf			: bool = False
+		self.generate_rccf		: bool = False
 		self.physical_mapping	: bool = True
 		self.big_endian			: bool = False
 		self.store_packs 		: bool = False
 		self.use_local_packs 	: bool = False
 		self.update_requested 	: bool = False
 		self.force_pack_version	: bool = False
+		self.refresh_output     : bool = False
 
 		self.group_filter		: T.List[str] = list()
 		self.chips_filter		: T.List[str] = list()
@@ -151,7 +152,7 @@ class ParametersHandler :
 			elif token == "sql":
 				self.dump_sql = True
 			elif token == "rccf":
-				self.dump_rccf = True
+				self.generate_rccf = True
 			else :
 				logger.error(f"Unrecognized option provided to generate : {token} will be ignored.")
 
@@ -169,7 +170,8 @@ class ParametersHandler :
 		self.update_requested	= args.update_svd or args.upgrade_svd
 		self.jobs				= args.jobs
 		self.cubeide_path		= args.cubeide_path
-		self.group_filter = args.group_filter
+		self.group_filter       = args.group_filter
+		self.refresh_output     = args.refresh_output
 		if "all" in [x.lower() for x in self.group_filter] :
 			self.group_filter.clear()
 
