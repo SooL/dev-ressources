@@ -28,7 +28,7 @@ class GroupFileSet:
 	default_merged_folder : str = "."
 
 	def __init__(self,base_name : str,split_folder : str = None, merged_folder : str = None):
-		self.base_name = base_name
+		self.base_name = base_name.replace(".h","").replace("_definition","").replace("_struct","")
 		self.split_folder = split_folder if split_folder is not None else GroupFileSet.default_split_folder
 		self.merged_folder = merged_folder if merged_folder is not None else GroupFileSet.default_merged_folder
 
