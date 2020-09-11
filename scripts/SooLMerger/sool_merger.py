@@ -51,7 +51,7 @@ parser.add_argument("--merge-dir","-m",
 					required=True,
 					type=str)
 
-parser.add_argument("--root-filename","-r",
+parser.add_argument("--root-filename","-f",
 					help="Root for the filenames, as in <root>_definition.h for the split part and <root>.h for the merged one",
 					required=True,
 					type=str)
@@ -67,7 +67,7 @@ runtime_args = None
 
 if __name__ == "__main__" :
 	if len(sys.argv) < 6 and runtime_args is None:
-		runtime_args = "-s testcase -m testcase/output -r TESTR --reverse".split(" ")
+		runtime_args = "-s testcase -m testcase/output -f TESTR --reverse".split(" ")
 
 	args = parser.parse_args(runtime_args)
 
