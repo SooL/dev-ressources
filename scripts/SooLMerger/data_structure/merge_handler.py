@@ -144,7 +144,7 @@ class MergeHandler:
 				offset = offset -1
 
 			for line in reversed(data_merged[tag.start:tag.stop]):
-				data_definition.insert(pos,line.replace(tag.indent,''))
+				data_definition.insert(pos,self.definition_tags[name].indent + line.replace(tag.indent,''))
 				offset += 1
 
 
