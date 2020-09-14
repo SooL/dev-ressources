@@ -66,10 +66,44 @@ class ParametersHandler :
 		self.out_include = f"{self.main_out}/include"
 		self.out_sys = f"{self.main_out}/system/include"
 		self.out_rccf = f"{self.main_out}/rccf"
-		self.pdsc_path_model = ".data/fileset/*.pdsc"
-		self.pickle_data_path = ".data/SooL.dat"
+
+		self.main_data = ".data"
+		self.svd_path = f"{self.main_data}/svd"
+		self.svdst_path = f"{self.main_data}/svd-st"
+		self.packs_path = f"{self.main_data}/packs"
+		self.cmsis_path = f"{self.main_data}/cmsis"
+		self.config_file = f"{self.main_data}/versions.ini"
+
+		self.fileset_path = f"{self.main_data}/fileset"
+		self.pdsc_path_model = f"{self.fileset_path}/*.pdsc"
+		self.pickle_data_path = f"{self.main_data}/SooL.dat"
 
 		self.generation_manifest_path = f"{self.main_out}/manifest.xml"
+
+		self.defined_keil_archive = {
+			"STM32F0": "Keil.STM32F0xx_DFP.",
+			"STM32F1": "Keil.STM32F1xx_DFP.",
+			"STM32F2": "Keil.STM32F2xx_DFP.",
+			"STM32F3": "Keil.STM32F3xx_DFP.",
+			"STM32F4": "Keil.STM32F4xx_DFP.",
+			"STM32F7": "Keil.STM32F7xx_DFP.",
+			"STM32H7": "Keil.STM32H7xx_DFP.",
+			"STM32L0": "Keil.STM32L0xx_DFP.",
+			"STM32L1": "Keil.STM32L1xx_DFP.",
+			"STM32L4": "Keil.STM32L4xx_DFP.",
+			"STM32L5": "Keil.STM32L5xx_DFP.",
+			"STM32MP1": "Keil.STM32MP1xx_DFP.",
+			"STM32G0": "Keil.STM32G0xx_DFP.",
+			"STM32G4": "Keil.STM32G4xx_DFP.",
+			"STM32W1": "Keil.STM32W1xx_DFP.",
+			"STM32WB": "Keil.STM32WBxx_DFP."
+		}
+
+		self.default_archives_version = {
+			"STM32MP1": "1.1.0",
+			"STM32F4": "2.14.0",
+			"STM32H7" : "2.3.1",
+		}
 
 
 	@property

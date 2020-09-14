@@ -23,66 +23,164 @@ import shutil
 import tempfile
 import zipfile
 import typing as T
-from FileSetHandler import PDSCFile
+import urllib.request
+import urllib.error
+import json
+
+from ..tools import global_parameters
 
 logger = logging.getLogger()
 
+
+class VersionUnavailableError(RuntimeError):
+	def __init__(self,msg):
+		super().__init__(msg)
+		logger.error(msg)
+
+
+class OnlineVersionUnavailableError(VersionUnavailableError):
+	def __init__(self,msg):
+		super().__init__(msg)
+
+
+class DefaultVersionUnavailableError(VersionUnavailableError):
+	def __init__(self,msg):
+		super().__init__(msg)
+
+
+class DownloadFailedError(RuntimeError):
+	def __init__(self,msg):
+		super().__init__(msg)
+		logger.error(msg)
+
+
+class UnextractedPDSCError(RuntimeError):
+	def __init__(self,msg):
+		super().__init__(msg)
+		logger.error(msg)
+
+class KeilUnpackingError(RuntimeError):
+	def __init__(self,msg):
+		super().__init__(msg)
+		logger.error(msg)
+
+
+class InvalidKeilPackError(RuntimeError):
+	def __init__(self,msg):
+		super().__init__(msg)
+		logger.error(msg)
+
+
 class KeilPack:
-	data_root : str = ".data"
-	pdsc_path : str = f"{data_root}/fileset"
-	cmsis_path: str = f"{data_root}/cmsis"
-	svd_path  : str = f"{data_root}/svd"
+	@classmethod
+	def from_path(cls, src : str):
+		if not os.path.isfile(src) :
+			raise InvalidKeilPackError(f"Pack archive {src} does not exists or is not a file")
+		filename = os.path.basename(src)
+		path = os.path.dirname(os.path.abspath(src))
+		fields = filename.split(".")
 
-	defined_archives = {
-		"STM32F0": "Keil.STM32F0xx_DFP.",
-		"STM32F1": "Keil.STM32F1xx_DFP.",
-		"STM32F2": "Keil.STM32F2xx_DFP.",
-		"STM32F3": "Keil.STM32F3xx_DFP.",
-		"STM32F4": "Keil.STM32F4xx_DFP.",
-		"STM32F7": "Keil.STM32F7xx_DFP.",
-		"STM32H7": "Keil.STM32H7xx_DFP.",
-		"STM32L0": "Keil.STM32L0xx_DFP.",
-		"STM32L1": "Keil.STM32L1xx_DFP.",
-		"STM32L4": "Keil.STM32L4xx_DFP.",
-		"STM32L5": "Keil.STM32L5xx_DFP.",
-		"STM32MP1": "Keil.STM32MP1xx_DFP.",
-		"STM32G0": "Keil.STM32G0xx_DFP.",
-		"STM32G4": "Keil.STM32G4xx_DFP.",
-		"STM32W1": "Keil.STM32W1xx_DFP.",
-		"STM32WB": "Keil.STM32WBxx_DFP."
-	}
+		family = None
+		for f, archive in global_parameters.defined_keil_archive.items() :
+			if filename.startswith(archive) :
+				family = f
+				break
 
-	default_version = {
-		"STM32MP1" : "1.1.0",
-		"STM32F4"	: "2.14.0",
-		"STM32H7" 	: "2.3.1",
-	}
+		if family is None :
+			raise InvalidKeilPackError(f"{filename} is not a registered valid archive name.")
 
-	def __init__(self, path : str):
-		self.pack_path = path
-		self.pack_file = os.path.basename(self.pack_path)
-		self.pack_name = self.pack_file[:self.pack_file.rfind(".")]
-		self.extracted_path = None
+		ret = cls(family)
+		ret.version = ".".join(fields[-4:-1])
+		ret.location = path
+		return ret
 
-		self.pdsc = None
+	def __init__(self, family : str):
+		self.family = family.upper()
+		self.archive_basename = global_parameters.defined_keil_archive[self.family]
+		self.version 		: str = "0.0.0"
+		self.location 		: str = None
+		self.extracted_path : str = None
+		self.__pdsc_path 	: str = None
 
-	def extract(self,path = None) -> T.Optional[str]:
-		if path is None :
-			path = os.path.dirname(self.pack_path) + "/temp_extract"
-			shutil.rmtree(path,True)
-			os.mkdir(path)
+	def get_online_version(self):
+		base_url_check = "http://pack.keil.com/api/pack/check?pack="
 
-		shutil.copy(self.pack_path, f"{path}/{self.pack_name}.zip")
 
-		with zipfile.ZipFile(f"{path}/{self.pack_name}.zip") as zip_handler:
-			zip_handler.extractall(path)
-			self.extracted_path = path
+		url_check = base_url_check + self.archive_basename + "1.0.0.pack"
 
-		if os.path.exists(f"{path}/{self.pack_name}.pdsc") :
-			return f"{path}/{self.pack_name}.pdsc"
+		try:
+			with urllib.request.urlopen(url_check) as response:
+				t = json.loads(response.read().decode())
+				check_ok = t["Success"]
+				new_version = t["LatestVersion"]
+
+				if not check_ok:
+					raise OnlineVersionUnavailableError(f"\tUnable to retrieve {self.archive_basename}'s version value")
+
+		except urllib.error.HTTPError as err:
+			raise OnlineVersionUnavailableError(f"Unable to retrieve {self.archive_basename}'s version : HTTP Error {err.code} : {err.reason}")
+
+		self.version = new_version
+
+	def get_default_version(self):
+		if self.family not in global_parameters.default_archives_version :
+			raise DefaultVersionUnavailableError(f"Default version not available for family {self.family}")
+		self.family = global_parameters.default_archives_version
+
+	def setup_version(self):
+		try :
+			self.get_online_version()
+		except OnlineVersionUnavailableError :
+			self.get_default_version()
+
+	@property
+	def pack_filename(self) -> str:
+		return f"{self.archive_basename}{self.version}.pack"
+
+	@property
+	def full_path(self) -> str:
+		return f"{self.location}/{self.pack_filename}"
+
+	def download_to(self, path = None):
+		url = "https://keilpack.azureedge.net/pack/" + self.pack_filename
+
+		destination = path if path is not None else tempfile.mkdtemp(prefix=f"SVD_RETR_Keil_{self.archive_basename[:-1]}_")
+		with open(destination + f"/{self.pack_filename}", "wb") as temp_archive:
+			logger.info("Trying to download " + url + " ...")
+			logger.debug("Temp path is " + temp_archive.name)
+
+			try:
+				with urllib.request.urlopen(url) as response:
+					shutil.copyfileobj(response, temp_archive)
+					logger.info("Download complete !")
+			except urllib.error.HTTPError as err:
+				raise DownloadFailedError(f"\tIssue when downloading {self.archive_basename} : HTTP {err.code} : {err.reason}")
+
+		self.location = os.path.abspath(destination)
+
+	def extract_to(self, destination = None) -> T.Optional[str]:
+		if destination is None :
+			destination = os.path.dirname(global_parameters.pack_path) + "/temp_extract"
+			shutil.rmtree(destination, True)
+			os.mkdir(destination)
+
+		shutil.copy(self.full_path, f"{destination}/{global_parameters.pack_name}.zip")
+		logger.info("Unzipping archive...")
+		with zipfile.ZipFile(f"{destination}/{global_parameters.pack_name}.zip") as zip_handler:
+			zip_handler.extractall(destination)
+			self.extracted_path = destination
+
+		if os.path.exists(f"{destination}/{global_parameters.pack_name}.pdsc") :
+			self.__pdsc_path = os.path.abspath(f"{destination}/{global_parameters.pack_name}.pdsc")
 		else:
-			logger.error(f"PDSC File {path}/{self.pack_name}.pdsc not found.")
-			return None
+			raise KeilUnpackingError(f"PDSC File {destination}/{global_parameters.pack_name}.pdsc not found.")
+
+
+	@property
+	def pdsc_path(self) -> str:
+		if self.__pdsc_path is None :
+			raise UnextractedPDSCError("Trying to access to a PDSC file which have not been extracted")
+		return self.__pdsc_path
 
 
 
