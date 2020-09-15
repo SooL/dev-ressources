@@ -32,6 +32,33 @@ class ParametersHandler :
 						"sql"		: "Dump the final database into out/database.sqlite3",
 						"rccf"		: "RCC functions"}
 
+	defined_keil_archive = {
+		"STM32F0": "Keil.STM32F0xx_DFP.",
+		"STM32F1": "Keil.STM32F1xx_DFP.",
+		"STM32F2": "Keil.STM32F2xx_DFP.",
+		"STM32F3": "Keil.STM32F3xx_DFP.",
+		"STM32F4": "Keil.STM32F4xx_DFP.",
+		"STM32F7": "Keil.STM32F7xx_DFP.",
+		"STM32H7": "Keil.STM32H7xx_DFP.",
+		"STM32L0": "Keil.STM32L0xx_DFP.",
+		"STM32L1": "Keil.STM32L1xx_DFP.",
+		"STM32L4": "Keil.STM32L4xx_DFP.",
+		"STM32L5": "Keil.STM32L5xx_DFP.",
+		"STM32MP1": "Keil.STM32MP1xx_DFP.",
+		"STM32G0": "Keil.STM32G0xx_DFP.",
+		"STM32G4": "Keil.STM32G4xx_DFP.",
+		"STM32W1": "Keil.STM32W1xx_DFP.",
+		"STM32WB": "Keil.STM32WBxx_DFP."
+	}
+
+	default_archives_version = {
+		"STM32F4": "2.14.0",
+		"STM32H7": "2.6.0",
+		"STM32L4": "2.4.0",
+		"STM32MP1": "1.3.0",
+		"STM32WB": "1.1.0"
+	}
+
 	def __init__(self):
 		self.reuse_db			: bool = False
 		self.dump_db			: bool = False
@@ -79,31 +106,6 @@ class ParametersHandler :
 		self.pickle_data_path = f"{self.main_data}/SooL.dat"
 
 		self.generation_manifest_path = f"{self.main_out}/manifest.xml"
-
-		self.defined_keil_archive = {
-			"STM32F0": "Keil.STM32F0xx_DFP.",
-			"STM32F1": "Keil.STM32F1xx_DFP.",
-			"STM32F2": "Keil.STM32F2xx_DFP.",
-			"STM32F3": "Keil.STM32F3xx_DFP.",
-			"STM32F4": "Keil.STM32F4xx_DFP.",
-			"STM32F7": "Keil.STM32F7xx_DFP.",
-			"STM32H7": "Keil.STM32H7xx_DFP.",
-			"STM32L0": "Keil.STM32L0xx_DFP.",
-			"STM32L1": "Keil.STM32L1xx_DFP.",
-			"STM32L4": "Keil.STM32L4xx_DFP.",
-			"STM32L5": "Keil.STM32L5xx_DFP.",
-			"STM32MP1": "Keil.STM32MP1xx_DFP.",
-			"STM32G0": "Keil.STM32G0xx_DFP.",
-			"STM32G4": "Keil.STM32G4xx_DFP.",
-			"STM32W1": "Keil.STM32W1xx_DFP.",
-			"STM32WB": "Keil.STM32WBxx_DFP."
-		}
-
-		self.default_archives_version = {
-			"STM32MP1": "1.1.0",
-			"STM32F4": "2.14.0",
-			"STM32H7" : "2.3.1",
-		}
 
 
 	@property

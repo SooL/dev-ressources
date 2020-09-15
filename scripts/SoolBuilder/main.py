@@ -22,27 +22,9 @@
 #  along with SooL core Library. If not, see  <https://www.gnu.org/licenses/>. *
 # ******************************************************************************
 
-import glob
-
 import argparse
-import shutil
 import logging
-import typing as T
-import os
-
-from structure import *
-
-from tools import svd_retriever as svd
 from tools import global_parameters
-
-import pickle
-from FileSetHandler import PDSCHandler
-from FileSetHandler.svd import SVDFile
-
-
-from cleaners import register_forbid_autonamefix
-from generators.sool_chip_setup import generate_sool_chip_setup
-from dispatchers import svd_process_handler
 
 
 ########################################################################################################################
@@ -76,20 +58,7 @@ logger.addHandler(log_file_handler)
 	
 if __name__ == "__main__" :
 
-	from tools import SoolManifest
-
 	from time import time
-	import sqlite3 as sql
-
-	from generators import generate_get_bit
-	from generators import generate_get_reg
-	from generators import generate_records
-	from generators import generate_sool_irqn
-	from generators import generate_sool_cmsis_config
-
-	from FileSetHandler import FileSetLocator
-	from FileSetHandler import STFilesetHandler
-
 	from builder import SooLBuilder
 
 	logger.info("Tool startup")
@@ -99,13 +68,13 @@ if __name__ == "__main__" :
 						dest="update_svd",
 						default=list(),
 						help="Add a family to the files to be updated.",
-						choices=list(svd.defined_archives_keil.keys()) + ['all'])
+						choices=list(global_parameters.defined_keil_archive.keys()) + ['all'])
 	parser.add_argument("--upgrade", "-u",
 						nargs="+",
 						default=list(),
 						dest="upgrade_svd",
 						help="Add a family to the files to be upgraded.",
-						choices=list(svd.defined_archives_keil.keys()) + ['all'])
+						choices=list(global_parameters.defined_keil_archive) + ['all'])
 	parser.add_argument("--use-local-packs",
 						action="store_true",
 						help="Try to use the local packs repository (.data/packs)")
@@ -155,7 +124,7 @@ if __name__ == "__main__" :
 
 	# Start of actual code
 	args = parser.parse_args()
-	global_parameters.read_args(args,svd.defined_archives_keil)
+	global_parameters.read_args(args,global_parameters.defined_keil_archive)
 
 	builder = SooLBuilder(global_parameters)
 	start_time = time()

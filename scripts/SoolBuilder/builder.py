@@ -19,12 +19,13 @@
 
 from tools import ParametersHandler
 from tools import SoolManifest
-from tools import svd_retriever as svd
+
 
 from FileSetHandler import PDSCHandler
 from FileSetHandler import FileSetLocator
 from FileSetHandler import STFilesetHandler
 from FileSetHandler import SVDFile
+from FileSetHandler import KeilPack
 
 from structure import Group
 from structure import ChipSet
@@ -60,10 +61,16 @@ class SooLBuilder:
 		self.pdsc_handlers : T.List[PDSCHandler] = list()
 		self.skip_analysis : bool = False
 
+		self.packs_handlers: T.Dict[str,KeilPack] = dict()
+
 	def initialize_filestructure(self):
-		if not os.path.exists(svd.svd_path) or self.params.fileset_reinit:
+		if not os.path.exists(self.params.svd_path) or self.params.fileset_reinit:
 			logger.info("First initialization")
-			svd.init()
+			os.makedirs(self.params.svd_path , exist_ok=True)
+			os.makedirs(self.params.svdst_path, exist_ok=True)
+			os.makedirs(self.params.packs_path, exist_ok=True)
+			os.makedirs(self.params.cmsis_path, exist_ok=True)
+
 
 		if self.params.refresh_output:
 			if os.path.exists("out/"):
@@ -80,9 +87,15 @@ class SooLBuilder:
 		if self.params.use_local_packs:
 			logger.info("Using local packs.")
 		logger.warning("Refresh definition for following families :")
+		for family in self.params.update_list:
+			logger.warning(f"\t{family}")
 
 		for family in self.params.update_list :
-			self.ensure_pack(family)
+			try :
+				self.ensure_pack(family)
+			except RuntimeError as err:
+				logger.error(f"\tIssue while retrieving {family}")
+				self.unavailable_families.append(family)
 
 		if len(self.unavailable_families) > 0:
 			logger.warning("Several chip families have not been retrieved :")
@@ -91,46 +104,23 @@ class SooLBuilder:
 		else:
 			logger.info("All families retrieved")
 
-	def ensure_pack(self,chip_family : str):
-		logger.warning("\t" + chip_family)
+	def retrieve_packs(self,chip_family):
+		p = KeilPack(chip_family)
+		p.setup_version()
+		p.download_to(self.params.packs_path if self.params.store_packs or self.params.use_local_packs else None)
 
-		enforced_ver = svd.get_current_version(chip_family)
-		local_failed = False
-		local_pack = None
-		temp_folder = None
-		force_update = chip_family in self.params.family_update_request or self.params.enforce_versions
+		self.packs_handlers[chip_family] = p
 
-		if self.params.use_local_packs:
-			version_string = enforced_ver if self.params.enforce_versions else "*"
-			local_pack = svd.select_local_keil_pack(chip_family, version_string)
-			if local_pack is not None :
-				enforced_outdated = svd.version_cmp(enforced_ver) <= svd.version_cmp(svd.pack_version_string(local_pack))
-				if not force_update and enforced_outdated:
-					return
+	def handle_pack(self, chip_family : str):
+		p = self.packs_handlers[chip_family]
+		p.extract_to()
+		pdsc = PDSCHandler(p.pdsc_path)
+		pdsc.process()
+		pdsc.extract_to(self.params.main_data)
 
-			local_failed = local_pack is None
-
-		if not self.params.use_local_packs or local_failed:
-			current_version = svd.keil_get_version(chip_family) if not self.params.enforce_versions else enforced_ver
-			if current_version is None and chip_family in svd.default_version_keil:
-				current_version = svd.default_version_keil[chip_family]
-				logger.error(f"Error in getting version number. using static version number {current_version}")
-
-			if not force_update and svd.version_cmp(current_version) <= svd.version_cmp(enforced_ver):
-				return
-			# The local pack will be stored in a random temporary folder
-			local_pack = svd.retrieve_keil_pack(chip_family, current_version, self.params.store_packs,
-												self.params.enforce_versions)
-			if local_pack is not None:
-				temp_folder = os.path.dirname(local_pack)
-
-		if local_pack is not None:
-			svd.handle_keil_pack(local_pack)
-		else:
-			self.unavailable_families.append(chip_family)
-			return
-		if temp_folder is not None:
-			shutil.rmtree(temp_folder)
+	def ensure_pack(self,chip_family):
+		self.retrieve_packs(chip_family)
+		self.handle_pack(chip_family)
 
 	def process_pdsc(self):
 		logger.info("Reading .pdsc files to map STM number to svd...")
@@ -140,6 +130,7 @@ class SooLBuilder:
 			self.pdsc_handlers[-1].process()
 			self.pdsc_handlers[-1].rebuild_extracted_associations("./.data")
 			self.pdsc_handlers[-1].compute_cmsis_handlers()
+			pass
 
 		for pdsc_handler in self.pdsc_handlers:
 			pdsc_handler.check_svd_define_association()

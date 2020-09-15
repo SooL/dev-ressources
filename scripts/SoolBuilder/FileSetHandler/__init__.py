@@ -23,3 +23,11 @@ from .pdsc import PDSCHandler
 from .stm32targets import FileSetLocator, STFilesetHandler
 
 from .svd import SVDFile
+from .pack import KeilPack
+from .pack import InvalidKeilPackError
+from .pack import OnlineVersionUnavailableError
+from .pack import KeilUnpackingError
+from .pack import VersionUnavailableError
+from .pack import DefaultVersionUnavailableError
+from .pack import UnextractedPDSCError
+from .pack import DownloadFailedError
