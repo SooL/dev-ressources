@@ -202,6 +202,21 @@ class CMSISHeader:
 			end = data.find("@}", start)
 			self.raw_memory = data[start:end]
 
+	def extend_read(self):
+		"""
+		This function will read the provided file and extract if possible the raw data sections.
+		In order to use those values, an explicit call to processing functions must be done.
+
+		.. seealso:: clean
+		"""
+		with open(self.path,"r",encoding="latin-1") as f :
+			data = f.read()
+
+		start = data.find("#define __")
+		stop = data.find("\n",data.rfind("#define __"))
+		addendum = data[start:stop]
+		self.raw_cmsis_conf += "\n" + addendum
+
 	def clean(self):
 		"""
 		Remove all raw data to gain memory space and eventually ease data transfer.
@@ -322,7 +337,7 @@ class CMSISHeader:
 			if result:
 				if result["command"] != "define" :
 					logger.error(f"Found {result['command']} statement while parsing CMSIS conf in {os.path.basename(self.path)}")
-					break
+					continue
 				else :
 					self.cmsis_conf[result["name"]] = int(result["val"],0) if result["val"] is not None else ""
 
@@ -368,6 +383,10 @@ class CMSISHeader:
 		self.process_irq_table()
 		self.process_peripheral_definition()
 		self.process_cmsis_conf()
+		if len(self.cmsis_conf) == 0 :
+			logger.warning(f"Extended read required for {self.file_name}")
+			self.extend_read()
+			self.process_cmsis_conf()
 
 	def apply_corrector(self, root_corrector):
 		for periph in self.periph_table.values() :
