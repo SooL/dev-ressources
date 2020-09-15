@@ -179,6 +179,8 @@ base_root_corrector = Corrector({
 		})
 	},
 	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
+	"DSIHOST"   : lambda group: modify(group, new_name="DSI"),
+	"DSI" 		: {	"*" : DSI_periph_cleaner} ,
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
 	"FLASH"     : {

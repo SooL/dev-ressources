@@ -224,6 +224,10 @@ def DBGMCU_periph_cleaner(periph: "Peripheral") :
 				for reg in regs :
 					reg.name = reg_name
 
+def DSI_periph_cleaner(periph: "Peripheral") :
+	for i in periph.instances :
+		if i.name == "DSIHOST" :
+			i.name = "DSI"
 
 def ETHERNET_periph_cleaner(periph: "Peripheral") :
 	if len(periph.instances) == 1 :

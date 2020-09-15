@@ -112,7 +112,7 @@ class MergeHandler:
 			if name in self.definition_tags :
 				logger.info(f"Replacing tag {name}")
 				for line in reversed(data_definition[self.definition_tags[name].start:self.definition_tags[name].stop]):
-					data_struct.insert(pos,tag.indent + line)
+					data_struct.insert(pos,tag.indent + line.replace(self.definition_tags[name].indent,""))
 					offset += 1
 
 		logger.info("Writing result")
