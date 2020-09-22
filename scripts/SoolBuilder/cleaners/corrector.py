@@ -34,6 +34,12 @@ def modify(obj, new_name=None, new_type=None, new_brief=None, new_size=None) :
 	if new_size is not None :
 		obj.size = new_size
 
+def remove_prefix(obj, times=1) :
+	for i in range(times) :
+		if "_" not in obj.name :
+			return
+		modify(obj,new_name=obj.name[obj.name.index('_')+1:])
+
 def clone_field(field, name=None, pos=None, brief=None, size=None) :
 	newField = Field(field.chips,
 	                 field.name if name is None else name,
@@ -180,7 +186,10 @@ base_root_corrector = Corrector({
 	},
 	"DMAMUX*"   : lambda group: modify(group, new_name="DMAMUX"),
 	"DSIHOST"   : lambda group: modify(group, new_name="DSI"),
-	"DSI" 		: {	"*" : DSI_periph_cleaner} ,
+	"DSI" 		: {
+		"*" : (DSI_periph_cleaner,{
+			"DSIHSOT_*" : remove_prefix,
+			"DSI_*" : remove_prefix})} ,
 	"ETHERNET"  : { "*" : ETHERNET_periph_cleaner },
 	"FDCAN"     : { "*" : FDCAN_periph_cleaner },
 	"FLASH"     : {
@@ -224,10 +233,12 @@ base_root_corrector = Corrector({
 	"I2C"       : { "*" : I2C_periph_cleaner },
 	"IPCC"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"LPUART"    : lambda group: modify(group, new_name="USART"),
+	"LTDC"		: { "*" : LTCD_fix_periph_cleaner},
 	"MDMA"      : { "*" : PERIPH_VERSION_REGISTERS_cleaner },
 	"RAMECC"    : { "*" : lambda periph: modify(periph, new_name="RAMECC") },
 	"RCC"       : {
 		"*"         : {
+			"C*_*" : lambda reg : modify(reg,new_name=reg.name[reg.name.find("_")+1:]),
 			"*ENR"      : { "*" : {
 				"GPIOP?EN"  : lambda field : modify(field, new_name=f"GPIO{field.name[-3]}EN")
 			}},

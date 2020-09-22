@@ -229,6 +229,13 @@ def DSI_periph_cleaner(periph: "Peripheral") :
 		if i.name == "DSIHOST" :
 			i.name = "DSI"
 
+def LTCD_fix_periph_cleaner(periph: "Peripheral") :
+	if periph.name != "LTDC" :
+		periph.name = "LTDC"
+	for i in periph.instances :
+		if i.name != "LTDC" :
+			i.name = "LTDC"
+
 def ETHERNET_periph_cleaner(periph: "Peripheral") :
 	if len(periph.instances) == 1 :
 		periph.name = periph.instances[0].name
