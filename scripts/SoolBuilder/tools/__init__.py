@@ -16,6 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License    *
 #  along with SooL core Library. If not, see  <https://www.gnu.org/licenses/>. *
 # ******************************************************************************
+from .reporter import Reporter
+from .reporter import main_reporter
 
 from tools.parameters import ParametersHandler, global_parameters
 from .sool_manifest import SoolManifest
+
