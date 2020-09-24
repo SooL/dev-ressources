@@ -56,3 +56,6 @@ STM32MP1.svd :
     RTC registers mapping does not follow the mapping of the reference manual.
     TAMP peripheral is not described
 
+F769 :
+    DSIEN missing on RCC enable register.
+    LTCD instead of LTDC.
