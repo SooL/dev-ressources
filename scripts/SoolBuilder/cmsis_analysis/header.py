@@ -247,7 +247,8 @@ class CMSISHeader:
 			if define is None :
 				result = ifdef_rexp.search(line)
 				if result :
-					define = result.groupdict()["define"]
+					define = result["define"].replace("X","x")
+					#Reset the file name for each new define
 					filename = None
 				else:
 					continue
