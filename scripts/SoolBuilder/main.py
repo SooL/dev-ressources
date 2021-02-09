@@ -120,7 +120,7 @@ if __name__ == "__main__" :
 						help="Reuse an existing .data/SooL.dat file to skip the analysis step.")
 	parser.add_argument("--force-version",
 						action="store_true",
-						help="Force packs versions as specified in .data/version.ini")
+						help="Force packs versions as default version, skip online lookup")
 	parser.add_argument("--cubeide-path",
 						type=str,
 						default=None,

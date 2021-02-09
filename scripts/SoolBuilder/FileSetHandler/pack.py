@@ -138,10 +138,14 @@ class KeilPack:
 
 	def setup_version(self):
 		logger.info(f"Getting version for family {self.family}")
-		try :
-			self.get_online_version()
-		except OnlineVersionUnavailableError :
-			logger.info(f"Issue while getting online version, switching to default.")
+		if not global_parameters.force_pack_version :
+			try :
+				self.get_online_version()
+			except OnlineVersionUnavailableError :
+				logger.info(f"Issue while getting online version, switching to default.")
+				self.get_default_version()
+		else :
+			logger.info("Forced use of default version")
 			self.get_default_version()
 
 	@property
