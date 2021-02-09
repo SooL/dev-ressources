@@ -90,8 +90,6 @@ class ParametersHandler :
 		self.family_upgrade_request: T.List[str] = list()
 		self.fileset_reinit		: bool = False
 
-		self.enforce_versions	: bool = False
-
 		self.cubeide_path		: str = None
 		
 		self.jobs : int = 1
@@ -163,7 +161,7 @@ class ParametersHandler :
 
 	@property
 	def got_chip_exclude(self):
-		return len(self.chips_filter) > 0
+		return len(self.chips_exclude) > 0
 
 	def __chip_keep(self,chip_name : str) -> bool:
 		if not self.got_chip_filter :
@@ -210,7 +208,7 @@ class ParametersHandler :
 		# self.physical_mapping 	= not args.no_phy
 		# self.big_endian			= args.big_endian
 
-		self.enforce_versions	= args.force_version
+		self.force_pack_version	= args.force_version
 		self.store_packs		= args.store_packs
 		self.use_local_packs	= args.use_local_packs
 		self.update_requested	= args.update_svd or args.upgrade_svd
@@ -218,6 +216,8 @@ class ParametersHandler :
 		self.cubeide_path		= args.cubeide_path
 		self.group_filter       = args.group_filter
 		self.refresh_output     = args.refresh_output
+
+
 		if "all" in [x.lower() for x in self.group_filter] :
 			self.group_filter.clear()
 
