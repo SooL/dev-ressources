@@ -124,7 +124,7 @@ class KeilPack:
 					raise OnlineVersionUnavailableError(f"\tUnable to retrieve {self.archive_basename}'s version value using URL {url_check}")
 
 		except urllib.error.HTTPError as err:
-			raise OnlineVersionUnavailableError(f"Unable to retrieve {self.archive_basename}'s version : HTTP Error {err.code} : {err.reason}")
+			raise OnlineVersionUnavailableError(f"Unable to retrieve {self.archive_basename}'s version using URL {url_check} : HTTP Error {err.code} : {err.reason}")
 
 
 		self.version = new_version
