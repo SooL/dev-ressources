@@ -207,8 +207,20 @@ class SooLBuilder:
 		self.svd_file_handler_mapping = svd_process_handler(self.svd_file_handler_mapping,self.params.group_filter)
 
 	def write_pdsc_infos_in_manifest(self):
+		logger.info("Add PDSC info in manifest.")
 		for pdsc in self.pdsc_handlers :
 			self.manifest.add_pdsc_version(pdsc.family,pdsc.version_string)
+
+	def write_chips_infos_in_manifest(self):
+		logger.info("Add Chips info to manifest...")
+		if ChipSet.reference_chipset is not None :
+			for chip in ChipSet.reference_chipset :
+				self.manifest.add_chip(chip)
+		else:
+			for g in self.groups.values():
+				for c in g.chips:
+					self.manifest.add_chip(c)
+		logger.info("\tDone.")
 
 	def final_merge(self):
 		i = 1
@@ -339,6 +351,7 @@ class SooLBuilder:
 		if not self.skip_analysis :
 			self.perform_analysis()
 
+		self.write_chips_infos_in_manifest()
 		self.generate_output()
 		self.generate_optionals()
 
