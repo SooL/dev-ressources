@@ -254,6 +254,8 @@ class SooLBuilder:
 		with open(f"{self.params.out_sys}/cmsis_config.h", "w") as cmsis_configuration:
 			cmsis_configuration.write(generate_sool_cmsis_config())
 
+		self.manifest.construct_xml()
+		self.manifest.write_file()
 	def generate_rccf(self):
 		os.makedirs(self.params.out_rccf, exist_ok=True)
 		if "RCC" not in self.groups:
