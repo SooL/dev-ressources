@@ -21,6 +21,7 @@ import typing as T
 import logging
 import xml.etree.ElementTree as ET
 import fnmatch
+import os
 
 logger = logging.getLogger()
 
@@ -91,7 +92,9 @@ class ParametersHandler :
 		self.fileset_reinit		: bool = False
 
 		self.cubeide_path		: str = None
-		
+		self.manifest_copy_path : str = None
+		self.headers_copy_path  : str = None
+
 		self.jobs : int = 1
 
 		self.archives = dict()
@@ -160,6 +163,14 @@ class ParametersHandler :
 		return len(self.chips_filter) > 0
 
 	@property
+	def copy_manifest(self):
+		return self.manifest_copy_path is not None	\
+
+	@property
+	def copy_headers(self):
+		return self.headers_copy_path is not None
+
+	@property
 	def got_chip_exclude(self):
 		return len(self.chips_exclude) > 0
 
@@ -217,6 +228,11 @@ class ParametersHandler :
 		self.group_filter       = args.group_filter
 		self.refresh_output     = args.refresh_output
 
+		self.manifest_copy_path = args.manifest_path
+		if self.copy_manifest and os.path.isdir(self.manifest_copy_path) :
+			self.manifest_copy_path = f"{os.path.abspath(self.manifest_copy_path)}/manifest.xml"
+
+		self.headers_copy_path = args.header_path
 
 		if "all" in [x.lower() for x in self.group_filter] :
 			self.group_filter.clear()

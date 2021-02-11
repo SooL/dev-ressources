@@ -125,6 +125,14 @@ if __name__ == "__main__" :
 						type=str,
 						default=None,
 						help="Path to STM32CubeIDE installation")
+	parser.add_argument("--manifest-path",
+						default=None,
+						type=str,
+						help="Path to copy the manifest to")
+	parser.add_argument("--header-path",
+						default=None,
+						type=str,
+						help="Path to copy the headers to")
 
 	# Start of actual code
 	args = parser.parse_args()

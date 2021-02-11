@@ -256,6 +256,15 @@ class SooLBuilder:
 
 		self.manifest.construct_xml()
 		self.manifest.write_file()
+		if self.params.copy_manifest :
+			logger.info(f"Copy manifest file to {self.params.manifest_copy_path}")
+			shutil.copyfile(self.params.generation_manifest_path,self.params.manifest_copy_path)
+
+		if self.params.copy_headers:
+			logger.info(f"Copy generated files to {self.params.manifest_copy_path}")
+			for f in glob.glob(f"{self.params.out_include}/*.h"):
+				shutil.copyfile(f,f"{self.params.headers_copy_path}/{os.path.basename(f)}")
+
 	def generate_rccf(self):
 		os.makedirs(self.params.out_rccf, exist_ok=True)
 		if "RCC" not in self.groups:
