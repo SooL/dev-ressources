@@ -25,7 +25,6 @@
 import argparse
 import logging
 from tools import global_parameters
-from tools import main_reporter
 
 ########################################################################################################################
 #                                                 LOGGER SETTING                                                       #
@@ -137,12 +136,6 @@ if __name__ == "__main__" :
 	# Start of actual code
 	args = parser.parse_args()
 
-	try :
-		if os.path.exists("report.xml") :
-			main_reporter.read_xml("report.xml")
-	except ET.ParseError:
-		pass
-
 	global_parameters.read_args(args,global_parameters.defined_keil_archive)
 
 	builder = SooLBuilder(global_parameters)
@@ -150,10 +143,6 @@ if __name__ == "__main__" :
 	builder.run()
 	end_time = time()
 	print("End of process.")
-
-	with open("report.xml", "w") as out:
-		dom = minidom.parseString(ET.tostring(main_reporter.xml))
-		out.write(dom.toprettyxml())
 
 	print(f"Elapsed time : {end_time - start_time:.2f}s")
 	quit(0)

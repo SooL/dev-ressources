@@ -32,7 +32,6 @@ from structure import Component
 from structure.utils import DefinesHandler, fill_periph_hole
 
 from tools import global_parameters
-from tools import main_reporter as report
 import sqlite3 as sql
 
 logger = logging.getLogger()
@@ -402,11 +401,6 @@ class Peripheral(Component) :
 					else :
 						if isinstance(elmt, Register) :
 							logger.warning(f"Header sub-peripheral {cmsis_reg.name} doesn' match register {elmt}")
-			if not match :
-				report.warning("ST",f"Register {cmsis_reg.type} "
-				               f"{cmsis_reg.name}{f'[{cmsis_reg.array_size}]' if cmsis_reg.array_size > 1 else ''} "
-				               f"({cmsis_periph.parent.file_name}) is missing in peripheral {self}")
-
 
 	def finalize(self):
 		super().finalize()
